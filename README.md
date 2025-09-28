@@ -12,49 +12,40 @@ flowchart LR
   subgraph CLIENT
     W[Web App]
     M[Mobile App]
-    W --- M
   end
 
   subgraph BACKEND_MONOLITH
     CTRL[HTTP Controllers]
-    AUTH[Auth & RBAC]
-    CNT[Content Service]
-    ASM[Assignment Service]
-    SUB[Submission / Grader]
-    AFL[AI Feedback]
-    ANA[Skill Analytics]
-    INT[Integration Manager]
-    SEC[Security Center - Hot Reload]
-
-    CTRL --> AUTH
-    CTRL --> CNT
-    CTRL --> ASM
-    CTRL --> SUB
-    CTRL --> AFL
-    CTRL --> ANA
-    CTRL --> INT
-    CTRL --> SEC
+    IAM[Auth & RBAC]
+    CNT[Content]
+    ASM[Assignment]
+    SUB[Submission/Grader]
+    EVL[Evaluation/AI Feedback]
+    SKL[Skill Analytics]
+    INT[Integration]
+    SEC[Security Center]
   end
 
-  subgraph EXTERNAL_SERVICES
-    J0[Online Judge: Judge0 / Piston]
-    SA[SAST & Complexity]
-    OBS[Observability: Prometheus / ELK]
+  subgraph EXTERNAL
+    J0[Judge0/Piston]
+    SA[SAST/Complexity]
+    OBS[Prometheus / ELK]
   end
 
   subgraph STORAGE
-    DB[(mysql)]
+    DB[(MySQL)]
     CACHE[(Redis - optional)]
   end
 
   W --> CTRL
   M --> CTRL
 
+  CTRL --> IAM & CNT & ASM & SUB & EVL & SKL & INT & SEC
+
   SUB --> J0
   SUB --> SA
-  SUB --> AFL --> DB
-  SUB --> ANA --> DB
-
+  EVL --> DB
+  SKL --> DB
   CNT --> DB
   ASM --> DB
   INT --> DB
@@ -98,20 +89,21 @@ sequenceDiagram
   participant SA as SAST/Complexity
   participant AI as AI Feedback
   participant SK as Skill Analytics
-  participant DB as mysql
+  participant DB as MySQL
 
   U->>API: POST /submissions (code, lang)
   API->>Sub: validate & enqueue
-  Sub->>J: run tests (per-case)
+  Sub->>J: run tests
   J-->>Sub: results
   Sub->>SA: analyze(code)
-  SA-->>Sub: metrics (CCN, smells)
+  SA-->>Sub: metrics
   Sub->>AI: build prompt(results+metrics)
-  AI-->>Sub: feedback (text)
+  AI-->>Sub: feedback
   Sub->>DB: save submission+scores+feedback
-  Sub->>SK: update EMA/decay snapshots
-  SK-->>DB: write snapshots
+  Sub->>SK: update snapshots
+  SK-->>DB: write
   API-->>U: 200 (scores + feedback)
+
 ```
 
 ---
@@ -119,20 +111,18 @@ sequenceDiagram
 ## 3) Module Structure (source tree)
 
 ```text
-src/main/java/com/apsas/
-├─ common/                 # DTO, exception, mapper, utils, web handlers
-├─ config/                 # OpenAPI, WebClient, Jackson, CORS (hot)
-├─ security/               # JWT + RBAC
-├─ auth/                   # register/login/refresh
-├─ content/                # content + version + review/publish
-├─ assignment/             # assignment + deadline + rubric
-├─ submission/             # grading orchestrator + judge clients + analysis
-├─ feedback/               # AI feedback
-├─ skills/                 # EMA/decay + snapshots + APIs
-├─ integration/            # connectors + logs + test
-├─ secconfig/              # security policy center (hot-reload)
-├─ sysconfig/              # system change → CI/CD
-└─ observability/          # links/proxy to dashboards
+xxx.com/
+├─ xxx-domain/                 # Domain thuần (không Spring/JPA)
+│  └─ src/main/java/com/apsas/domain/{iam,content,assignment,submission,evaluation,skills,support,common}
+├─ xxx-application/            # Use-case/Policies, Ports
+│  └─ src/main/java/com/apsas/application/{...}/(command|query|policy|ports)
+├─ xxx-infrastructure/         # JPA, WebClient, Security, Config kỹ thuật
+│  └─ src/main/java/com/apsas/infrastructure/{jpa,client,security,config}
+├─ xxx-controller/             # REST controllers, DTO, Validation, OpenAPI
+│  └─ src/main/java/com/apsas/controller/{auth,content,assignment,submission,evaluation,skills,support,common}
+└─ xxx-start/                  # Ứng dụng chạy duy nhất
+   └─ src/main/java/com/apsas/StartApplication.java
+
 ```
 
 ---
