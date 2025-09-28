@@ -1,12 +1,9 @@
 # APSAS
 hệ thống Automated Programming Skills Assessment System (APSAS) được đề xuất nhằm tự động hóa việc chấm code, đánh giá kỹ năng và đưa ra phản hồi cá nhân hóa, giúp nâng cao trải nghiệm học tập cho sinh viên và giảm tải công việc cho giảng viên
-## 2) Backend Architecture (Monolith‑Modular, DDD‑oriented)
-
-> Spring Boot 3, Java 17+, PostgreSQL, WebClient, JWT, Flyway, Micrometer. Một app duy nhất nhưng chia **bounded contexts** (có thể tách thành microservices sau).
 
 ## 2) Backend Architecture (Monolith-Modular, DDD-oriented)
 
-> Spring Boot 3, Java 17+, PostgreSQL, WebClient, JWT, Flyway, Micrometer.
+> Spring Boot 3, Java 17+, mysql, WebClient, JWT, Flyway, Micrometer.
 
 ### 2.1 High-Level System Flow
 
