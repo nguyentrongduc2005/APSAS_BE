@@ -111,18 +111,20 @@ sequenceDiagram
 ## 3) Module Structure (source tree)
 
 ```text
-xxx.com/
-├─ xxx-domain/                 # Domain thuần (không Spring/JPA)
-│  └─ src/main/java/com/apsas/domain/{iam,content,assignment,submission,evaluation,skills,support,common}
-├─ xxx-application/            # Use-case/Policies, Ports
-│  └─ src/main/java/com/apsas/application/{...}/(command|query|policy|ports)
-├─ xxx-infrastructure/         # JPA, WebClient, Security, Config kỹ thuật
-│  └─ src/main/java/com/apsas/infrastructure/{jpa,client,security,config}
-├─ xxx-controller/             # REST controllers, DTO, Validation, OpenAPI
-│  └─ src/main/java/com/apsas/controller/{auth,content,assignment,submission,evaluation,skills,support,common}
-└─ xxx-start/                  # Ứng dụng chạy duy nhất
-   └─ src/main/java/com/apsas/StartApplication.java
-
+src/
+ └─ main/
+     ├─ java/com/example/project/
+     │   ├─ controller/        # REST Controllers (API layer)
+     │   ├─ service/           # Business logic
+     │   │    └─ impl/         # Triển khai service
+     │   ├─ repository/        # Repository (Spring Data JPA interface)
+     │   ├─ model/             # Entity (JPA @Entity) hoặc DTO
+     │   ├─ dto/               # Request/Response objects
+     │   ├─ config/            # Cấu hình: Security, CORS, Swagger, Database
+     │   └─ exception/         # Custom exception + @ControllerAdvice
+     └─ resources/
+         ├─ application.yml    # cấu hình app
+         └─ db/migration/      # Flyway/Liquibase scripts
 ```
 
 ---
