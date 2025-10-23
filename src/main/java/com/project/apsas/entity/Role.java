@@ -1,6 +1,5 @@
 package com.project.apsas.entity;
 
-import com.project.apsas.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,22 +15,23 @@ import java.util.Set;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "users")
-public class User {
+@Table(name = "roles")
+public class Role {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
-    @Column(nullable = false, length = 120)
+
+    @Column(nullable = false, length = 80, unique = true)
     String name;
-    @Column(nullable = false, length = 190,  unique = true)
-    String email;
-    @Column(nullable = false, length = 255)
-    String password;
-    @Enumerated(EnumType.STRING)
-    UserStatus status;
+
+    @Column(columnDefinition = "TEXT")
+    String description;
+
     @Column( updatable = false, insertable = false)
     LocalDateTime createdAt;
+    @ManyToMany(mappedBy = "roles",fetch = FetchType.LAZY)
+    Set<User> users = new HashSet<>();
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    Set<Role> roles = new HashSet<>();
+    Set<Permission> permissions = new HashSet<>();
 }
