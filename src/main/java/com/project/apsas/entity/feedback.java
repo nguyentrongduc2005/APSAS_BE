@@ -28,7 +28,7 @@ public class feedback {
     @Column(name = "submission_id", nullable = false)
     private Long submissionId;
 
-    // @ManyToOne(fetch = FetchType.LAZY)
-    // @JoinColumn(name = "submission_id", insertable = false, updatable = false)
-    // private Submission submission;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "submission_id", insertable = false, updatable = false)
+    private Submission submission;
 }

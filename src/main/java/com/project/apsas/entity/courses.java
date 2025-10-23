@@ -1,8 +1,7 @@
 package com.project.apsas.entity;
 
 import com.project.apsas.enums.CourseVisibility;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,6 +9,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Data 
@@ -43,5 +44,17 @@ public class courses {
 
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @OneToMany(mappedBy = "course", fetch = FetchType.LAZY)
+    private Set<enrollments> enrollments = new HashSet<>();
+
+    @OneToMany(mappedBy = "course", fetch = FetchType.LAZY)
+    private Set<courses_assignments> assignmentLinks = new HashSet<>();
+
+    @OneToMany(mappedBy = "course", fetch = FetchType.LAZY)
+    private Set<courses_contents> contentLinks = new HashSet<>();
+
+    @OneToMany(mappedBy = "course", fetch = FetchType.LAZY)
+    private Set<help_requests> helpRequests = new HashSet<>();
 }
 

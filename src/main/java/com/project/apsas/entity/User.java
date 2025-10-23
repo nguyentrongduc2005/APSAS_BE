@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.management.Notification;
+
 @Entity
 @Data
 @Builder
@@ -34,4 +36,23 @@ public class User {
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     Set<Role> roles = new HashSet<>();
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Profile profile;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private otps otp;
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private Set<enrollments> enrollments = new HashSet<>();
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private Set<help_requests> helpRequests = new HashSet<>();
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private Set<notifications> notifications = new HashSet<>();
+    
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private Progress progress;
+
 }

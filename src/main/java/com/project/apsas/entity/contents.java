@@ -8,6 +8,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
+
+import javax.print.attribute.standard.Media;
 
 @Entity
 @Data
@@ -42,8 +46,14 @@ public class contents {
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    // @ManyToOne(fetch = FetchType.LAZY)
-    // @JoinColumn(name = "tutorial_id", insertable = false, updatable = false)
-    // private Tutorial tutorial;  
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tutorial_id", insertable = false, updatable = false)
+    private Tutorial tutorial;  
+
+    @OneToMany(mappedBy = "content", fetch = FetchType.LAZY)
+    private Set<courses_contents> courseLinks = new HashSet<>();
+
+    @OneToMany(mappedBy = "content", fetch = FetchType.LAZY)
+    private Set<media> mediaList = new HashSet<>();
 
 }

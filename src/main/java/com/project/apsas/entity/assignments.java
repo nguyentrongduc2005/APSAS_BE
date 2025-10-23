@@ -9,6 +9,8 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 
 @Entity
@@ -46,13 +48,23 @@ public class assignments {
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
-//     //  truy vấn tutorial đi kèm
-//     @ManyToOne(fetch = FetchType.LAZY)
-//     @JoinColumn(name = "tutorial_id", insertable = false, updatable = false)
-//     private Tutorial tutorial;
+    //  truy vấn tutorial đi kèm
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tutorial_id", insertable = false, updatable = false)
+    private Tutorial tutorial;
 
-//     // truy vấn kỹ năng liên quan
-//     @ManyToOne(fetch = FetchType.LAZY)
-//     @JoinColumn(name = "skill_id", insertable = false, updatable = false)
-//     private Skill skill;
+    // truy vấn kỹ năng liên quan
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "skill_id", insertable = false, updatable = false)
+    private Skill skill;
+
+    @OneToMany(mappedBy = "assignment", fetch = FetchType.LAZY)
+    private Set<courses_assignments> courseLinks = new HashSet<>();
+    
+    @OneToMany(mappedBy = "assignment", fetch = FetchType.LAZY)
+    private Set<assignment_evaluation_maps> evaluationLinks = new HashSet<>();
+
+    @OneToMany(mappedBy = "assignment", fetch = FetchType.LAZY)
+    private Set<Submission> submissions = new HashSet<>();
+    
 }
