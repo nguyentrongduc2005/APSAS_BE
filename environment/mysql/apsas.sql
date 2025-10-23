@@ -152,7 +152,7 @@ CREATE TABLE `progress` (
                             `id` BIGINT NOT NULL AUTO_INCREMENT,
                             `user_id` BIGINT NOT NULL,
                             `total_attempt_no` int(11) DEFAULT NULL,
-                            `acceptance` varchar(80) DEFAULT NULL,
+                            `acceptance` float DEFAULT NULL,
                             `created_at` datetime DEFAULT current_timestamp(),
                             PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -168,7 +168,7 @@ CREATE TABLE `refresh_tokens` (
                                   `id` BIGINT NOT NULL AUTO_INCREMENT,
                                   `user_id` BIGINT NOT NULL,
                                   `name` varchar(100) DEFAULT NULL,
-                                  `token_hash` char(64) NOT NULL,
+                                  `token_hash` varchar(255) NOT NULL,
                                   `created_at` datetime DEFAULT current_timestamp(),
                                   `expires_at` datetime DEFAULT NULL,
                                   PRIMARY KEY (`id`),
@@ -188,7 +188,28 @@ CREATE TABLE `skills` (
                           `id` BIGINT NOT NULL AUTO_INCREMENT,
                           `name` varchar(160) NOT NULL,
                           `description` text DEFAULT NULL,
-                          `category` varchar(120) DEFAULT NULL,
+                          `category` ENUM(
+  'ARRAY',
+  'STRING',
+  'LIST',
+  'STACK',
+  'QUEUE',
+  'LINKED_LIST',
+  'TREE',
+  'GRAPH',
+  'HASH_MAP',
+  'HEAP',
+  'SEARCHING',
+  'SORTING',
+  'GREEDY',
+  'DIVIDE_AND_CONQUER',
+  'DYNAMIC_PROGRAMMING',
+  'BACKTRACKING',
+  'GRAPH_ALGORITHM',
+  'MATH',
+  'BIT_MANIPULATION',
+  'OTHER'
+) DEFAULT 'OTHER',
                           PRIMARY KEY (`id`),
                           UNIQUE KEY `name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_GENERAL_ci;
@@ -406,6 +427,14 @@ ALTER TABLE `progress_skills`
 
 ALTER TABLE `refresh_tokens`
     ADD CONSTRAINT `fk_refresh_tokens_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+ALTER TABLE `tutorials`
+    ADD CONSTRAINT `fk_tutorials_created_by`
+        FOREIGN KEY (`created_by`) REFERENCES `users` (`id`)
+            ON DELETE SET NULL
+            ON UPDATE CASCADE;
+
 
 ALTER TABLE `roles_permissions`
     ADD CONSTRAINT `roles_permissions_ibfk_1` FOREIGN KEY (`roles_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
