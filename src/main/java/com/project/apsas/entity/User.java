@@ -10,6 +10,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.type.SqlTypes;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -20,13 +21,17 @@ import java.util.UUID;
 @Table(name = "users")
 public class User {
     @Id
-    @UuidGenerator(style = UuidGenerator.Style.AUTO)
-    @JdbcTypeCode(SqlTypes.CHAR)
-    UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    Long id;
+    @Column(nullable = false, length = 120)
     String name;
+    @Column(nullable = false, length = 190)
     String email;
+    @Column(nullable = false, length = 255)
     String password;
     @Enumerated(EnumType.STRING)
     UserStatus status;
+    @Column(name = "created_at", updatable = false, insertable = false)
+    LocalDateTime createdAt;
 
 }
