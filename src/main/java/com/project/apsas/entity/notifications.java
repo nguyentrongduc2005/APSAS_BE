@@ -1,7 +1,10 @@
 package com.project.apsas.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
@@ -10,29 +13,28 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "refresh_tokens")
-public class RefreshToken {
-
+@Table(name = "notifications")
+public class notifications {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false, unique = true)
+    @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column(length = 100)
-    private String name;
+    @Column(length = 64, nullable = false)
+    private String type;
 
-    @Column(name = "token_hash", nullable = false, length = 64, unique = true)
-    private String tokenHash;
+    @Column(name = "payload", columnDefinition = "LONGTEXT")
+    private String payload;
+
+    @Column(name = "is_read")
+    private Boolean isRead;
 
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "expires_at")
-    private LocalDateTime expiresAt;
-
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private User user;
 }

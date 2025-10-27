@@ -1,29 +1,34 @@
 package com.project.apsas.entity;
 
-import com.project.apsas.enums.CategorySkill;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.FieldDefaults;
+
+import java.util.Set;
 
 @Entity
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
 @Table(name = "skills")
 public class Skill {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long id;
+    private Long id;
 
-    String name;
+    @Column(length = 160, nullable = false, unique = true)
+    private String name;
 
-    String description;
+    @Column(columnDefinition = "TEXT")
+    private String description;
 
-    @Enumerated(EnumType.STRING)
-    CategorySkill category;
+    @Column(length = 120)
+    private String category;
 
+    @OneToMany(mappedBy = "skill", fetch = FetchType.LAZY)
+    private Set<assignments> assignments;
 
-
+    @OneToMany(mappedBy = "skill", fetch = FetchType.LAZY)
+    private Set<ProgressSkill> progressSkills;
 }

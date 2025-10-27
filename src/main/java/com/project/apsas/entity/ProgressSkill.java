@@ -1,36 +1,37 @@
-    package com.project.apsas.entity;
+package com.project.apsas.entity;
 
+import com.project.apsas.entity.ProgressSkillId;
+import jakarta.persistence.*;
+import lombok.*;
 
-    import jakarta.persistence.*;
-    import lombok.*;
-    import lombok.experimental.FieldDefaults;
+import java.math.BigDecimal;
 
-    import java.math.BigDecimal;
+@Entity
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@IdClass(ProgressSkillId.class)
+@Table(name = "progress_skills")
+public class ProgressSkill {
 
-    @Entity
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @FieldDefaults(level = AccessLevel.PRIVATE)
-    @Table(name = "progress_skills")
-    public class ProgressSkill {
-        @EmbeddedId
-        ProgressSkillId id = new ProgressSkillId();
+    @Id
+    @Column(name = "progress_id")
+    private Long progressId;
 
-        @ManyToOne(fetch = FetchType.LAZY)
-        @MapsId("progressId") // map phần progressId trong PK
-        @JoinColumn(name = "progress_id")
-        Progress progress;
+    @Id
+    @Column(name = "skill_id")
+    private Long skillId;
 
-        @ManyToOne(fetch = FetchType.LAZY)
-        @MapsId("skillId") // map phần progressId trong PK
-        @JoinColumn(name = "skill_id")
-        Skill skill;
+    private Integer level;
 
-        int level;
+    private BigDecimal score;
 
-        @Column(precision = 6, scale = 2)
-        BigDecimal score;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "progress_id", insertable = false, updatable = false)
+    private Progress progress;
 
-    }
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "skill_id", insertable = false, updatable = false)
+    private Skill skill;
+}

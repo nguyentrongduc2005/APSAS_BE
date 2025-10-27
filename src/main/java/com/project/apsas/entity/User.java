@@ -2,12 +2,16 @@ package com.project.apsas.entity;
 
 import com.project.apsas.enums.UserStatus;
 import jakarta.persistence.*;
-import lombok.*;
-import lombok.experimental.FieldDefaults;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+
+import javax.management.Notification;
 
 @Entity
 @Data
@@ -15,7 +19,6 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "users")
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,21 +34,25 @@ public class User {
     @Column( updatable = false, insertable = false)
     LocalDateTime createdAt;
 
-    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    Profile profile;
-
-    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    Progress progress;
-
     @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     Set<Role> roles = new HashSet<>();
 
-    @OneToMany(mappedBy = "createdBy", fetch = FetchType.LAZY)
-    Set<Tutorial> tutorials = new HashSet<>();
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Profile profile;
 
-//    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-//    Set<UserNotification> userNotifications = new HashSet<>();
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private otps otp;
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    Set<Submission> submissions = new HashSet<>();
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private Set<enrollments> enrollments = new HashSet<>();
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private Set<help_requests> helpRequests = new HashSet<>();
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private Set<notifications> notifications = new HashSet<>();
+    
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private Progress progress;
+
 }

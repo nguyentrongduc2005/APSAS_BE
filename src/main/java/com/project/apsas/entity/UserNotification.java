@@ -1,8 +1,8 @@
 package com.project.apsas.entity;
 
+import com.project.apsas.entity.UserNotificationId;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
 
@@ -11,25 +11,29 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@IdClass(UserNotificationId.class)
 @Table(name = "users_notifications")
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserNotification {
 
-    @EmbeddedId
-    UserNotificationId id;
+    @Id
+    @Column(name = "users_id")
+    private Long userId;
+
+    @Id
+    @Column(name = "notifications_id")
+    private Long notificationId;
+
+    @Column(name = "is_read")
+    private Boolean isRead;
+
+    @Column(name = "read_at")
+    private LocalDateTime readAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("userId")
-    @JoinColumn(name = "users_id")
-    User user;
+    @JoinColumn(name = "users_id", insertable = false, updatable = false)
+    private User user;
 
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @MapsId("userId")
-//    @JoinColumn(name = "users_id")
-//    Notification notification;
-    @Column(name = "is_read")
-    boolean isRead;
-
-    @Column( updatable = false, insertable = false)
-    LocalDateTime readAt;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "notifications_id", insertable = false, updatable = false)
+    private notifications notification;
 }

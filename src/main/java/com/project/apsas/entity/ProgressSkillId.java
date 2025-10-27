@@ -1,22 +1,28 @@
 package com.project.apsas.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Embeddable;
 import lombok.*;
-import lombok.experimental.FieldDefaults;
 
 import java.io.Serializable;
+import java.util.Objects;
 
-@Embeddable
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ProgressSkillId implements Serializable {
-    @Column(name = "progress_id")
-    Long progressId;
 
-    @Column(name = "skill_id")
-    Long skillId;
+    private Long progressId;
+    private Long skillId;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ProgressSkillId that)) return false;
+        return Objects.equals(progressId, that.progressId) &&
+               Objects.equals(skillId, that.skillId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(progressId, skillId);
+    }
 }

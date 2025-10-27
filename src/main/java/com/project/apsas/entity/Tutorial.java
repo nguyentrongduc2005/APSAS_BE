@@ -1,37 +1,42 @@
 package com.project.apsas.entity;
 
-import com.project.apsas.enums.StatusTutorial;
+import com.project.apsas.enums.TutorialStatus;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Entity
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
 @Table(name = "tutorials")
 public class Tutorial {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long id;
+    private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by", nullable = true)
-    User createdBy;
+    @Column(name = "created_by")
+    private Long createdBy;
 
-    @Column(length = 200)
-    String title;
+    @Column(length = 200, nullable = false)
+    private String title;
 
     @Column(columnDefinition = "TEXT")
-    String summary;
+    private String summary;
 
     @Enumerated(EnumType.STRING)
-    StatusTutorial status;
+    private TutorialStatus status;
 
-    @Column( updatable = false, insertable = false)
-    LocalDateTime createdAt;
+    @Column(name = "created_at", insertable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @OneToMany(mappedBy = "tutorial", fetch = FetchType.LAZY)
+    private Set<assignments> assignments;
+
+    @OneToMany(mappedBy = "tutorial", fetch = FetchType.LAZY)
+    private Set<contents> contents;
 }

@@ -3,7 +3,6 @@ package com.project.apsas.entity;
 import com.project.apsas.enums.Gender;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -13,34 +12,39 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
 @Table(name = "profiles")
 public class Profile {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long id;
-    @Column(length = 512)
-    String avatarUrl;
+    private Long id;
 
-    LocalDate dob;
+    @Column(name = "user_id", nullable = false, unique = true)
+    private Long userId;
+
+    @Column(name = "avatar_url", length = 512)
+    private String avatarUrl;
+
+    private LocalDate dob;
 
     @Enumerated(EnumType.STRING)
-    Gender gender;
+    private Gender gender;
 
     @Column(length = 30)
-    String phone;
+    private String phone;
 
     @Column(length = 255)
-    String address;
+    private String address;
 
     @Column(columnDefinition = "TEXT")
-    String bio;
+    private String bio;
 
-    @Column( updatable = false, insertable = false)
-    LocalDateTime createdAt;
+    @Column(name = "created_at", insertable = false, updatable = false)
+    private LocalDateTime createdAt;
 
     @OneToOne(fetch = FetchType.LAZY)
-    User user;
-
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
+    private User user;
+    
 
 }

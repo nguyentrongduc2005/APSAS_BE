@@ -1,21 +1,28 @@
 package com.project.apsas.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Embeddable;
 import lombok.*;
-import lombok.experimental.FieldDefaults;
 
 import java.io.Serializable;
+import java.util.Objects;
 
-@Embeddable
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserNotificationId implements Serializable {
-    @Column(name = "users_id")
-    Long userId;
-    @Column(name = "notifications_id")
-    Long notificationId;
+
+    private Long userId;
+    private Long notificationId;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof UserNotificationId that)) return false;
+        return Objects.equals(userId, that.userId) &&
+               Objects.equals(notificationId, that.notificationId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(userId, notificationId);
+    }
 }

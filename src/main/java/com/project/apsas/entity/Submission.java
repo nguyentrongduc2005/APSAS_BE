@@ -2,53 +2,59 @@ package com.project.apsas.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Entity
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
 @Table(name = "submissions")
 public class Submission {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long id;
+    private Long id;
 
-    // Nhiều submission có thể thuộc về 1 assignment
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "assignment_id", nullable = false)
-//    Assignment assignment;
+    @Column(name = "assignment_id", nullable = false)
+    private Long assignmentId;
 
-    // Nhiều submission có thể thuộc về 1 user
-    @ManyToOne(fetch = FetchType.LAZY)
-    User user;
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
     @Column(length = 40)
-    String language;
+    private String language;
 
     @Column(columnDefinition = "MEDIUMTEXT")
-    String code;
+    private String code;
 
-    @Column(columnDefinition = "LONGTEXT")
-    String reportJson;
+    @Column(name = "report_json", columnDefinition = "LONGTEXT")
+    private String reportJson;
 
-    @Column(precision = 6, scale = 2)
-    BigDecimal score;
+    private BigDecimal score;
 
     @Column(columnDefinition = "TEXT")
-    String feedback;
+    private String feedback;
 
-    @Column
-    Boolean passed;
+    private Boolean passed;
 
-    @Column(name = "attempt_no", columnDefinition = "INT UNSIGNED DEFAULT 1")
-    Integer attemptNo;
+    @Column(name = "attempt_no")
+    private Integer attemptNo;
 
     @Column(name = "submitted_at", insertable = false, updatable = false)
-    LocalDateTime submittedAt;
+    private LocalDateTime submittedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assignment_id", insertable = false, updatable = false)
+    private assignments assignment;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
+    private User user;
+
+    @OneToMany(mappedBy = "submission", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private Set<feedback> feedbacks;
 }

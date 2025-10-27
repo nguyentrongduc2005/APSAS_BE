@@ -2,7 +2,6 @@ package com.project.apsas.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -12,22 +11,29 @@ import java.util.Set;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
 @Table(name = "progress")
 public class Progress {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long id;
+    private Long id;
 
-    int totalAttemptNo;
+    @Column(name = "user_id", nullable = false, unique = true)
+    private Long userId;
 
-    float acceptance;
+    @Column(name = "total_attempt_no")
+    private Integer totalAttemptNo;
 
-    @Column( updatable = false, insertable = false)
-    LocalDateTime createdAt;
+    @Column(length = 80)
+    private String acceptance;
+
+    @Column(name = "created_at", insertable = false, updatable = false)
+    private LocalDateTime createdAt;
+
     @OneToOne(fetch = FetchType.LAZY)
-    User user;
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
+    private User user;
 
-    @OneToMany(mappedBy = "progress", cascade = CascadeType.ALL)
-    Set<ProgressSkill> progressSkills;
+    @OneToMany(mappedBy = "progress", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private Set<ProgressSkill> skills;
 }
