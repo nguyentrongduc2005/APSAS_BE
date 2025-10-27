@@ -39,7 +39,14 @@ CREATE TABLE `assignment_evaluations` (
                                           `visibility` enum('PUBLIC','PRIVATE') DEFAULT 'PUBLIC',
                                           `config_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`config_json`)),
                                           `created_at` datetime DEFAULT current_timestamp(),
-                                          PRIMARY KEY (`id`)
+                                          `owner_id` BIGINT NOT NULL,
+
+
+                                          PRIMARY KEY (`id`),
+                                          CONSTRAINT `fk_assignment_evaluations_owner`
+                                              FOREIGN KEY (`owner_id`) REFERENCES `users`(`id`)
+                                                  ON DELETE CASCADE
+                                                  ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `assignment_evaluation_maps` (

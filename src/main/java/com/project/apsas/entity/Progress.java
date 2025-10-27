@@ -24,8 +24,7 @@ public class Progress {
     @Column(name = "total_attempt_no")
     private Integer totalAttemptNo;
 
-    @Column(length = 80)
-    private String acceptance;
+    private float acceptance;
 
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;

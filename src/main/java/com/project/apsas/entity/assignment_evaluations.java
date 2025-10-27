@@ -1,5 +1,6 @@
 package com.project.apsas.entity;
 
+import com.project.apsas.enums.EvaluationVisibility;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,6 +25,10 @@ public class assignment_evaluations {
 
     @Column(length = 160, nullable = false)
     private String name;
+
+    @Enumerated(EnumType.STRING)
+    private EvaluationVisibility visibility;
+
 
     @Column(length = 80, nullable = false)
     private String type;

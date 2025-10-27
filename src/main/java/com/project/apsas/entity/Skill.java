@@ -1,5 +1,6 @@
 package com.project.apsas.entity;
 
+import com.project.apsas.enums.CategorySkill;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -23,8 +24,8 @@ public class Skill {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(length = 120)
-    private String category;
+    @Enumerated(EnumType.STRING)
+    private CategorySkill category;
 
     @OneToMany(mappedBy = "skill", fetch = FetchType.LAZY)
     private Set<assignments> assignments;

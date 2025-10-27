@@ -15,7 +15,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "assignment_evaluation_maps")
-
+@IdClass(assignment_evaluation_maps.PK.class)
 public class assignment_evaluation_maps {
 
     @Id
@@ -35,7 +35,7 @@ public class assignment_evaluation_maps {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "evaluation_id", insertable = false, updatable = false)
-    private assignment_evaluation_maps evaluation;
+    private assignment_evaluations evaluation;
 
     @Data
     @NoArgsConstructor

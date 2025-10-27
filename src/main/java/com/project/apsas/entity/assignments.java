@@ -33,6 +33,9 @@ public class assignments {
     @Column(length = 200, nullable = false)
     private String title;
 
+    @Column(name = "order_no")
+    private Integer orderNo;
+
     @Column(name = "statement_md", columnDefinition = "MEDIUMTEXT")
     private String statementMd;
 
