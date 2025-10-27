@@ -26,8 +26,6 @@ public class assignment_evaluations {
     @Column(length = 160, nullable = false)
     private String name;
 
-    @Enumerated(EnumType.STRING)
-    private EvaluationVisibility visibility;
 
 
     @Column(length = 80, nullable = false)
