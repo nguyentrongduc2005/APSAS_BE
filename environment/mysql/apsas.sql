@@ -35,6 +35,7 @@ CREATE TABLE `assignment_evaluations` (
                                           `id` BIGINT NOT NULL AUTO_INCREMENT,
                                           `name` varchar(160) NOT NULL,
                                           `type` varchar(80) NOT NULL,
+                                          `visibility` enum('PUBLIC','PRIVATE') DEFAULT 'PUBLIC',
                                           `config_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`config_json`)),
                                           `created_at` datetime DEFAULT current_timestamp(),
                                           PRIMARY KEY (`id`)

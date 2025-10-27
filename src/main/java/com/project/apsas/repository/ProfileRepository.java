@@ -1,4 +1,9 @@
 package com.project.apsas.repository;
 
-public interface ProfileRepository {
+import com.project.apsas.entity.Profile;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface ProfileRepository extends JpaRepository<Profile,Long> {
 }
