@@ -25,6 +25,7 @@ CREATE TABLE `assignments` (
                                `title` varchar(200) NOT NULL,
                                `statement_md` mediumtext DEFAULT NULL,
                                `max_score` decimal(6,2) DEFAULT NULL,
+                               `order_no` int(11) DEFAULT NULL,
                                `attempts_limit` int(10) UNSIGNED DEFAULT NULL,
                                `proficiency` varchar(80) DEFAULT NULL,
                                `created_at` datetime DEFAULT current_timestamp(),
