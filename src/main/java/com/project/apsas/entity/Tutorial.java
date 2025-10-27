@@ -35,8 +35,8 @@ public class Tutorial {
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "tutorial", fetch = FetchType.LAZY)
-    private Set<assignments> assignments;
+    private Set<Assignment> assignments;
 
     @OneToMany(mappedBy = "tutorial", fetch = FetchType.LAZY)
-    private Set<contents> contents;
+    private Set<Content> contents;
 }

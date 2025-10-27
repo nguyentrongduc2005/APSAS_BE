@@ -18,7 +18,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "enrollments")
-public class enrollments {
+@IdClass(Enrollment.PK.class)
+public class Enrollment {
  @Id
     @Column(name = "user_id", nullable = false)
     private Long userId;
@@ -42,7 +43,7 @@ public class enrollments {
     // Quan hệ tới Course
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "course_id", insertable = false, updatable = false)
-    private courses course;
+    private Course course;
 
     @Data
     @NoArgsConstructor

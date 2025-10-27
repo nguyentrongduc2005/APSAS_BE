@@ -11,15 +11,13 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.print.attribute.standard.Media;
-
 @Entity
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "contents")
-public class contents {
+public class Content {
 @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -51,9 +49,9 @@ public class contents {
     private Tutorial tutorial;  
 
     @OneToMany(mappedBy = "content", fetch = FetchType.LAZY)
-    private Set<courses_contents> courseLinks = new HashSet<>();
+    private Set<CourseContent> courseLinks = new HashSet<>();
 
     @OneToMany(mappedBy = "content", fetch = FetchType.LAZY)
-    private Set<media> mediaList = new HashSet<>();
+    private Set<Media> mediaList = new HashSet<>();
 
 }

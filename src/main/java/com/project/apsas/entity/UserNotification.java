@@ -1,6 +1,5 @@
 package com.project.apsas.entity;
 
-import com.project.apsas.entity.UserNotificationId;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -35,5 +34,5 @@ public class UserNotification {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "notifications_id", insertable = false, updatable = false)
-    private notifications notification;
+    private Notification notification;
 }

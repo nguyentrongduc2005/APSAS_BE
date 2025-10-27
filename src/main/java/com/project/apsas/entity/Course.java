@@ -18,7 +18,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "courses")
-public class courses {
+public class Course {
 @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -46,15 +46,15 @@ public class courses {
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "course", fetch = FetchType.LAZY)
-    private Set<enrollments> enrollments = new HashSet<>();
+    private Set<Enrollment> enrollments = new HashSet<>();
 
     @OneToMany(mappedBy = "course", fetch = FetchType.LAZY)
-    private Set<courses_assignments> assignmentLinks = new HashSet<>();
+    private Set<CourseAssignment> assignmentLinks = new HashSet<>();
 
     @OneToMany(mappedBy = "course", fetch = FetchType.LAZY)
-    private Set<courses_contents> contentLinks = new HashSet<>();
+    private Set<CourseContent> contentLinks = new HashSet<>();
 
     @OneToMany(mappedBy = "course", fetch = FetchType.LAZY)
-    private Set<help_requests> helpRequests = new HashSet<>();
+    private Set<HelpRequest> helpRequests = new HashSet<>();
 }
 

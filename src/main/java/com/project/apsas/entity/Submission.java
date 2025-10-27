@@ -49,12 +49,12 @@ public class Submission {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assignment_id", insertable = false, updatable = false)
-    private assignments assignment;
+    private Assignment assignment;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private User user;
 
     @OneToMany(mappedBy = "submission", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private Set<feedback> feedbacks;
+    private Set<Feedback> feedbacks;
 }

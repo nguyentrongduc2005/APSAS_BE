@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "media")
-public class media {
+public class Media {
  @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -41,6 +41,6 @@ public class media {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "content_id", insertable = false, updatable = false)
-    private contents content;
+    private Content content;
 }
 

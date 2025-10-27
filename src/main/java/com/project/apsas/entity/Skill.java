@@ -28,7 +28,7 @@ public class Skill {
     private CategorySkill category;
 
     @OneToMany(mappedBy = "skill", fetch = FetchType.LAZY)
-    private Set<assignments> assignments;
+    private Set<Assignment> assignments;
 
     @OneToMany(mappedBy = "skill", fetch = FetchType.LAZY)
     private Set<ProgressSkill> progressSkills;

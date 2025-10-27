@@ -15,8 +15,8 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "assignment_evaluation_maps")
-@IdClass(assignment_evaluation_maps.PK.class)
-public class assignment_evaluation_maps {
+@IdClass(AssignmentEvaluationMaps.PK.class)
+public class AssignmentEvaluationMaps {
 
     @Id
     @Column(name = "assignment_id", nullable = false)
@@ -31,11 +31,11 @@ public class assignment_evaluation_maps {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assignment_id", insertable = false, updatable = false)
-    private assignments assignment;
+    private Assignment assignment;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "evaluation_id", insertable = false, updatable = false)
-    private assignment_evaluations evaluation;
+    private AssignmentEvaluation evaluation;
 
     @Data
     @NoArgsConstructor

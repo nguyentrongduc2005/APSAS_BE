@@ -7,45 +7,38 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
 
 @Entity
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "courses_assignments")
-public class courses_assignments {
-@Id
+@Table(name = "courses_contents")
+@IdClass(CourseContent.PK.class)
+public class CourseContent {
+ @Id
     @Column(name = "courses_id", nullable = false)
     private Long courseId;
 
     @Id
-    @Column(name = "assignments_id", nullable = false)
-    private Long assignmentId;
-
-    @Column(name = "open_at")
-    private LocalDateTime openAt;
-
-    @Column(name = "due_at")
-    private LocalDateTime dueAt;
+    @Column(name = "contents_id", nullable = false)
+    private Long contentId;
 
     // Quan hệ tới Course
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "courses_id", insertable = false, updatable = false)
-    private courses course;
+    private Course course;
 
-    // Quan hệ tới Assignment
+    // Quan hệ tới Content
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assignments_id", insertable = false, updatable = false)
-    private assignments assignment;
+    @JoinColumn(name = "contents_id", insertable = false, updatable = false)
+    private Content content;
 
-    // Composite Key Class
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     public static class PK implements Serializable {
         private Long courseId;
-        private Long assignmentId;
+        private Long contentId;
     }
 }

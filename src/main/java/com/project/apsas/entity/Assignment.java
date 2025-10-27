@@ -19,7 +19,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "assignments")
-public class assignments {
+public class Assignment {
  @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -62,10 +62,10 @@ public class assignments {
     private Skill skill;
 
     @OneToMany(mappedBy = "assignment", fetch = FetchType.LAZY)
-    private Set<courses_assignments> courseLinks = new HashSet<>();
+    private Set<CourseAssignment> courseLinks = new HashSet<>();
     
     @OneToMany(mappedBy = "assignment", fetch = FetchType.LAZY)
-    private Set<assignment_evaluation_maps> evaluationLinks = new HashSet<>();
+    private Set<AssignmentEvaluationMaps> evaluationLinks = new HashSet<>();
 
     @OneToMany(mappedBy = "assignment", fetch = FetchType.LAZY)
     private Set<Submission> submissions = new HashSet<>();

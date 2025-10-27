@@ -1,6 +1,5 @@
 package com.project.apsas.entity;
 
-import com.project.apsas.enums.EvaluationVisibility;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,7 +17,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "assignment_evaluations")
-public class assignment_evaluations {
+public class AssignmentEvaluation {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -38,5 +37,5 @@ public class assignment_evaluations {
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "evaluation", fetch = FetchType.LAZY)
-    private Set<assignment_evaluation_maps> assignmentLinks = new HashSet<>();
+    private Set<AssignmentEvaluationMaps> assignmentLinks = new HashSet<>();
 }

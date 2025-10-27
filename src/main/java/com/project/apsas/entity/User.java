@@ -11,8 +11,6 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.management.Notification;
-
 @Entity
 @Data
 @Builder
@@ -41,16 +39,16 @@ public class User {
     private Profile profile;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private otps otp;
+    private Otp otp;
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
-    private Set<enrollments> enrollments = new HashSet<>();
+    private Set<Enrollment> enrollments = new HashSet<>();
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
-    private Set<help_requests> helpRequests = new HashSet<>();
+    private Set<HelpRequest> helpRequests = new HashSet<>();
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
-    private Set<notifications> notifications = new HashSet<>();
+    private Set<Notification> notifications = new HashSet<>();
     
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private Progress progress;
