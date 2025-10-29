@@ -5,7 +5,7 @@ server:
 
 spring:
   datasource:
-    username: root
+    username: user
     password: 123
     url: jdbc:mysql://localhost:3308/apsas_db?serverTimezone=UTC&useSSL=false
   jpa:

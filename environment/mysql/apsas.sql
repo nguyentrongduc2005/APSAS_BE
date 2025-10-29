@@ -458,6 +458,21 @@ ALTER TABLE `users_roles`
     ADD CONSTRAINT `users_roles_ibfk_1` FOREIGN KEY (`users_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `users_roles_ibfk_2` FOREIGN KEY (`roles_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
+-- ========================================================
+ALTER TABLE `skills`
+  ADD COLUMN `created_by` BIGINT DEFAULT NULL AFTER `category`;
+
+
+ALTER TABLE `skills`
+  ADD KEY `ix_skills_created_by` (`created_by`);
+
+
+ALTER TABLE `skills`
+  ADD CONSTRAINT `fk_skills_created_by`
+    FOREIGN KEY (`created_by`) REFERENCES `users` (`id`)
+    ON DELETE SET NULL
+    ON UPDATE CASCADE;
+
 SET FOREIGN_KEY_CHECKS=1;
 COMMIT;
 
