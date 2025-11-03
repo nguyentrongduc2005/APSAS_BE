@@ -6,8 +6,8 @@ server:
 spring:
   datasource:
     username: user
-    password: 123
-    url: jdbc:mysql://localhost:3308/apsas_db?serverTimezone=UTC&useSSL=false
+    password: 1234
+    url: jdbc:mysql://localhost:3308/apsas_db?serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true
   jpa:
     show-sql: true
     hibernate:
