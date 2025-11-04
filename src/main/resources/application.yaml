@@ -12,3 +12,9 @@ spring:
     show-sql: true
     hibernate:
       ddl-auto: validate
+
+
+cloudinary:
+  cloud-name: ddcyjcpx0
+  api-key: 197971381659871
+  api-secret: 6g3wTrSYbG9B5T5kPps5olGXOuM
