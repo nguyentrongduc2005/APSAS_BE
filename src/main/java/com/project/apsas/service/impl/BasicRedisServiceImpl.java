@@ -77,7 +77,7 @@ public class BasicRedisServiceImpl implements BaseRedisService {
 
     @Override
     public void delete(String key) {
-        hashOperations.delete(key);
+        redisTemplate.delete(key);
     }
 
     @Override
