@@ -1,7 +1,9 @@
 package com.project.apsas.controller;
 
+import com.cloudinary.Cloudinary;
 import com.project.apsas.dto.request.LoginRequest;
 import com.project.apsas.dto.response.LoginResponse;
+import com.project.apsas.dto.response.UploadResult;
 import com.project.apsas.entity.Permission;
 import com.project.apsas.entity.Role;
 import com.project.apsas.entity.User;
@@ -10,13 +12,15 @@ import com.project.apsas.repository.PermissionRepository;
 import com.project.apsas.repository.RoleRepository;
 import com.project.apsas.repository.UserRepository;
 import com.project.apsas.service.AuthService;
+import com.project.apsas.service.CloudinaryService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 
 @RestController
 public class demo {
@@ -28,6 +32,10 @@ public class demo {
     PermissionRepository permissionRepository;
     @Autowired
     AuthService authService;
+
+    @Autowired
+    CloudinaryService cloudinaryService;
+
     @GetMapping("/hello")
     public String hello() {
         System.out.println(UserStatus.ACTIVE.name());
@@ -59,6 +67,20 @@ public class demo {
     @PostMapping("/login")
     public LoginResponse login(@RequestBody LoginRequest loginRequest) {
         return authService.login(loginRequest);
+    }
+
+    @PostMapping("/file")
+    public ResponseEntity<UploadResult> upload(@RequestParam("file") MultipartFile file) {
+        try {
+            UploadResult uploadResult = cloudinaryService.upload(file, null, "jelell");
+            String url = (String) uploadResult.getUrl();
+//            Map map = cloudinaryService.delete("uploads/general/jelell", "image");
+//            String url_resized = cloudinaryService.getAvatarThumbnailUrl("uploads/general/jelell");
+            return ResponseEntity.ok().body(uploadResult);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity.status(500).body(null);
     }
 
 
