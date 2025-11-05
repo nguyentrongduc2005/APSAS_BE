@@ -13,6 +13,7 @@ import com.project.apsas.repository.RoleRepository;
 import com.project.apsas.repository.UserRepository;
 import com.project.apsas.service.AuthService;
 import com.project.apsas.service.CloudinaryService;
+import com.project.apsas.service.MailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Properties;
 
 @RestController
 public class demo {
@@ -35,6 +37,9 @@ public class demo {
 
     @Autowired
     CloudinaryService cloudinaryService;
+
+    @Autowired
+    MailService mailService;
 
     @GetMapping("/hello")
     public String hello() {
@@ -81,6 +86,18 @@ public class demo {
             e.printStackTrace();
         }
         return ResponseEntity.status(500).body(null);
+    }
+    @PostMapping("/mail")
+    public ResponseEntity<String> sendmail() {
+        String recipientEmail = "ducnt2749@ut.edu.vn";
+        String recipientName = "Nguyễn Trọng Đức";
+
+        Properties  props = new Properties();
+        props.setProperty("otp_code", "999123"); // Mã OTP giả
+        props.setProperty("action", "kiểm tra hệ thống"); // Hành động
+        props.setProperty("expiry_minutes", "5"); // Thời gian hết hạn
+        String messageId = mailService.sendTransactionalEmail(recipientEmail, recipientName,props);
+        return ResponseEntity.ok().body(messageId);
     }
 
 

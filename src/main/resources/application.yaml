@@ -27,3 +27,10 @@ cloudinary:
     resource-type: auto
 jwt:
   signerKey: "JvLr4on9xnJj75gmh3fnVFdx9xELXish"
+brevo:
+  base-url: https://api.brevo.com/v3
+  api-key: ${API_KEY_BREVO}
+  template-id: 3
+  sender:
+    mail: nguyentrongduc447@gmail.com
+    name: CodeVerse
