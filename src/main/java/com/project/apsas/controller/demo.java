@@ -1,6 +1,7 @@
 package com.project.apsas.controller;
 
 import com.cloudinary.Cloudinary;
+import com.project.apsas.dto.event.SendMailEvent;
 import com.project.apsas.dto.request.LoginRequest;
 import com.project.apsas.dto.response.LoginResponse;
 import com.project.apsas.dto.response.UploadResult;
@@ -16,6 +17,7 @@ import com.project.apsas.service.CloudinaryService;
 import com.project.apsas.service.MailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -40,6 +42,9 @@ public class demo {
 
     @Autowired
     MailService mailService;
+
+    @Autowired
+    KafkaTemplate<String, SendMailEvent> kafkaTemplate;
 
     @GetMapping("/hello")
     public String hello() {
@@ -89,16 +94,24 @@ public class demo {
     }
     @PostMapping("/mail")
     public ResponseEntity<String> sendmail() {
-        String recipientEmail = "ducnt2749@ut.edu.vn";
+        String recipientEmail = "duc@yopmail.com";
         String recipientName = "Nguyễn Trọng Đức";
 
         Properties  props = new Properties();
-        props.setProperty("otp_code", "999123"); // Mã OTP giả
+        props.setProperty("otp_code", "432425"); // Mã OTP giả
         props.setProperty("action", "kiểm tra hệ thống"); // Hành động
         props.setProperty("expiry_minutes", "5"); // Thời gian hết hạn
-        String messageId = mailService.sendTransactionalEmail(recipientEmail, recipientName,props);
-        return ResponseEntity.ok().body(messageId);
+
+        SendMailEvent event =  SendMailEvent.builder()
+                .toEmail(recipientEmail)
+                .name(recipientName)
+                .params(props)
+                .build();
+        kafkaTemplate.send("topic-mail", event);
+
+        return ResponseEntity.ok().body("thành công");
     }
+
 
 
 

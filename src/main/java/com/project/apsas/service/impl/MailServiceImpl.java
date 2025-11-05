@@ -1,5 +1,6 @@
 package com.project.apsas.service.impl;
 
+import com.project.apsas.dto.event.SendMailEvent;
 import com.project.apsas.integration.brevo.BrevoApiClient;
 import com.project.apsas.integration.brevo.dto.SendEmailRequest;
 import com.project.apsas.integration.brevo.dto.SendEmailResponse;
@@ -10,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -33,7 +36,8 @@ public class MailServiceImpl implements MailService {
     int templateId;
 
     @Override
-    public String sendTransactionalEmail(String toEmail, String name, Properties templateParams) {
+    @Async
+    public void sendTransactionalEmail(String toEmail, String name, Properties templateParams) {
         SendEmailRequest.Sender sender = SendEmailRequest.Sender.builder()
                 .email(senderEmail)
                 .name(senderName)
@@ -53,10 +57,20 @@ public class MailServiceImpl implements MailService {
         try {
             SendEmailResponse response = brevoApiClient.sendEmail(sendEmailRequest);
             System.out.println("Gửi email (Feign) thành công! Message ID: " + response.getMessageId());
-            return response.getMessageId();
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("send mail failed");
         }
+    }
+
+    @Override
+//    @KafkaListener(id = "mail-listener",topics = "topic-mail")
+    public void sendMailConsumer(SendMailEvent event) {
+//        System.out.println(event.toString());
+//        sendTransactionalEmail(
+//                event.getToEmail(),
+//                event.getName(),
+//                event.getParams()
+//        );
     }
 }
