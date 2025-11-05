@@ -39,10 +39,12 @@ logging:
 cloudinary:
   cloud-name: ddcyjcpx0
   api-key: 197971381659871
-  api-secret: ${API_SECRET_CLOUDINARY}
+  api-secret: 6g3wTrSYbG9B5T5kPps5olGXOuM
   option:
-    folder-name: uploads
+    folder-name: uploads/general
     resource-type: auto
+jwt:
+  signerKey: "JvLr4on9xnJj75gmh3fnVFdx9xELXish"
 brevo:
   base-url: https://api.brevo.com/v3
   api-key: ${API_KEY_BREVO}
