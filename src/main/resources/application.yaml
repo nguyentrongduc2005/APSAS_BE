@@ -25,3 +25,5 @@ cloudinary:
   option:
     folder-name: uploads/general
     resource-type: auto
+jwt:
+  signerKey: "JvLr4on9xnJj75gmh3fnVFdx9xELXish"

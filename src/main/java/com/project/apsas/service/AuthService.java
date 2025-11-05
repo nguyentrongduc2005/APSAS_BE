@@ -5,4 +5,5 @@ import com.project.apsas.dto.response.LoginResponse;
 
 public interface AuthService {
     public LoginResponse login(LoginRequest loginRequest);
+
 }
