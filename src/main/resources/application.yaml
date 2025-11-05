@@ -23,5 +23,12 @@ cloudinary:
   api-key: 197971381659871
   api-secret: 6g3wTrSYbG9B5T5kPps5olGXOuM
   option:
-    folder-name: uploads/general
+    folder-name: uploads
     resource-type: auto
+brevo:
+  base-url: https://api.brevo.com/v3
+  api-key: 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
+  template-id: 3
+  sender:
+    mail: nguyentrongduc447@gmail.com
+    name: CodeVerse
