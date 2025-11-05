@@ -12,9 +12,43 @@ spring:
     show-sql: true
     hibernate:
       ddl-auto: validate
+  servlet:
+    multipart:
+      max-request-size: 10MB
+      max-file-size: 10MB
+  kafka:
+    bootstrap-servers: localhost:9094
+    consumer:
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        spring.json.trusted.packages: "com.project.apsas"  # hoặc com.yourapp.dto
+    producer:
+      acks: all
+      retries: 3
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+logging:
+  level:
+    org.springframework.kafka.config: DEBUG
+    org.springframework.kafka.listener: DEBUG
 
 
 cloudinary:
   cloud-name: ddcyjcpx0
   api-key: 197971381659871
   api-secret: 6g3wTrSYbG9B5T5kPps5olGXOuM
+  option:
+    folder-name: uploads/general
+    resource-type: auto
+jwt:
+  signerKey: "JvLr4on9xnJj75gmh3fnVFdx9xELXish"
+brevo:
+  base-url: https://api.brevo.com/v3
+  api-key: ${API_KEY_BREVO}
+  template-id: 3
+  sender:
+    mail: nguyentrongduc447@gmail.com
+    name: CodeVerse
