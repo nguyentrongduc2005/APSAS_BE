@@ -50,7 +50,6 @@ public class MailServiceImpl implements MailService {
                 .sender(sender)
                 .to(List.of(to))
                 .build();
-
         try {
             SendEmailResponse response = brevoApiClient.sendEmail(sendEmailRequest);
             System.out.println("Gửi email (Feign) thành công! Message ID: " + response.getMessageId());
