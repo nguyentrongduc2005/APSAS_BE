@@ -1,5 +1,6 @@
 package com.project.apsas.configuration;
 
+import com.project.apsas.enums.Role;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -38,6 +39,10 @@ public class SecurityConfig {
         httpSecurity.csrf(AbstractHttpConfigurer::disable);
         httpSecurity.authorizeHttpRequests(request -> request
                 .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
+//                .requestMatchers(HttpMethod.GET,"/users")
+//                .hasRole(Role.ADMIN.name()) dùng theo role đã được định nghĩa ở enum
+//                .hasAuthority("ROLE_ADMIN") dung theo authority
+                        // Get ra từ security placeholder cái role để phân quyền
                 .anyRequest().authenticated()
         );
         httpSecurity.oauth2ResourceServer(oauth2 ->
