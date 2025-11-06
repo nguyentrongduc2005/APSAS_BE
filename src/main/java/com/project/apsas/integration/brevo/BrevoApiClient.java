@@ -14,5 +14,4 @@ import org.springframework.web.bind.annotation.RequestBody;
 public interface BrevoApiClient {
     @PostMapping("/smtp/email")
     SendEmailResponse sendEmail(@RequestBody SendEmailRequest sendEmailRequest);
-
 }
