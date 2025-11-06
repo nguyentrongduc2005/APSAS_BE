@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -16,14 +17,17 @@ import java.util.Set;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Table(name = "users")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     Long id;
     @Column(nullable = false, length = 120)
     String name;
     @Column(nullable = false, length = 190,  unique = true)
+    @EqualsAndHashCode.Include
     String email;
     @Column(nullable = false, length = 255)
     String password;
@@ -33,6 +37,7 @@ public class User {
     LocalDateTime createdAt;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @lombok.Builder.Default
     Set<Role> roles = new HashSet<>();
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -42,12 +47,15 @@ public class User {
     private Otp otp;
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    @lombok.Builder.Default
     private Set<Enrollment> enrollments = new HashSet<>();
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    @lombok.Builder.Default
     private Set<HelpRequest> helpRequests = new HashSet<>();
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    @lombok.Builder.Default
     private Set<Notification> notifications = new HashSet<>();
     
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
