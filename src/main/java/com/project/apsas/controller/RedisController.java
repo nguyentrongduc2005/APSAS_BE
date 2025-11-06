@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class RedisController {
     private final BaseRedisService baseRedisService;
 
+
     @PostMapping
     public void SetupRedis() {
         baseRedisService.set("hihi", "haha");
