@@ -26,7 +26,8 @@ public class SecurityConfig {
     private final String[] PUBLIC_ENDPOINTS = {
             "/auth/login",
             "/auth/register",
-            "/auth/introspect"
+            "/auth/introspect",
+            "/mail"
     };
 
     @Bean
@@ -39,7 +40,7 @@ public class SecurityConfig {
         httpSecurity.oauth2ResourceServer(oauth2 ->
                 oauth2.jwt(jwtConfigurer ->
                         jwtConfigurer.decoder(jwtDecoder())
-                                .jwtAuthenticationConverter(jwtAuthenticationConverter()))
+                               .jwtAuthenticationConverter(jwtAuthenticationConverter()))
         );
         return httpSecurity.build();
     }
