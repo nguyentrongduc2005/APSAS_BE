@@ -1,16 +1,19 @@
 package com.project.apsas.exception;
 
+
+import lombok.Getter;
+
+@Getter
 public class AppException extends RuntimeException {
     private final ErrorCode errorCode;
-    private final Object[] args;
 
     public AppException(ErrorCode errorCode) {
         super(errorCode.defaultMessage());
-        this.errorCode = errorCode; this.args = null;
+        this.errorCode = errorCode;
     }
-    public AppException(ErrorCode errorCode, String message, Object... args) {
-        super(message); this.errorCode = errorCode; this.args = args;
+
+    public AppException(ErrorCode errorCode, String message) {
+        super(message);
+        this.errorCode = errorCode;
     }
-    public ErrorCode getErrorCode() { return errorCode; }
-    public Object[] getArgs() { return args; }
 }
