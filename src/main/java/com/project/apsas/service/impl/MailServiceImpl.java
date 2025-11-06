@@ -11,12 +11,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +36,6 @@ public class MailServiceImpl implements MailService {
     int templateId;
 
     @Override
-    @Async
     public void sendTransactionalEmail(String toEmail, String name, Properties templateParams) {
         SendEmailRequest.Sender sender = SendEmailRequest.Sender.builder()
                 .email(senderEmail)
@@ -54,23 +53,34 @@ public class MailServiceImpl implements MailService {
                 .sender(sender)
                 .to(List.of(to))
                 .build();
+
         try {
             SendEmailResponse response = brevoApiClient.sendEmail(sendEmailRequest);
             System.out.println("Gửi email (Feign) thành công! Message ID: " + response.getMessageId());
         } catch (Exception e) {
-            e.printStackTrace();
             throw new RuntimeException("send mail failed");
         }
     }
 
-    @Override
-//    @KafkaListener(id = "mail-listener",topics = "topic-mail")
-    public void sendMailConsumer(SendMailEvent event) {
-//        System.out.println(event.toString());
-//        sendTransactionalEmail(
-//                event.getToEmail(),
-//                event.getName(),
-//                event.getParams()
-//        );
+    @Async
+    public CompletableFuture<Void> sendMailAsync(String toEmail, String name, Properties templateParams) {
+        try {
+            if (toEmail == null || toEmail.isBlank()) {
+                throw new IllegalArgumentException("toEmail null/blank");
+            }
+            if (!toEmail.contains("@")) {
+                throw new IllegalArgumentException("Email không hợp lệ: " + toEmail);
+            }
+            sendTransactionalEmail(toEmail, name, templateParams);
+
+            if ("true".equalsIgnoreCase(String.valueOf(templateParams.get("force_fail")))) {
+                throw new RuntimeException("Giả lập lỗi gửi mail");
+            }
+
+            return CompletableFuture.completedFuture(null);
+        } catch (Exception ex) {
+            return CompletableFuture.failedFuture(ex);
+        }
     }
+
 }

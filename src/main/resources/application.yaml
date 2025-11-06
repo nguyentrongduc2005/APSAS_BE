@@ -4,6 +4,13 @@ server:
     context-path: /api
 
 spring:
+  task:
+    execution:
+      pool:
+        core-size: 4
+        max-size: 8
+        queue-capacity: 1000
+      thread-name-prefix: app-async-
   datasource:
     username: user
     password: 1234
@@ -20,20 +27,35 @@ spring:
     bootstrap-servers: localhost:9094
     consumer:
       auto-offset-reset: earliest
+      enable-auto-commit: false
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
       properties:
+        spring.json.use.type.headers: true
         spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
-        spring.json.trusted.packages: "com.project.apsas"  # hoặc com.yourapp.dto
+        spring.json.trusted.packages: "com.project.apsas.*"
+      group-id: group_one
     producer:
       acks: all
       retries: 3
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-logging:
-  level:
-    org.springframework.kafka.config: DEBUG
-    org.springframework.kafka.listener: DEBUG
+      properties:
+        spring.json.use.type.headers: true
+    listener:
+      ack-mode: manual_immediate
+      concurrency: 3
+#logging:
+#  level:
+#    org.springframework.kafka.config: DEBUG
+#    org.springframework.kafka.listener: DEBUG
+
+message-queue:
+  topic:
+    mail:
+      name: topic-mail
+      dlt: topic-mail.DLT
+      drop: topic-mail.DLT.DROP
 
 
 cloudinary:
