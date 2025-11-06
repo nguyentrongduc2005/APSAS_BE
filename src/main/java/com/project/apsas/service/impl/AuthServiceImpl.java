@@ -2,8 +2,12 @@ package com.project.apsas.service.impl;
 
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.MACSigner;
+import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
+import com.project.apsas.dto.request.IntrospectRequest;
 import com.project.apsas.dto.request.LoginRequest;
+import com.project.apsas.dto.response.IntrospecResponse;
 import com.project.apsas.dto.response.LoginResponse;
 import com.project.apsas.entity.User;
 import com.project.apsas.mapper.UserMapper;
@@ -21,6 +25,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
+import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
@@ -43,7 +48,7 @@ public class AuthServiceImpl implements AuthService {
 
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
                 .subject(user.getName())
-                .issuer("devteria.com")
+                .issuer("apsas.com")
                 .issueTime(new Date())
                 .expirationTime(new Date(
                         Instant.now().plus(1, ChronoUnit.HOURS).toEpochMilli()
@@ -64,16 +69,28 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
-    private String buildScope(User user){
+    private String buildScope(User user) {
         StringJoiner stringJoiner = new StringJoiner(" ");
         if (!CollectionUtils.isEmpty(user.getRoles()))
-            user.getRoles().forEach(stringJoiner::add);
-
+            user.getRoles().forEach(s -> stringJoiner.add(s.getName()));
         return stringJoiner.toString();
     }
 
+    @Override
+    public IntrospecResponse introspect(IntrospectRequest introspectRequest)
+            throws JOSEException, ParseException {
+        var token = introspectRequest.getToken();
+        JWSVerifier verifier = new MACVerifier(SIGNER_KEY.getBytes());
+        SignedJWT signedJWT = SignedJWT.parse(token);
 
+        Date expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
 
+        var verified = signedJWT.verify(verifier);
+
+        return IntrospecResponse.builder()
+                .valid(verified && expiryTime.after(new Date()))
+                .build();
+    }
 
     @Override
     public LoginResponse login(LoginRequest loginRequest) {
