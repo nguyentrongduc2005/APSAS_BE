@@ -10,6 +10,7 @@ public interface BaseRedisService {
     void setTimeToLive(String key, String value, long timeInSeconds);
     // cai time expire cho Day hay la time cung duoc tuy ae quyet dinh
 
+
     void hashSet(String key, String hashKey, String value);
 
     boolean hashExists(String key, String hashKey);

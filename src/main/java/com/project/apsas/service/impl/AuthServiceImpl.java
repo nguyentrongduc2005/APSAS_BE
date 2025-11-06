@@ -89,6 +89,7 @@ public class AuthServiceImpl implements AuthService {
         return IntrospecResponse.builder()
                 .valid(verified && expiryTime.after(new Date()))
                 .build();
+
     }
 
     @Override
