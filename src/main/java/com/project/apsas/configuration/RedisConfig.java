@@ -17,6 +17,7 @@ public class RedisConfig {
     private String redisHost;
 
 
+
     @Bean
     JedisConnectionFactory jedisConnectionFactory() {
         RedisStandaloneConfiguration redisStandaloneConfiguration = new RedisStandaloneConfiguration();

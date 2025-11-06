@@ -67,8 +67,6 @@ public class SecurityConfig {
 
         UrlBasedCorsConfigurationSource basedCorsConfigurationSource = new UrlBasedCorsConfigurationSource();
         basedCorsConfigurationSource.registerCorsConfiguration("/**",corsConfiguration);
-
-
         return new CorsFilter();
     }
 
