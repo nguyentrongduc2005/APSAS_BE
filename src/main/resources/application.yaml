@@ -2,6 +2,8 @@ server:
   port: 8080
   servlet:
     context-path: /api
+  error:
+    include-message: never  
 
 spring:
   task:
@@ -74,3 +76,9 @@ brevo:
   sender:
     mail: nguyentrongduc447@gmail.com
     name: CodeVerse
+mvc:
+  thow-exception-if-no-handler-found: true
+web:
+  resources:
+    add-mappings: false    
+
