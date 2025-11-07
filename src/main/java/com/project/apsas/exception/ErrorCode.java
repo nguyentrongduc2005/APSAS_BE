@@ -1,6 +1,5 @@
 package com.project.apsas.exception;
 
-
 import org.springframework.http.HttpStatus;
 
 public enum ErrorCode {
@@ -21,7 +20,6 @@ public enum ErrorCode {
     ErrorCode(String code, HttpStatus status, String defaultMessage) {
         this.code = code; this.status = status; this.defaultMessage = defaultMessage;
     }
-
     public String code() { return code; }
     public HttpStatus status() { return status; }
     public String defaultMessage() { return defaultMessage; }

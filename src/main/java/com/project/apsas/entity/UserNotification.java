@@ -3,6 +3,7 @@ package com.project.apsas.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Entity
@@ -10,7 +11,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@IdClass(UserNotificationId.class)
+@IdClass(UserNotification.PK.class)
 @Table(name = "users_notifications")
 public class UserNotification {
 
@@ -35,4 +36,12 @@ public class UserNotification {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "notifications_id", insertable = false, updatable = false)
     private Notification notification;
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class PK implements Serializable {
+        private Long userId;
+        private Long notificationId;
+    }
 }
