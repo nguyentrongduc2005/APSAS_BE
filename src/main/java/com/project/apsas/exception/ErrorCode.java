@@ -1,10 +1,8 @@
 package com.project.apsas.exception;
 
-
 import org.springframework.http.HttpStatus;
 
 public enum ErrorCode {
-    
     BAD_REQUEST("E4000", HttpStatus.BAD_REQUEST, "Request không hợp lệ."),
     VALIDATION_FAILED("E4001", HttpStatus.BAD_REQUEST, "Dữ liệu không hợp lệ."),
     UNAUTHORIZED("E4010", HttpStatus.UNAUTHORIZED, "Chưa đăng nhập."),
@@ -22,7 +20,6 @@ public enum ErrorCode {
     ErrorCode(String code, HttpStatus status, String defaultMessage) {
         this.code = code; this.status = status; this.defaultMessage = defaultMessage;
     }
-
     public String code() { return code; }
     public HttpStatus status() { return status; }
     public String defaultMessage() { return defaultMessage; }
