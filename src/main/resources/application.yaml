@@ -80,5 +80,13 @@ mvc:
   thow-exception-if-no-handler-found: true
 web:
   resources:
-    add-mappings: false    
+    add-mappings: false 
+
+app:
+  verify:
+    ttl-minutes: 10
+  kafka:
+    topic:
+      verify-email: verify-email
+
 

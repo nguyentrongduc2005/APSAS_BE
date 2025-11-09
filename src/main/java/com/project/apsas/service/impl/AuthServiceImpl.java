@@ -1,35 +1,36 @@
 package com.project.apsas.service.impl;
 
-import com.nimbusds.jose.*;
-import com.nimbusds.jose.crypto.MACSigner;
-import com.nimbusds.jose.crypto.MACVerifier;
-import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.jwt.SignedJWT;
 import com.project.apsas.dto.request.IntrospectRequest;
 import com.project.apsas.dto.request.LoginRequest;
+import com.project.apsas.dto.request.RegisterRequest;
+import com.project.apsas.dto.request.VerifyRequest;
 import com.project.apsas.dto.response.IntrospecResponse;
 import com.project.apsas.dto.response.LoginResponse;
+import com.project.apsas.dto.response.RegisterResponse;
+import com.project.apsas.entity.Role;
 import com.project.apsas.entity.User;
+import com.project.apsas.enums.UserStatus;
+import com.project.apsas.integration.kafka.mail.KafkaMailProducer;
 import com.project.apsas.mapper.UserMapper;
+import com.project.apsas.repository.RoleRepository;
 import com.project.apsas.repository.UserRepository;
 import com.project.apsas.service.AuthService;
+import com.project.apsas.service.MailService;
+
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 
-import java.text.ParseException;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Date;
-import java.util.StringJoiner;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.util.Properties;
+
+ 
 
 @Slf4j
 @Service
@@ -38,71 +39,90 @@ import java.util.StringJoiner;
 public class AuthServiceImpl implements AuthService {
 
     UserRepository userRepository;
+    RoleRepository roleRepository;
+    PasswordEncoder passwordEncoder;
+    MailService mailService;
     UserMapper userMapper;
+
     @NonFinal
     @Value("${jwt.signerKey}")
     protected String SIGNER_KEY;
 
-    private String generateToken(User user) {
-        JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
+     StringRedisTemplate redis;
+    KafkaMailProducer kafkaMailProducer; 
 
-        JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
-                .subject(user.getName())
-                .issuer("apsas.com")
-                .issueTime(new Date())
-                .expirationTime(new Date(
-                        Instant.now().plus(1, ChronoUnit.HOURS).toEpochMilli()
-                ))
-                .claim("scope", buildScope(user))
-                .build();
+    @Value("${app.verify.ttl-minutes:10}")
+    @NonFinal Long VERIFY_TTL_MINUTES;
 
-        Payload payload = new Payload(jwtClaimsSet.toJSONObject());
+    @Value("${app.kafka.topic.mail-send:mail-send}")
+    @NonFinal String MAIL_TOPIC;
 
-        JWSObject jwsObject = new JWSObject(header, payload);
+    @Value("${app.mail.template.verify:VERIFY_EMAIL}")
+    @NonFinal String VERIFY_TEMPLATE;
 
-        try {
-            jwsObject.sign(new MACSigner(SIGNER_KEY.getBytes()));
-            return jwsObject.serialize();
-        } catch (JOSEException e) {
-            log.error("Cannot create token", e);
-            throw new RuntimeException(e);
-        }
+    private String verifyKey(String email) {
+        return "verify:" + email.toLowerCase();
     }
-
-    private String buildScope(User user) {
-        StringJoiner stringJoiner = new StringJoiner(" ");
-        if (!CollectionUtils.isEmpty(user.getRoles()))
-            user.getRoles().forEach(s -> stringJoiner.add(s.getName()));
-        return stringJoiner.toString();
+    private String genCode() {
+        return String.format("%06d", new java.util.Random().nextInt(1_000_000));
     }
 
     @Override
-    public IntrospecResponse introspect(IntrospectRequest introspectRequest)
-            throws JOSEException, ParseException {
-        var token = introspectRequest.getToken();
-        JWSVerifier verifier = new MACVerifier(SIGNER_KEY.getBytes());
-        SignedJWT signedJWT = SignedJWT.parse(token);
+    public RegisterResponse register(RegisterRequest request) {
+        String email = request.getEmail().trim().toLowerCase();
+        if (userRepository.existsByEmail(email)) {
+            throw new RuntimeException("Email đã tồn tại");
+        }
 
-        Date expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
+        String roleName = switch (request.getAccountType()) {
+            case 1 -> "USER";      // Student
+            case 2 -> "LECTURER";  // Teacher
+            default -> throw new RuntimeException("accountType phải là 1 (student) hoặc 2 (teacher)");
+        };
 
-        var verified = signedJWT.verify(verifier);
+        Role role = roleRepository.findByName(roleName)
+                .orElseThrow(() -> new RuntimeException("Role không tồn tại: " + roleName));
 
-        return IntrospecResponse.builder()
-                .valid(verified && expiryTime.after(new Date()))
+        User user = User.builder()
+                .name(request.getName())
+                .email(email)
+                .password(passwordEncoder.encode(request.getPassword())) // HASH bằng BCrypt
+                .status(UserStatus.ACTIVE)
                 .build();
+        user.getRoles().add(role);
 
+        userRepository.save(user);
+
+        // Gửi mail async (Brevo/Kafka flow của bạn bên dưới MailServiceImpl)
+        Properties params = new Properties();
+        params.setProperty("name", user.getName());
+        params.setProperty("app_brand", "APSAS");
+        try {
+            mailService.sendMailAsync(user.getEmail(), user.getName(), params);
+        } catch (Exception ignored) {}
+
+        return RegisterResponse.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .role(roleName)
+                .build();
     }
 
     @Override
     public LoginResponse login(LoginRequest loginRequest) {
-        String email = loginRequest.getEmail();
-        String password = loginRequest.getPassword();
+        // Minimal stub to satisfy interface; implement real logic (JWT creation, password check) later
+        throw new UnsupportedOperationException("login not implemented yet");
+    }
 
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
-        if (!user.getPassword().equals(password)) {
-            throw new RuntimeException("Incorrect password");
-        }
+    @Override
+    public IntrospecResponse introspect(IntrospectRequest introspectRequest) throws com.nimbusds.jose.JOSEException, java.text.ParseException {
+        // Minimal stub to satisfy interface; implement token introspection logic later
+        throw new UnsupportedOperationException("introspect not implemented yet");
+    }
 
-        return userMapper.toLoginResponse(user);
+    @Override
+    public void verify(VerifyRequest verifyRequest) {
+        // Implement verification logic here
+        throw new UnsupportedOperationException("verify not implemented yet");
     }
 }
