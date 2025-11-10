@@ -25,4 +25,16 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     Page<Course> searchPublic(@Param("keyword") String keyword,
                               @Param("visibility") CourseVisibility visibility,
                               Pageable pageable);
+
+    @Query("""
+        select new com.project.apsas.dto.teacher.TeacherCourseSummaryResponse(
+            c.id, c.code, c.name, c.visibility,
+            (select count(a) from CourseAssignment a where a.course.id = c.id),
+            (select avg(s.score) from Submission s where s.course.id = c.id)
+        )
+        from Course c
+        where (:teacherId is null or c.teacher.id = :teacherId)
+        """)
+    java.util.List<com.project.apsas.dto.teacher.TeacherCourseSummaryResponse>
+    findSummariesByTeacherId(@Param("teacherId") Long teacherId);
 }

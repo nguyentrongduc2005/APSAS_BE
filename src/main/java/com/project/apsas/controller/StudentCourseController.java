@@ -11,8 +11,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.project.apsas.dto.response.StudentCourseCardDto;
-import com.project.apsas.dto.response.StudentCourseDetailsDto;
+import com.project.apsas.dto.student.StudentCourseCardDto;
+import com.project.apsas.dto.student.StudentCourseDetailsDto;
 import com.project.apsas.enums.CourseVisibility;
 import com.project.apsas.service.AuthUserResolver;
 import com.project.apsas.service.StudentCourseService;
@@ -55,8 +55,8 @@ public class StudentCourseController {
         } else {
             String[] p = sort.split(",", 2);
             String field = p[0].trim();
-            String dir = (p.length > 1 ? p[1].trim() : "asc");
-            if (!field.equals("name") && !field.equals("createdAt")) field = "createdAt";
+            String dir = (p.length > 1) ? p[1].trim() : "asc";
+            if (field.equals("name")) field = "name";
             Sort.Direction d = "desc".equalsIgnoreCase(dir) ? Sort.Direction.DESC : Sort.Direction.ASC;
             s = Sort.by(d, field);
         }
