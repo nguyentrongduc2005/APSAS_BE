@@ -1,94 +1,40 @@
 package com.project.apsas.service.impl;
 
+import java.time.Duration;
 
-import com.project.apsas.service.BaseRedisService;
-import org.springframework.data.redis.core.HashOperations;
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import com.project.apsas.service.BasicRedisService;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
-public class BasicRedisServiceImpl implements BaseRedisService {
-    private final RedisTemplate<String,Object> redisTemplate;
-    private final HashOperations<String,String,Object> hashOperations;
+@Profile("db")
+@RequiredArgsConstructor
+public class BasicRedisServiceImpl implements BasicRedisService {
 
-    public BasicRedisServiceImpl(RedisTemplate<String, Object> redisTemplate) {
-        this.redisTemplate = redisTemplate;
-        this.hashOperations = redisTemplate.opsForHash();
-    }
+    private final RedisTemplate<String, Object> redisTemplate;
 
     @Override
-    public void set(String key, String value) {
-        redisTemplate.opsForValue().set(key, value);
-    }
-
-    @Override
-    public void setTimeToLive(String key, String value, long timeInSeconds) {
-        redisTemplate.expire(key, timeInSeconds, TimeUnit.SECONDS);
-    }
-
-    @Override
-    public void hashSet(String key, String hashKey, String value) {
-        hashOperations.put(key,hashKey,value);
-    }
-
-    @Override
-    public boolean hashExists(String key, String hashKey) {
-        return false;
-    }
-
-    @Override
-    public Object Get(String key) {
-       return redisTemplate.opsForValue().get(key);
-    }
-
-    @Override
-    public Map<String, Object> getField(String key) {
-        return hashOperations.entries(key);
-    }
-
-    @Override
-    public Object hashGet(String key, String field) {
-        return hashOperations.get(key, field);
-    }
-
-    @Override
-    public List<Object> hashGetByFieldPrefix(String key, String fieldPrefix) {
-    List<Object> list = new ArrayList<>();
-    Map<String,Object> map = hashOperations.entries(key);
-    for(Map.Entry<String,Object>  entry :hashOperations.entries(fieldPrefix).entrySet()) {
-        if(entry.getKey().equals(fieldPrefix)) {
-            list.add(entry.getValue());
-            return list;
+    public void set(String key, Object value, Duration ttl) {
+        if (ttl == null) {
+            redisTemplate.opsForValue().set(key, value);
+        } else {
+            redisTemplate.opsForValue().set(key, value, ttl);
         }
     }
-        return List.of();
-    }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public  Set<String> getFieldPrefix(String key) {
-        return hashOperations.entries(key).keySet();
+    public <T> T get(String key, Class<T> type) {
+        Object v = redisTemplate.opsForValue().get(key);
+        return v == null ? null : (T) v;
     }
 
     @Override
     public void delete(String key) {
         redisTemplate.delete(key);
-    }
-
-    @Override
-    public void delete(String key, String field) {
-        hashOperations.delete(key,field);
-    }
-
-    @Override
-    public void delete(String key, List<String> fields) {
-        for(String field:fields){
-            hashOperations.delete(key,field);
-        }
     }
 }
