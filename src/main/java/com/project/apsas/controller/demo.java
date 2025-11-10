@@ -1,5 +1,6 @@
 package com.project.apsas.controller;
 
+import com.project.apsas.dto.ApiResponse;
 import com.project.apsas.dto.event.SendMailEvent;
 import com.project.apsas.dto.request.LoginRequest;
 import com.project.apsas.dto.response.LoginResponse;
@@ -8,6 +9,8 @@ import com.project.apsas.entity.Permission;
 import com.project.apsas.entity.Role;
 import com.project.apsas.entity.User;
 import com.project.apsas.enums.UserStatus;
+import com.project.apsas.exception.AppException;
+import com.project.apsas.exception.ErrorCode;
 import com.project.apsas.integration.kafka.mail.KafkaMailProducer;
 import com.project.apsas.repository.PermissionRepository;
 import com.project.apsas.repository.RoleRepository;
@@ -72,8 +75,10 @@ public class demo {
 
 
     @PostMapping("/login")
-    public LoginResponse login(@RequestBody LoginRequest loginRequest) {
-        return authService.login(loginRequest);
+    public ApiResponse<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
+        System.out.println(ErrorCode.NOT_FOUND.name());
+         throw new AppException(ErrorCode.NOT_FOUND);
+//        return authService.login(loginRequest);
     }
 
     @PostMapping("/file")
