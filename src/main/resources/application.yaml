@@ -71,7 +71,7 @@ jwt:
   signerKey: "JvLr4on9xnJj75gmh3fnVFdx9xELXish"
 brevo:
   base-url: https://api.brevo.com/v3
-  api-key: ${API_KEY_BREVO}
+  api-key: ${API_KEY_BREVO:dummy-key-for-dev}
   template-id: 3
   sender:
     mail: nguyentrongduc447@gmail.com
