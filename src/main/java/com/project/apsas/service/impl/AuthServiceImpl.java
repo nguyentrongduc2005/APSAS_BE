@@ -2,12 +2,12 @@ package com.project.apsas.service.impl;
 
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSHeader;
-import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.JWSObject;
+import com.nimbusds.jose.Payload;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import java.nio.charset.StandardCharsets;
 import com.project.apsas.dto.event.SendMailEvent;
 import com.project.apsas.dto.request.IntrospectRequest;
 import com.project.apsas.dto.request.LoginRequest;
@@ -16,75 +16,60 @@ import com.project.apsas.dto.request.VerifyRequest;
 import com.project.apsas.dto.response.IntrospecResponse;
 import com.project.apsas.dto.response.LoginResponse;
 import com.project.apsas.dto.response.RegisterResponse;
-import com.project.apsas.entity.Role;
-import com.project.apsas.entity.User;
+import com.project.apsas.entity.*;
 import com.project.apsas.enums.UserStatus;
 import com.project.apsas.integration.kafka.mail.KafkaMailProducer;
 import com.project.apsas.mapper.UserMapper;
-import com.project.apsas.repository.RoleRepository;
-import com.project.apsas.repository.UserRepository;
+import com.project.apsas.repository.*;
 import com.project.apsas.service.AuthService;
-import com.project.apsas.service.MailService; // vẫn giữ nếu nơi khác đang inject; không dùng trong OTP
-
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.text.ParseException;
-import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 @Slf4j
 @Service
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AuthServiceImpl implements AuthService {
 
+    private static final int REFRESH_TTI_DAYS = 7;
     UserRepository userRepository;
     RoleRepository roleRepository;
+    VerificationCodeRepository verificationCodeRepository;
+    RefreshTokenRepository refreshTokenRepository;
+
     PasswordEncoder passwordEncoder;
-    MailService mailService;          // không dùng trong OTP nhưng giữ lại để tránh phá chỗ khác
     UserMapper userMapper;
 
-    StringRedisTemplate redis;
-    KafkaMailProducer kafkaMailProducer;
+    KafkaMailProducer kafkaMailProducer; 
 
-    @NonFinal
-    @Value("${jwt.signerKey}")
-    String SIGNER_KEY;
+    @NonFinal @Value("${jwt.signerKey}") String SIGNER_KEY;
 
-    @NonFinal
-    @Value("${app.verify.ttl-minutes:10}")
-    Long VERIFY_TTL_MINUTES;
+    @NonFinal @Value("${app.verify.ttl-minutes:10}") long VERIFY_TTL_MINUTES;
+    @NonFinal @Value("${app.kafka.topic.mail-send:mail-send}") String MAIL_TOPIC;
+    @NonFinal @Value("${app.mail.template.verify:VERIFY_EMAIL}") String VERIFY_TEMPLATE;
 
-    @NonFinal
-    @Value("${app.kafka.topic.mail-send:mail-send}")
-    String MAIL_TOPIC;
+    @NonFinal @Value("${app.auth.access-ttl-minutes:15}") long ACCESS_TTL_MINUTES;   // 15'
+    @NonFinal @Value("${app.auth.refresh-ttl-days:7}") long REFRESH_TTL_DAYS;       // 7 days
 
-    @NonFinal
-    @Value("${app.mail.template.verify:VERIFY_EMAIL}")
-    String VERIFY_TEMPLATE;
-
-    /* ===================== Helpers ===================== */
-
-    private String verifyKey(String email) {
-        return "verify:" + email.toLowerCase();
-    }
+    /* ================= Helpers ================= */
 
     private String genCode() {
         return String.format("%06d", new java.util.Random().nextInt(1_000_000));
     }
 
-    private String generateToken(User user) {
+    private String generateAccessToken(User user, long ttlMinutes) {
         try {
             Instant now = Instant.now();
 
@@ -94,21 +79,27 @@ public class AuthServiceImpl implements AuthService {
             JWTClaimsSet claims = new JWTClaimsSet.Builder()
                     .subject(String.valueOf(user.getId()))
                     .issueTime(Date.from(now))
-                    .expirationTime(Date.from(now.plus(1, ChronoUnit.DAYS))) // TTL 1 ngày (tùy chỉnh thêm nếu muốn)
+                    .expirationTime(Date.from(now.plus(ttlMinutes, ChronoUnit.MINUTES)))
                     .claim("email", user.getEmail())
                     .claim("name", user.getName())
                     .claim("roles", roleNames)
                     .build();
 
-            SignedJWT signedJWT = new SignedJWT(new JWSHeader(JWSAlgorithm.HS512), claims);
-            signedJWT.sign(new MACSigner(SIGNER_KEY.getBytes(StandardCharsets.UTF_8)));
-            return signedJWT.serialize();
+            JWSHeader header = new JWSHeader(com.nimbusds.jose.JWSAlgorithm.HS512);
+            JWSObject jws = new JWSObject(header, new Payload(claims.toJSONObject()));
+            jws.sign(new MACSigner(SIGNER_KEY.getBytes()));
+            return jws.serialize();
         } catch (Exception e) {
-            throw new RuntimeException("Không tạo được token", e);
+            throw new RuntimeException("Không tạo được access token", e);
         }
     }
 
-    /* ===================== REGISTER (INACTIVE + OTP + Kafka) ===================== */
+    private String newRefreshToken() {
+        // Có thể dùng SecureRandom/UUID, ở đây đủ cho use-case
+        return UUID.randomUUID().toString().replace("-", "");
+    }
+
+    /* ================= Register: INACTIVE + OTP lưu DB + gửi Kafka ================= */
 
     @Override
     public RegisterResponse register(RegisterRequest request) {
@@ -118,30 +109,36 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String roleName = switch (request.getAccountType()) {
-            case 1 -> "USER";      // Student
-            case 2 -> "LECTURER";  // Teacher
+            case 1 -> "USER";
+            case 2 -> "LECTURER";
             default -> throw new RuntimeException("accountType phải là 1 (student) hoặc 2 (teacher)");
         };
 
         Role role = roleRepository.findByName(roleName)
                 .orElseThrow(() -> new RuntimeException("Role không tồn tại: " + roleName));
 
-        // builder roles: đảm bảo không NPE khi add
         User user = User.builder()
                 .name(request.getName())
                 .email(email)
-                .password(passwordEncoder.encode(request.getPassword())) // HASH BCrypt
-                .status(UserStatus.INACTIVE)                            // đăng ký xong INACTIVE
-                .roles(new HashSet<>(Collections.singletonList(role)))
+                .password(passwordEncoder.encode(request.getPassword()))
+                .status(UserStatus.INACTIVE)
+                .roles(new HashSet<>(Collections.singleton(role)))
                 .build();
-
         userRepository.save(user);
 
-        // Tạo OTP và lưu Redis với TTL
+        // clear mã cũ (nếu có) và lưu mã mới
+        verificationCodeRepository.deleteByEmail(email);
         String code = genCode();
-        redis.opsForValue().set(verifyKey(email), code, Duration.ofMinutes(VERIFY_TTL_MINUTES));
+        VerificationCode vc = VerificationCode.builder()
+                .email(email)
+                .code(code)
+                .createdAt(Instant.now())
+                .expiresAt(Instant.now().plus(VERIFY_TTL_MINUTES, ChronoUnit.MINUTES))
+                .used(false)
+                .build();
+        verificationCodeRepository.save(vc);
 
-        // Gửi OTP qua Kafka (mail-service sẽ gửi email)
+        // gửi qua Kafka -> mail-service (Brevo)
         Properties params = new Properties();
         params.setProperty("template", VERIFY_TEMPLATE);
         params.setProperty("name", user.getName());
@@ -154,7 +151,6 @@ public class AuthServiceImpl implements AuthService {
                 .name(user.getName())
                 .params(params)
                 .build();
-
         kafkaMailProducer.push(MAIL_TOPIC, email, event);
 
         return RegisterResponse.builder()
@@ -164,18 +160,20 @@ public class AuthServiceImpl implements AuthService {
                 .build();
     }
 
-    /* ===================== VERIFY OTP ===================== */
+    /* ================= Verify: đối chiếu DB, ACTIVE, mark used ================= */
 
     @Override
-    public void verify(VerifyRequest verifyRequest) {
-        String email = verifyRequest.getEmail().trim().toLowerCase();
-        String key = verifyKey(email);
-        String codeInRedis = redis.opsForValue().get(key);
+    public void verify(VerifyRequest request) {
+        String email = request.getEmail().trim().toLowerCase();
 
-        if (codeInRedis == null) {
-            throw new RuntimeException("Mã xác thực không tồn tại hoặc đã hết hạn");
+        VerificationCode latest = verificationCodeRepository
+                .findTopByEmailOrderByCreatedAtDesc(email)
+                .orElseThrow(() -> new RuntimeException("Không có mã xác thực"));
+
+        if (latest.isUsed() || Instant.now().isAfter(latest.getExpiresAt())) {
+            throw new RuntimeException("Mã xác thực đã dùng hoặc hết hạn");
         }
-        if (!codeInRedis.equals(verifyRequest.getCode())) {
+        if (!latest.getCode().equals(request.getCode())) {
             throw new RuntimeException("Mã xác thực không đúng");
         }
 
@@ -185,40 +183,58 @@ public class AuthServiceImpl implements AuthService {
         user.setStatus(UserStatus.ACTIVE);
         userRepository.save(user);
 
-        redis.delete(key);
+        latest.setUsed(true);
+        verificationCodeRepository.save(latest);
     }
 
-    /* ===================== LOGIN (JWT) ===================== */
+    /* ================= Login: tạo access + refresh, lưu refresh DB ================= */
 
     @Override
-    public LoginResponse login(LoginRequest loginRequest) {
-        String email = loginRequest.getEmail().trim().toLowerCase();
+    public LoginResponse login(LoginRequest req) {
+        String email = req.getEmail().trim().toLowerCase();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Sai email hoặc mật khẩu"));
 
         if (user.getStatus() != UserStatus.ACTIVE) {
-            throw new RuntimeException("Tài khoản chưa kích hoạt. Vui lòng xác thực email trước khi đăng nhập.");
+            throw new RuntimeException("Tài khoản chưa kích hoạt. Vui lòng xác thực email.");
         }
-
-        if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+        if (!passwordEncoder.matches(req.getPassword(), user.getPassword())) {
             throw new RuntimeException("Sai email hoặc mật khẩu");
         }
 
-        String token = generateToken(user);
+        String accessToken = generateAccessToken(user, ACCESS_TTL_MINUTES); 
+
+        Instant expiryInstant = Instant.now().plus(REFRESH_TTI_DAYS, ChronoUnit.DAYS);
+
+        // 2. Chuyển đổi Instant sang LocalDateTime để lưu vào DB (dùng múi giờ hệ thống)
+        LocalDateTime expiryDateTime = LocalDateTime.ofInstant(expiryInstant, ZoneId.systemDefault());
+
+        // refresh token mới -> (tuỳ yêu cầu) xóa refresh cũ của user rồi tạo mới
+        refreshTokenRepository.deleteByUser(user);
+        String refreshTokenStr = newRefreshToken();
+        
+       RefreshToken rt = RefreshToken.builder()
+            .userId(user.getId()) 
+            .tokenHash(refreshTokenStr) 
+            .expiresAt(expiryDateTime)
+            .build();
+
+        refreshTokenRepository.save(rt);
 
         return LoginResponse.builder()
-                .token(token)
-                .user(userMapper.toAuthUserDto(user)) // trả name,email,roles,avatar
+                .accessToken(accessToken)
+                .refreshToken(refreshTokenStr)
+                .user(userMapper.toAuthUserDto(user))
                 .build();
     }
 
-    /* ===================== INTROSPECT ===================== */
+    /* ================= Introspect: verify chữ ký + hạn ================= */
 
     @Override
-    public IntrospecResponse introspect(IntrospectRequest introspectRequest) throws JOSEException, ParseException {
-        String token = introspectRequest.getToken();
-    SignedJWT signed = SignedJWT.parse(token);
-    boolean verified = signed.verify(new MACVerifier(SIGNER_KEY.getBytes(StandardCharsets.UTF_8)));
+    public IntrospecResponse introspect(IntrospectRequest request) throws JOSEException, ParseException {
+        String token = request.getToken();
+        SignedJWT signed = SignedJWT.parse(token);
+        boolean verified = signed.verify(new MACVerifier(SIGNER_KEY.getBytes()));
 
         boolean active = false;
         if (verified) {
@@ -227,8 +243,8 @@ public class AuthServiceImpl implements AuthService {
             active = (exp != null && exp.after(now));
         }
 
-    return IntrospecResponse.builder()
-        .valid(active)
-        .build();
+        return IntrospecResponse.builder()
+                .valid(active)   
+                .build();
     }
 }
