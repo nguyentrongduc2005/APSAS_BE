@@ -1,5 +1,6 @@
 package com.project.apsas.controller;
 
+import com.project.apsas.dto.ApiResponse;
 import com.project.apsas.dto.response.PagedResponse;
 import com.project.apsas.dto.response.PublicCourseItem;
 import com.project.apsas.service.PublicCourseService;
@@ -12,14 +13,14 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class PublicCourseController {
 
-    private final PublicCourseService service;
+    private final PublicCourseService publicCourseService;
 
     @GetMapping("/courses")
-    public ResponseEntity<PagedResponse<PublicCourseItem>> getPublicCourses(
+    public ResponseEntity<ApiResponse<PagedResponse<PublicCourseItem>>> getPublicCourses(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "12") int limit,
             @RequestParam(required = false) String search
     ) {
-        return ResponseEntity.ok(service.list(page, limit, search));
+        return ResponseEntity.ok(publicCourseService.getPublicCourses(page, limit, search));
     }
 }

@@ -1,5 +1,6 @@
 package com.project.apsas.controller;
 
+import com.project.apsas.dto.ApiResponse;
 import com.project.apsas.dto.response.ProfileResponse;
 import com.project.apsas.service.ProfileService;
 import lombok.RequiredArgsConstructor;
@@ -14,11 +15,11 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class ProfileController {
 
-    private final ProfileService service;
+    private final ProfileService profileService;
 
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ProfileResponse> me(@AuthenticationPrincipal Jwt jwt) {
-        return ResponseEntity.ok(service.meFromJwt(jwt));
+    public ResponseEntity<ApiResponse<ProfileResponse>> me(@AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(profileService.me(jwt));
     }
 }
