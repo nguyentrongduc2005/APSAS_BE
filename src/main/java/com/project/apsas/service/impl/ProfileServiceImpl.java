@@ -2,45 +2,43 @@ package com.project.apsas.service.impl;
 
 import com.project.apsas.dto.response.ProfileResponse;
 import com.project.apsas.entity.User;
+import com.project.apsas.exception.AppException;
+import com.project.apsas.exception.ErrorCode;
 import com.project.apsas.repository.UserRepository;
-import com.project.apsas.service.CourseDetailService;
 import com.project.apsas.service.ProfileService;
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
-import static org.springframework.http.HttpStatus.NOT_FOUND;
 @Service
 @RequiredArgsConstructor
-@Transactional
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ProfileServiceImpl implements ProfileService {
-    UserRepository userRepo;
+
+    private final UserRepository userRepository;
+
     @Override
-    public ProfileResponse meFromJwt(Jwt jwt) {
-        // lấy id từ claim. Tuỳ hệ thống: "sub", "userId", "uid" ...
-        String raw = jwt.getClaimAsString("userId");
-        if (raw == null) raw = jwt.getSubject(); // fallback "sub"
-        Long userId = Long.valueOf(raw);
+    public ProfileResponse me(Jwt jwt) {
+        String idStr = jwt.getClaimAsString("userId");
+        if (idStr == null || idStr.isBlank()) idStr = jwt.getSubject();
+        if (idStr == null || idStr.isBlank()) throw new AppException(ErrorCode.UNAUTHORIZED);
 
-        User u = userRepo.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "User not found"));
+        final long userId;
+        try { userId = Long.parseLong(idStr); }
+        catch (NumberFormatException e) { throw new AppException(ErrorCode.UNAUTHORIZED); }
 
-        // Lấy roles từ token (scope/authorities) hoặc từ DB của bạn
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+
         List<String> roles = jwt.getClaimAsStringList("roles");
-        if (roles == null) roles = List.of(); // hoặc map từ u.getRole()
+        if (roles == null) roles = List.of();
 
         return ProfileResponse.builder()
-                .id(u.getId())
-                .name(u.getName())
-                .email(u.getEmail())
-                .avatar(null) // điền nếu có cột
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .avatar(null)         // map nếu có field/avatar trong DB
                 .roles(roles)
                 .build();
     }
