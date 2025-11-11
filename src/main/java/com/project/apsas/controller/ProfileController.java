@@ -19,7 +19,7 @@ public class ProfileController {
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<ProfileResponse> me(@AuthenticationPrincipal Jwt jwt) {
-        var data = profileService.me(jwt);
+        var data = profileService.meFromJwt(jwt);
         return ApiResponse.<ProfileResponse>builder()
                 .code("0")
                 .message("SUCCESS")

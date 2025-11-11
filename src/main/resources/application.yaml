@@ -3,9 +3,11 @@ server:
   servlet:
     context-path: /api
   error:
-    include-message: never  
+    include-message: never
 
 spring:
+  application:
+    name: CodeVerse
   data:
     redis:
       host: localhost
@@ -84,6 +86,10 @@ cloudinary:
     folder-name: uploads/general
     resource-type: auto
 jwt:
+  verify:
+    ttl-minutes: 10
+  refresh:
+    ttl-minutes: 120
   signerKey: "JvLr4on9xnJj75gmh3fnVFdx9xELXish"
 brevo:
   base-url: https://api.brevo.com/v3
@@ -99,8 +105,7 @@ web:
     add-mappings: false 
 
 app:
-  verify:
-    ttl-minutes: 10
+  name: CodeVerse
   kafka:
     topic:
       verify-email: verify-email

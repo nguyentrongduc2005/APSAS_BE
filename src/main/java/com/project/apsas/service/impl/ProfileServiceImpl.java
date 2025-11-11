@@ -19,7 +19,7 @@ public class ProfileServiceImpl implements ProfileService {
     private final UserRepository userRepository;
 
     @Override
-    public ProfileResponse me(Jwt jwt) {
+    public ProfileResponse meFromJwt(Jwt jwt) {
         String idStr = jwt.getClaimAsString("userId");
         if (idStr == null || idStr.isBlank()) idStr = jwt.getSubject();
         if (idStr == null || idStr.isBlank()) throw new AppException(ErrorCode.UNAUTHORIZED);
