@@ -39,12 +39,12 @@ SET @skill_array_id = LAST_INSERT_ID(); -- Lưu ID của skill "Mảng (Array)"
 -- 3. TẠO KHÓA HỌC VÀ GHI DANH
 -- ========================================================
 
-INSERT INTO `courses` (`name`, `code`, `visibility`, `limit`, `type`, `avatar_url`) VALUES
-    ('Lập Trình Backend với Spring Boot', 'SPB_2025', 'PUBLIC', 100, 'Chuyên ngành', 'https://images.unsplash.com/photo-1607703703578-508b1fadf879?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMTc4M3wwfDF8c2VhcmNofDEzfHxKYXZhfGVufDB8fHx8MTY5ODc0OTM0OHww&ixlib=rb-4.0.3&q=80&w=1080');
+INSERT INTO `courses` (`name`, `code`, `visibility`, `limit`, `type`, `avatar_url`,created_by) VALUES
+    ('Lập Trình Backend với Spring Boot', 'SPB_2025', 'PUBLIC', 100, 'Chuyên ngành', 'https://images.unsplash.com/photo-1607703703578-508b1fadf879?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMTc4M3wwfDF8c2VhcmNofDEzfHxKYXZhfGVufDB8fHx8MTY5ODc0OTM0OHww&ixlib=rb-4.0.3&q=80&w=1080',1);
 SET @course_spring_id = LAST_INSERT_ID();
 
-INSERT INTO `courses` (`name`, `code`, `visibility`, `limit`, `type`, `avatar_url`) VALUES
-    ('Lập Trình Frontend với React', 'REACT_2025', 'PRIVATE', 50, 'Tự chọn', 'https://images.unsplash.com/photo-1633356122102-3fe601e05bd2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMTc4M3wwfDF8c2VhcmNofDF8fFJlYWN0fGVufDB8fHx8MTY5ODc0OTM4M3ww&ixlib=rb-4.0.3&q=80&w=1080');
+INSERT INTO `courses` (`name`, `code`, `visibility`, `limit`, `type`, `avatar_url`,created_by) VALUES
+    ('Lập Trình Frontend với React', 'REACT_2025', 'PRIVATE', 50, 'Tự chọn', 'https://images.unsplash.com/photo-1633356122102-3fe601e05bd2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMTc4M3wwfDF8c2VhcmNofDF8fFJlYWN0fGVufDB8fHx8MTY5ODc0OTM4M3ww&ixlib=rb-4.0.3&q=80&w=1080', 1);
 SET @course_react_id = LAST_INSERT_ID();
 
 INSERT INTO `enrollments` (`user_id`, `course_id`, `role`, `joined_at`) VALUES

@@ -10,13 +10,13 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/me")
 @RequiredArgsConstructor
 public class ProfileController {
 
     private final ProfileService profileService;
 
-    @GetMapping("/me")
+    @GetMapping()
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<ProfileResponse> me(@AuthenticationPrincipal Jwt jwt) {
         var data = profileService.meFromJwt(jwt);

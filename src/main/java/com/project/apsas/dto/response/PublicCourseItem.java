@@ -7,18 +7,8 @@ import java.time.LocalDateTime;
 public class PublicCourseItem {
     private Long id;
     private String name;
-    private String code;
-
-    @Data @Builder @NoArgsConstructor @AllArgsConstructor
-    public static class Instructor {
-        private Long id;
-        private String name;
-    }
-    private Instructor instructor;
-
+    private String description;
     private Long studentsCount;
     private Long lessonsCount;
-
-    private LocalDateTime createdAt;
-    private String visibility;
+    private Long lessonsCountTotal;
 }

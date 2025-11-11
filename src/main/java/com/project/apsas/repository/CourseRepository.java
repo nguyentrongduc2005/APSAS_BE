@@ -14,6 +14,16 @@ import org.springframework.stereotype.Repository;
 
 public interface CourseRepository extends JpaRepository<Course, Long> {
 
+    Page<Course> findByNameContainingIgnoreCaseAndVisibility(
+            String search,
+            CourseVisibility visibility, // Tham số Enum lọc
+            Pageable pageable      // Tham số phân trang và sắp xếp
+    );
+
+    Page<Course> findByVisibility(CourseVisibility visibility, Pageable pageable);
+    @Query("SELECT COUNT(c) FROM Course c WHERE c.creator.id = :creatorId")
+    Long countCoursesByCreatorId(@Param("creatorId") Long creatorId);
+
     @Query("""
         select c from Course c
         where

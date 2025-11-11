@@ -21,9 +21,6 @@ public class Otp {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false, unique = true)
-    private Long userId;
-
     @Column(length = 16, nullable = false)
     private String code;
 
@@ -34,6 +31,6 @@ public class Otp {
     private LocalDateTime createdAt;
 
     @OneToOne
-    @JoinColumn(name = "user_id", insertable = false, updatable = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 }

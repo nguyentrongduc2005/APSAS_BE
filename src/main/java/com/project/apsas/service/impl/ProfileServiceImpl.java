@@ -1,6 +1,7 @@
 package com.project.apsas.service.impl;
 
 import com.project.apsas.dto.response.ProfileResponse;
+import com.project.apsas.entity.Profile;
 import com.project.apsas.entity.User;
 import com.project.apsas.exception.AppException;
 import com.project.apsas.exception.ErrorCode;
@@ -31,15 +32,18 @@ public class ProfileServiceImpl implements ProfileService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
 
-        List<String> roles = jwt.getClaimAsStringList("roles");
-        if (roles == null) roles = List.of();
+        Profile profile = user.getProfile();
 
         return ProfileResponse.builder()
                 .id(user.getId())
                 .name(user.getName())
+                .dob(profile.getDob())
+                .bio(profile.getBio())
+                .phone(profile.getPhone())
+                .address(profile.getAddress())
+                .gender(profile.getGender().name())
                 .email(user.getEmail())
                 .avatar(null)         // map nếu có field/avatar trong DB
-                .roles(roles)
                 .build();
     }
 }

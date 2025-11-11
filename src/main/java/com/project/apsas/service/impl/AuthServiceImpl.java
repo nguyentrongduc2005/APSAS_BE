@@ -28,6 +28,7 @@ import com.project.apsas.integration.kafka.mail.KafkaMailProducer;
 import com.project.apsas.mapper.UserMapper;
 import com.project.apsas.repository.OtpRepository;
 import com.project.apsas.repository.RefreshTokenRepository;
+import com.project.apsas.repository.RoleRepository;
 import com.project.apsas.repository.UserRepository;
 
 import com.project.apsas.service.AuthService;
@@ -40,7 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.cache.annotation.Cacheable;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -59,6 +60,7 @@ import java.util.stream.Collectors;
 public class AuthServiceImpl implements AuthService {
 
     UserRepository userRepository;
+    RoleRepository roleRepository;
     OtpRepository otpRepository;
     PasswordEncoder passwordEncoder;
     UserMapper mapper;
@@ -86,13 +88,18 @@ public class AuthServiceImpl implements AuthService {
 
     // ================= REGISTER =================
     @Override
-    @Transactional
     public RegisterResponse register(RegisterRequest req) {
         final String email = req.getEmail().trim().toLowerCase(Locale.ROOT);
 
         userRepository.findByEmail(email).ifPresent(u -> {
             throw new AppException(ErrorCode.USER_ESIXSTED);
         });
+        String roleName = "";
+        if(req.getRole() == 1)  roleName = com.project.apsas.enums.Role.STUDENT.name();
+        if(req.getRole() == 2)  roleName = com.project.apsas.enums.Role.LECTURER.name();
+
+        Role role = roleRepository.findByName(roleName).orElseThrow(() ->
+                new AppException(ErrorCode.BAD_REQUEST));
 
         String hashed = passwordEncoder.encode(req.getPassword());
 
@@ -100,9 +107,11 @@ public class AuthServiceImpl implements AuthService {
         user.setEmail(email);
         user.setPassword(hashed);
         user.setName(req.getName());
+        user.setRoles(Set.of(role));
         user.setStatus(UserStatus.INACTIVE);
 
-        user = userRepository.save(user);
+
+
 
         // Tạo OTP
         String code = genOtp6();
@@ -116,7 +125,6 @@ public class AuthServiceImpl implements AuthService {
                 .expiresAt(expiresAt)
                 .createdAt(LocalDateTime.now())
                 .user(user)
-                .userId(user.getId())
                 .build();
 
         user.setOtp(otp);  // Set otp cho user

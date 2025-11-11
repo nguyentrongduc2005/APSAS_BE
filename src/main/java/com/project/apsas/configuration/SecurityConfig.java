@@ -36,7 +36,8 @@ public class SecurityConfig {
             "/auth/register",
             "/auth/login",
             "/auth/introspect",
-            "/login",
+            "/auth/verify",
+            "/auth/resend-code",
             "/api/courses",
             "/api/me",
             "/feedback",
@@ -45,7 +46,8 @@ public class SecurityConfig {
     };
 
     private final String[] PUBLIC_ENDPOINTS_GET = {
-
+            "/courses",
+            "/courses/{courseId}/register-details",
     };
 
     @Bean
