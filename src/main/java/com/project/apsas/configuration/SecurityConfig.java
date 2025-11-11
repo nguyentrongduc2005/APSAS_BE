@@ -5,7 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -21,14 +21,12 @@ import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.oauth2.jwt.Jwt;
 
 import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
-import javax.crypto.spec.SecretKeySpec;
-
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
 public class SecurityConfig {
         @Value("${jwt.signerKey}")
         private String signerKey;
@@ -87,28 +85,16 @@ public class SecurityConfig {
         return new CorsFilter(source);
     }
 
-
-
     @Bean
-    JwtDecoder jwtDecoder(){
-        SecretKeySpec secretKeySpec = new SecretKeySpec(signerKey.getBytes(), "HS512");
-        return NimbusJwtDecoder
-                .withSecretKey(secretKeySpec)
-                .macAlgorithm(MacAlgorithm.HS512)
-                .build();
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration cfg = new CorsConfiguration();
+        cfg.setAllowedOrigins(List.of("*"));
+        cfg.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
+        cfg.setAllowedHeaders(List.of("*"));
+        cfg.setAllowCredentials(false);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", cfg);
+        return source;
     }
-
-        // Convert JWT to Authentication with authorities from token claim (e.g. roles)
-        private Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter() {
-                JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
-                // tokens may contain a claim like 'roles' (adjust if your tokens use a different claim)
-                grantedAuthoritiesConverter.setAuthoritiesClaimName("roles");
-                grantedAuthoritiesConverter.setAuthorityPrefix("ROLE_");
-
-                JwtAuthenticationConverter authenticationConverter = new JwtAuthenticationConverter();
-                authenticationConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
-                return authenticationConverter;
-        }
-
 }
-

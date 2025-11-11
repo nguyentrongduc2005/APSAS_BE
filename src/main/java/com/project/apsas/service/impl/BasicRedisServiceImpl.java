@@ -1,15 +1,14 @@
 package com.project.apsas.service.impl;
 
+import java.time.Duration;
+
+import org.springframework.context.annotation.Profile;
 import com.project.apsas.service.BaseRedisService;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import com.project.apsas.service.BasicRedisService;
 
 @Service
 public class BasicRedisServiceImpl implements BaseRedisService {
@@ -77,7 +76,11 @@ public class BasicRedisServiceImpl implements BaseRedisService {
         return list;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
+    public <T> T get(String key, Class<T> type) {
+        Object v = redisTemplate.opsForValue().get(key);
+        return v == null ? null : (T) v;
     public Set<String> getFieldPrefix(String key) {
         // Lấy tất cả tên field. VD: getFieldPrefix("user:1") → ["email", "name", "age"]
         return hashOperations.entries(key).keySet();
@@ -88,6 +91,7 @@ public class BasicRedisServiceImpl implements BaseRedisService {
         // Xóa toàn bộ key. VD: delete("user:1")
         redisTemplate.delete(key);
     }
+}
 
     @Override
     public void delete(String key, String field) {
