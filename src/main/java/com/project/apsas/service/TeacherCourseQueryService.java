@@ -1,4 +1,4 @@
-package com.project.apsas.service.teacher;
+package com.project.apsas.service;
 
 import java.util.List;
 

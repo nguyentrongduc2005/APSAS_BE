@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.project.apsas.dto.teacher.TeacherCourseSummaryResponse;
 import com.project.apsas.repository.CourseRepository;
-import com.project.apsas.service.teacher.TeacherCourseQueryService;
+import com.project.apsas.service.TeacherCourseQueryService;
 
 import lombok.RequiredArgsConstructor;
 

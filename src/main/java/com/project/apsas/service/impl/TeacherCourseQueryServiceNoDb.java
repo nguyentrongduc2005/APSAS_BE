@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import com.project.apsas.dto.teacher.TeacherCourseSummaryResponse;
-import com.project.apsas.service.teacher.TeacherCourseQueryService;
+import com.project.apsas.service.TeacherCourseQueryService;
 
 @Service
 @Profile("no-db")
