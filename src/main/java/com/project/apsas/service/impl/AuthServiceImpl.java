@@ -1,20 +1,5 @@
 package com.project.apsas.service.impl;
 
-import java.text.ParseException;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Date;
-import java.util.StringJoiner;
-
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
-
-import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.JWSAlgorithm;
-import com.nimbusds.jose.JWSHeader;
-import com.nimbusds.jose.JWSObject;
-import com.nimbusds.jose.Payload;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSSigner;
@@ -156,13 +141,6 @@ public class AuthServiceImpl implements AuthService {
 
     // ================= LOGIN =================
     @Override
-    public IntrospecResponse introspect(IntrospectRequest req) throws JOSEException, ParseException {
-        SignedJWT jwt = SignedJWT.parse(req.getToken());
-        boolean verified = jwt.verify(new MACVerifier(SIGNER_KEY.getBytes()));
-        Date exp = jwt.getJWTClaimsSet().getExpirationTime();
-        return IntrospecResponse.builder()
-                .valid(verified && exp.after(new Date()))
-                .build();
     public LoginResponse login(LoginRequest req) {
         final String email = req.getEmail().trim().toLowerCase(Locale.ROOT);
 
