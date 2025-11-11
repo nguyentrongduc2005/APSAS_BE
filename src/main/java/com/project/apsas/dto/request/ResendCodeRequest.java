@@ -8,10 +8,7 @@ import lombok.AllArgsConstructor;
 
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
-public class LoginRequest {
+public class ResendCodeRequest {
     @NotBlank @Email
     private String email;
-
-    @NotBlank
-    private String password;
 }
