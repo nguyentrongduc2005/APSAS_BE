@@ -18,7 +18,9 @@ public class RegisterRequest {
     @NotBlank
     private String name;
 
-    // 1 = student, 2 = teacher (nếu bạn chưa dùng thì vẫn để đây cho đúng yêu cầu)
+    @NotNull(message = "Role không được để trống")
+    @Min(value = 1, message = "Role phải là 1 (student) hoặc 2 (teacher)")
+    @Max(value = 2, message = "Role phải là 1 (student) hoặc 2 (teacher)")
     private Integer role;
 
     // optional

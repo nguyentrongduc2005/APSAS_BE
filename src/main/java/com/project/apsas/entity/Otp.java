@@ -33,7 +33,7 @@ public class Otp {
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private User user;
 }

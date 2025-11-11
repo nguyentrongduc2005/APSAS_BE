@@ -86,6 +86,7 @@ public class AuthServiceImpl implements AuthService {
 
     // ================= REGISTER =================
     @Override
+    @Transactional
     public RegisterResponse register(RegisterRequest req) {
         final String email = req.getEmail().trim().toLowerCase(Locale.ROOT);
 
@@ -99,23 +100,32 @@ public class AuthServiceImpl implements AuthService {
         user.setEmail(email);
         user.setPassword(hashed);
         user.setName(req.getName());
-        user.setStatus(UserStatus.INACTIVE); // ACTIVE sau khi verify
+        user.setStatus(UserStatus.INACTIVE);
 
+        user = userRepository.save(user);
 
-        // OTP lưu ở VerificationCode
+        // Tạo OTP
         String code = genOtp6();
-        LocalDateTime expiresAt = LocalDateTime.ofInstant(Instant.now().plus(VERIFY_TTL_MINUTES, ChronoUnit.MINUTES),
-                ZoneId.systemDefault()) ;
+        LocalDateTime expiresAt = LocalDateTime.ofInstant(
+                Instant.now().plus(VERIFY_TTL_MINUTES, ChronoUnit.MINUTES),
+                ZoneId.systemDefault()
+        );
 
-        Otp vc = Otp.builder()
+        Otp otp = Otp.builder()
                 .code(code)
                 .expiresAt(expiresAt)
                 .createdAt(LocalDateTime.now())
+                .user(user)
+                .userId(user.getId())
                 .build();
-        user.setOtp(vc);
+
+        user.setOtp(otp);  // Set otp cho user
+
+        // Save user (sẽ tự động save otp nếu có cascade)
         userRepository.save(user);
 
         sendOtpMail(email, user.getName(), code, VERIFY_TTL_MINUTES);
+
         return RegisterResponse.builder()
                 .email(user.getEmail())
                 .id(user.getId())
