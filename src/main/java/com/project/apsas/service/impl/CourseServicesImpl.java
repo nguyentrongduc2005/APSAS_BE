@@ -2,6 +2,8 @@ package com.project.apsas.service.impl;
 
 import com.project.apsas.dto.request.CreateCourseRequest;
 import com.project.apsas.dto.response.CourseItemResponse;
+import com.project.apsas.dto.response.PagedResponse;
+import com.project.apsas.dto.response.PublicCourseItem;
 import com.project.apsas.entity.Course;
 import com.project.apsas.exception.AppException;
 import com.project.apsas.exception.ErrorCode;
@@ -17,6 +19,11 @@ import java.time.LocalDateTime;
 public class CourseServicesImpl implements CourseServices {
 
     private final CourseRepository courseRepository;
+
+    @Override
+    public PagedResponse<PublicCourseItem> getPublicCourses(int page, int limit, String search) {
+        return null;
+    }
 
     @Override
     public CourseItemResponse create(CreateCourseRequest req) {
