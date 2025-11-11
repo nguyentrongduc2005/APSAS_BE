@@ -1,24 +1,26 @@
 package com.project.apsas.dto.request;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
-import lombok.Data;
+import jakarta.validation.constraints.*;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
-@Data
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor
 public class RegisterRequest {
-    @NotBlank @Size(min = 2, max = 120)
-    private String name;
-
     @NotBlank @Email
     private String email;
 
-    @NotBlank @Size(min = 8, max = 100)
+    @NotBlank @Size(min = 6, max = 64)
     private String password;
 
-    /**
-     * 1 = STUDENT  (map sang role "USER")
-     * 2 = TEACHER  (map sang role "LECTURER")
-     */
-    private int accountType;
+    @NotBlank
+    private String name;
+
+    // 1 = student, 2 = teacher (nếu bạn chưa dùng thì vẫn để đây cho đúng yêu cầu)
+    private Integer role;
+
+    // optional
+    private String avatar;
 }

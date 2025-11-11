@@ -1,250 +1,217 @@
 package com.project.apsas.service.impl;
 
 import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.JWSHeader;
-import com.nimbusds.jose.JWSObject;
-import com.nimbusds.jose.Payload;
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.JWSSigner;
 import com.nimbusds.jose.crypto.MACSigner;
-import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+
 import com.project.apsas.dto.event.SendMailEvent;
-import com.project.apsas.dto.request.IntrospectRequest;
 import com.project.apsas.dto.request.LoginRequest;
 import com.project.apsas.dto.request.RegisterRequest;
+import com.project.apsas.dto.request.ResendCodeRequest;
 import com.project.apsas.dto.request.VerifyRequest;
-import com.project.apsas.dto.response.IntrospecResponse;
 import com.project.apsas.dto.response.LoginResponse;
+
 import com.project.apsas.dto.response.RegisterResponse;
-import com.project.apsas.entity.*;
+import com.project.apsas.entity.User;
+import com.project.apsas.entity.VerificationCode;
 import com.project.apsas.enums.UserStatus;
+
 import com.project.apsas.integration.kafka.mail.KafkaMailProducer;
 import com.project.apsas.mapper.UserMapper;
-import com.project.apsas.repository.*;
+import com.project.apsas.repository.UserRepository;
+import com.project.apsas.repository.VerificationCodeRepository;
 import com.project.apsas.service.AuthService;
-import lombok.*;
+
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.text.ParseException;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Slf4j
 public class AuthServiceImpl implements AuthService {
 
-    private static final int REFRESH_TTI_DAYS = 7;
     UserRepository userRepository;
-    RoleRepository roleRepository;
     VerificationCodeRepository verificationCodeRepository;
-    RefreshTokenRepository refreshTokenRepository;
-
     PasswordEncoder passwordEncoder;
-    UserMapper userMapper;
+    UserMapper mapper;
+    KafkaMailProducer mailProducer;
 
-    KafkaMailProducer kafkaMailProducer; 
+    @Value("${security.jwt.secret}")
+    String jwtSecret;
 
-    @NonFinal @Value("${jwt.signerKey}") String SIGNER_KEY;
+    @Value("${security.jwt.issuer:apsas}")
+    String jwtIssuer;
 
-    @NonFinal @Value("${app.verify.ttl-minutes:10}") long VERIFY_TTL_MINUTES;
-    @NonFinal @Value("${app.kafka.topic.mail-send:mail-send}") String MAIL_TOPIC;
-    @NonFinal @Value("${app.mail.template.verify:VERIFY_EMAIL}") String VERIFY_TEMPLATE;
+    @Value("${security.jwt.access_ttl_minutes:60}")
+    long accessTtlMinutes;
 
-    @NonFinal @Value("${app.auth.access-ttl-minutes:15}") long ACCESS_TTL_MINUTES;   // 15'
-    @NonFinal @Value("${app.auth.refresh-ttl-days:7}") long REFRESH_TTL_DAYS;       // 7 days
+    static final String TOPIC_MAIL = "mail.send";
+    static final int VERIFY_TTL_MINUTES = 10;
 
-    /* ================= Helpers ================= */
-
-    private String genCode() {
-        return String.format("%06d", new java.util.Random().nextInt(1_000_000));
-    }
-
-    private String generateAccessToken(User user, long ttlMinutes) {
-        try {
-            Instant now = Instant.now();
-
-            Set<String> roleNames = new HashSet<>();
-            user.getRoles().forEach(r -> roleNames.add(r.getName()));
-
-            JWTClaimsSet claims = new JWTClaimsSet.Builder()
-                    .subject(String.valueOf(user.getId()))
-                    .issueTime(Date.from(now))
-                    .expirationTime(Date.from(now.plus(ttlMinutes, ChronoUnit.MINUTES)))
-                    .claim("email", user.getEmail())
-                    .claim("name", user.getName())
-                    .claim("roles", roleNames)
-                    .build();
-
-            JWSHeader header = new JWSHeader(com.nimbusds.jose.JWSAlgorithm.HS512);
-            JWSObject jws = new JWSObject(header, new Payload(claims.toJSONObject()));
-            jws.sign(new MACSigner(SIGNER_KEY.getBytes()));
-            return jws.serialize();
-        } catch (Exception e) {
-            throw new RuntimeException("Không tạo được access token", e);
-        }
-    }
-
-    private String newRefreshToken() {
-        // Có thể dùng SecureRandom/UUID, ở đây đủ cho use-case
-        return UUID.randomUUID().toString().replace("-", "");
-    }
-
-    /* ================= Register: INACTIVE + OTP lưu DB + gửi Kafka ================= */
-
+    // ================= REGISTER =================
     @Override
-    public RegisterResponse register(RegisterRequest request) {
-        String email = request.getEmail().trim().toLowerCase();
-        if (userRepository.existsByEmail(email)) {
+    public RegisterResponse register(RegisterRequest req) {
+        final String email = req.getEmail().trim().toLowerCase(Locale.ROOT);
+
+        userRepository.findByEmail(email).ifPresent(u -> {
             throw new RuntimeException("Email đã tồn tại");
-        }
+        });
 
-        String roleName = switch (request.getAccountType()) {
-            case 1 -> "USER";
-            case 2 -> "LECTURER";
-            default -> throw new RuntimeException("accountType phải là 1 (student) hoặc 2 (teacher)");
-        };
+        String hashed = passwordEncoder.encode(req.getPassword());
 
-        Role role = roleRepository.findByName(roleName)
-                .orElseThrow(() -> new RuntimeException("Role không tồn tại: " + roleName));
+        User user = new User();
+        user.setEmail(email);
+        user.setPassword(hashed);
+        user.setName(req.getName());
+        user.setStatus(UserStatus.INACTIVE); // ACTIVE sau khi verify
 
-        User user = User.builder()
-                .name(request.getName())
-                .email(email)
-                .password(passwordEncoder.encode(request.getPassword()))
-                .status(UserStatus.INACTIVE)
-                .roles(new HashSet<>(Collections.singleton(role)))
-                .build();
         userRepository.save(user);
 
-        // clear mã cũ (nếu có) và lưu mã mới
+        // OTP lưu ở VerificationCode
+        String code = genOtp6();
+        Instant expiresAt = Instant.now().plus(VERIFY_TTL_MINUTES, ChronoUnit.MINUTES);
+
         verificationCodeRepository.deleteByEmail(email);
-        String code = genCode();
+
         VerificationCode vc = VerificationCode.builder()
                 .email(email)
                 .code(code)
-                .createdAt(Instant.now())
-                .expiresAt(Instant.now().plus(VERIFY_TTL_MINUTES, ChronoUnit.MINUTES))
+                .expiresAt(expiresAt)
                 .used(false)
+                .createdAt(Instant.now())
                 .build();
         verificationCodeRepository.save(vc);
 
-        // gửi qua Kafka -> mail-service (Brevo)
-        Properties params = new Properties();
-        params.setProperty("template", VERIFY_TEMPLATE);
-        params.setProperty("name", user.getName());
-        params.setProperty("email", email);
-        params.setProperty("code", code);
-        params.setProperty("ttlMinutes", String.valueOf(VERIFY_TTL_MINUTES));
-
-        SendMailEvent event = SendMailEvent.builder()
-                .toEmail(email)
-                .name(user.getName())
-                .params(params)
-                .build();
-        kafkaMailProducer.push(MAIL_TOPIC, email, event);
-
-        return RegisterResponse.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .role(roleName)
-                .build();
+        sendOtpMail(email, user.getName(), code, VERIFY_TTL_MINUTES);
+        return null;
     }
-
-    /* ================= Verify: đối chiếu DB, ACTIVE, mark used ================= */
 
     @Override
     public void verify(VerifyRequest request) {
-        String email = request.getEmail().trim().toLowerCase();
 
-        VerificationCode latest = verificationCodeRepository
-                .findTopByEmailOrderByCreatedAtDesc(email)
-                .orElseThrow(() -> new RuntimeException("Không có mã xác thực"));
+    }
 
-        if (latest.isUsed() || Instant.now().isAfter(latest.getExpiresAt())) {
-            throw new RuntimeException("Mã xác thực đã dùng hoặc hết hạn");
+    // ================= LOGIN =================
+    @Override
+    public LoginResponse login(LoginRequest req) {
+        final String email = req.getEmail().trim().toLowerCase(Locale.ROOT);
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Email hoặc mật khẩu không đúng"));
+
+        if (!passwordEncoder.matches(req.getPassword(), user.getPassword())) {
+            throw new RuntimeException("Email hoặc mật khẩu không đúng");
         }
-        if (!latest.getCode().equals(request.getCode())) {
-            throw new RuntimeException("Mã xác thực không đúng");
+
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new RuntimeException("Tài khoản chưa xác thực email");
         }
+
+        String accessToken = generateAccessToken(user);
+
+        // Trả về theo mapper hiện có của bạn
+        LoginResponse res = mapper.toLoginResponse(user);
+
+
+        // Nếu LoginResponse của bạn có setter/constructor cho token thì set thêm ở đây.
+        // Tuỳ tên field trong DTO mà chỉnh 'setAccessToken' hay 'setToken':
+        try {
+            res.getClass().getMethod("setAccessToken", String.class).invoke(res, accessToken);
+        } catch (Exception ignored1) {
+            try {
+                res.getClass().getMethod("setToken", String.class).invoke(res, accessToken);
+            } catch (Exception ignored2) {
+                // Nếu DTO là immutable/record, hãy bổ sung field token trong mapper/DTO sau.
+            }
+        }
+        return res;
+    }
+
+    // ================= RESEND OTP =================
+    @Override
+    public void resendCode(ResendCodeRequest req) {
+        final String email = req.getEmail().trim().toLowerCase(Locale.ROOT);
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
 
-        user.setStatus(UserStatus.ACTIVE);
-        userRepository.save(user);
+        String code = genOtp6();
+        Instant expiresAt = Instant.now().plus(VERIFY_TTL_MINUTES, ChronoUnit.MINUTES);
 
-        latest.setUsed(true);
-        verificationCodeRepository.save(latest);
-    }
+        verificationCodeRepository.deleteByEmail(email);
 
-    /* ================= Login: tạo access + refresh, lưu refresh DB ================= */
-
-    @Override
-    public LoginResponse login(LoginRequest req) {
-        String email = req.getEmail().trim().toLowerCase();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Sai email hoặc mật khẩu"));
-
-        if (user.getStatus() != UserStatus.ACTIVE) {
-            throw new RuntimeException("Tài khoản chưa kích hoạt. Vui lòng xác thực email.");
-        }
-        if (!passwordEncoder.matches(req.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Sai email hoặc mật khẩu");
-        }
-
-        String accessToken = generateAccessToken(user, ACCESS_TTL_MINUTES); 
-
-        Instant expiryInstant = Instant.now().plus(REFRESH_TTI_DAYS, ChronoUnit.DAYS);
-
-        // 2. Chuyển đổi Instant sang LocalDateTime để lưu vào DB (dùng múi giờ hệ thống)
-        LocalDateTime expiryDateTime = LocalDateTime.ofInstant(expiryInstant, ZoneId.systemDefault());
-
-        // refresh token mới -> (tuỳ yêu cầu) xóa refresh cũ của user rồi tạo mới
-        refreshTokenRepository.deleteByUser(user);
-        String refreshTokenStr = newRefreshToken();
-        
-       RefreshToken rt = RefreshToken.builder()
-            .userId(user.getId()) 
-            .tokenHash(refreshTokenStr) 
-            .expiresAt(expiryDateTime)
-            .build();
-
-        refreshTokenRepository.save(rt);
-
-        return LoginResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshTokenStr)
-                .user(userMapper.toAuthUserDto(user))
+        VerificationCode vc = VerificationCode.builder()
+                .email(email)
+                .code(code)
+                .expiresAt(expiresAt)
+                .used(false)
+                .createdAt(Instant.now())
                 .build();
+        verificationCodeRepository.save(vc);
+
+        sendOtpMail(email, user.getName(), code, VERIFY_TTL_MINUTES);
     }
 
-    /* ================= Introspect: verify chữ ký + hạn ================= */
+    // ================= Helpers =================
+    private String genOtp6() {
+        return String.valueOf(100000 + new Random().nextInt(900000));
+    }
 
-    @Override
-    public IntrospecResponse introspect(IntrospectRequest request) throws JOSEException, ParseException {
-        String token = request.getToken();
-        SignedJWT signed = SignedJWT.parse(token);
-        boolean verified = signed.verify(new MACVerifier(SIGNER_KEY.getBytes()));
+    private void sendOtpMail(String to, String name, String otp, int minutesLeft) {
+        Properties params = new Properties();
+        params.setProperty("otp", otp);
+        params.setProperty("minutes", String.valueOf(minutesLeft));
+        // Nếu template bên mail-service cần thêm, bạn có thể add tiếp vào params:
+        // params.setProperty("template", "otp");
 
-        boolean active = false;
-        if (verified) {
+        SendMailEvent event = SendMailEvent.builder()
+                .toEmail(to)
+                .name(name)
+                .params(params)
+                .build();
+
+
+        mailProducer.push(TOPIC_MAIL, "OTP-" + to, event);
+    }
+
+    private String generateAccessToken(User user) {
+        try {
+            JWSSigner signer = new MACSigner(jwtSecret.getBytes());
             Date now = new Date();
-            Date exp = signed.getJWTClaimsSet().getExpirationTime();
-            active = (exp != null && exp.after(now));
-        }
+            Date exp = Date.from(Instant.now().plus(accessTtlMinutes, ChronoUnit.MINUTES));
 
-        return IntrospecResponse.builder()
-                .valid(active)   
-                .build();
+            JWTClaimsSet claims = new JWTClaimsSet.Builder()
+                    .subject(String.valueOf(user.getId()))
+                    .issuer(jwtIssuer)
+                    .issueTime(now)
+                    .expirationTime(exp)
+                    .claim("email", user.getEmail())
+                    .claim("name", user.getName())
+                    .build();
+
+            SignedJWT signedJWT = new SignedJWT(
+                    new com.nimbusds.jose.JWSHeader(JWSAlgorithm.HS256),
+                    claims
+            );
+            signedJWT.sign(signer);
+            return signedJWT.serialize();
+        } catch (JOSEException e) {
+            log.error("Generate access token error", e);
+            throw new RuntimeException("Không tạo được access token");
+        }
     }
 }

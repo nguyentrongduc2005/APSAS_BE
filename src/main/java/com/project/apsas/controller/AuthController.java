@@ -3,6 +3,7 @@ package com.project.apsas.controller;
 import com.project.apsas.dto.ApiResponse;
 import com.project.apsas.dto.request.LoginRequest;
 import com.project.apsas.dto.request.RegisterRequest;
+import com.project.apsas.dto.request.ResendCodeRequest;
 import com.project.apsas.dto.request.VerifyRequest;
 import com.project.apsas.dto.response.LoginResponse;
 import com.project.apsas.dto.response.RegisterResponse;
@@ -47,6 +48,15 @@ public class AuthController {
                 .code("OK")
                 .message("Đăng nhập thành công")
                 .data(res)
+                .build();
+    }
+
+    @PostMapping("/resend-code")
+    public ApiResponse<Void> resend(@Valid @RequestBody ResendCodeRequest request) {
+        authService.resendCode(request);
+        return ApiResponse.<Void>builder()
+                .code("OK")
+                .message("Đã gửi lại mã xác thực tới email")
                 .build();
     }
 }
