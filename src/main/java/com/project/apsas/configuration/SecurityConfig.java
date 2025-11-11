@@ -41,7 +41,10 @@ public class SecurityConfig {
             "/auth/register",
             "/auth/login",
             "/auth/introspect",
-            "/login"
+            "/login",
+            "/feedback",
+            "/submission",
+            "/ai"
     };
 
     @Bean

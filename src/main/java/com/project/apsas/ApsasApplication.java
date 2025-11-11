@@ -6,10 +6,10 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.annotation.EnableKafkaStreams;
 
+
 @SpringBootApplication
 @EnableFeignClients
 @EnableKafka
-@EnableKafkaStreams
 public class ApsasApplication {
 
 	public static void main(String[] args) {

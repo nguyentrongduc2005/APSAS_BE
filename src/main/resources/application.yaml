@@ -6,6 +6,21 @@ server:
     include-message: never  
 
 spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  ai:
+    model:
+      chat: openai
+    openai:
+      api-key: ${GEMINI_API_KEY}        # dùng Gemini API key
+      chat:
+        base-url: https://generativelanguage.googleapis.com
+        api-key: ${GEMINI_API_KEY}     # hoặc spring.ai.openai.chat.api-key (tùy version)
+        options:
+          model: gemini-2.5-flash
+        completions-path: /v1beta/openai/chat/completions
   task:
     execution:
       pool:
@@ -58,7 +73,8 @@ message-queue:
       name: topic-mail
       dlt: topic-mail.DLT
       drop: topic-mail.DLT.DROP
-
+    feedback:
+      name: topic-ai
 
 cloudinary:
   cloud-name: ddcyjcpx0
