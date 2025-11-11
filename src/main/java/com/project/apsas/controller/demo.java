@@ -1,17 +1,27 @@
 package com.project.apsas.controller;
 
+import com.project.apsas.dto.ApiResponse;
+import com.project.apsas.dto.event.FeedbackEvent;
 import com.project.apsas.dto.event.SendMailEvent;
+import com.project.apsas.dto.request.FeedbackRequest;
 import com.project.apsas.dto.request.LoginRequest;
+import com.project.apsas.dto.response.CodeFeedbackDTO;
 import com.project.apsas.dto.response.LoginResponse;
 import com.project.apsas.dto.response.UploadResult;
 import com.project.apsas.entity.Permission;
 import com.project.apsas.entity.Role;
+import com.project.apsas.entity.Submission;
 import com.project.apsas.entity.User;
 import com.project.apsas.enums.UserStatus;
+import com.project.apsas.exception.AppException;
+import com.project.apsas.exception.ErrorCode;
+import com.project.apsas.integration.kafka.ai.KafkaFeedbackProvider;
 import com.project.apsas.integration.kafka.mail.KafkaMailProducer;
 import com.project.apsas.repository.PermissionRepository;
 import com.project.apsas.repository.RoleRepository;
+import com.project.apsas.repository.SubmissionRepository;
 import com.project.apsas.repository.UserRepository;
+import com.project.apsas.service.AIFeedbackService;
 import com.project.apsas.service.AuthService;
 import com.project.apsas.service.CloudinaryService;
 import com.project.apsas.service.MailService;
@@ -43,6 +53,14 @@ public class demo {
     @Autowired
     KafkaMailProducer kafkaMailProducer;
 
+    @Autowired
+    AIFeedbackService aiFeedbackService;
+
+    @Autowired
+    KafkaFeedbackProvider kafkaFeedbackProvider;
+    @Autowired
+    SubmissionRepository  submissionRepository;
+
     @GetMapping("/hello")
     public String hello() {
         System.out.println(UserStatus.ACTIVE.name());
@@ -72,8 +90,10 @@ public class demo {
 
 
     @PostMapping("/login")
-    public LoginResponse login(@RequestBody LoginRequest loginRequest) {
-        return authService.login(loginRequest);
+    public ApiResponse<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
+        System.out.println(ErrorCode.NOT_FOUND.name());
+         throw new AppException(ErrorCode.NOT_FOUND);
+//        return authService.login(loginRequest);
     }
 
     @PostMapping("/file")
@@ -98,7 +118,6 @@ public class demo {
         props.setProperty("otp_code", "432000425"); // Mã OTP giả
         props.setProperty("action", "kiểm tra hệ thống"); // Hành động
         props.setProperty("expiry_minutes", "5");
-        props.setProperty("force_fail", "true");
         // Thời gian hết hạn
 
         SendMailEvent event =  SendMailEvent.builder()
@@ -111,6 +130,27 @@ public class demo {
     }
 
 
+    @PostMapping("/submission")
+    public ResponseEntity<Submission> feedback(@RequestBody Object a) {
+        Long id =  1L;
+        Submission submission =  submissionRepository.findById(id).orElse(null);
+        return ResponseEntity.ok().body(submission);
+    }
+
+    @PostMapping("/ai")
+    public CodeFeedbackDTO ai() {
+        Long id =  1L;
+        Submission submission =  submissionRepository.findById(id).orElse(null);
+        submission.getAssignment();
+        FeedbackEvent event = FeedbackEvent.builder()
+                .statement_md(submission.getAssignment().getStatementMd())
+                .code(submission.getCode())
+                .language(submission.getLanguage())
+                .submissionId(submission.getId())
+                .build();
+        kafkaFeedbackProvider.push("topic-ai",submission.getId().toString(),event);
+        return null;
+    }
 
 
 }

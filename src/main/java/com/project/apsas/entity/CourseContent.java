@@ -20,7 +20,7 @@ public class CourseContent {
     @Column(name = "courses_id", nullable = false)
     private Long courseId;
 
-    @Id
+    @Id 
     @Column(name = "contents_id", nullable = false)
     private Long contentId;
 
