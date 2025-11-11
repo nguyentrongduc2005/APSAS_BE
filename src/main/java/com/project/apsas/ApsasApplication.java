@@ -9,7 +9,6 @@ import org.springframework.kafka.annotation.EnableKafkaStreams;
 @SpringBootApplication
 @EnableFeignClients
 @EnableKafka
-@EnableKafkaStreams
 public class ApsasApplication {
 
 	public static void main(String[] args) {
