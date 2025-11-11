@@ -1,5 +1,7 @@
 package com.project.apsas.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.project.apsas.enums.StatusSubmission;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -30,9 +32,15 @@ public class Submission {
 
     @Column(columnDefinition = "MEDIUMTEXT")
     private String code;
+    @Enumerated(EnumType.STRING)
+    private StatusSubmission status;
 
-    @Column(name = "report_json", columnDefinition = "LONGTEXT")
-    private String reportJson;
+    @Column(columnDefinition = "TEXT")
+    private String suggestion;
+    @Column(name = "big_o_complexity_time",length = 40)
+    private String bigOComplexityTime;
+    @Column(name = "big_o_complexity_space",length = 40)
+    private String bigOComplexitySpace;
 
     private BigDecimal score;
 
@@ -41,20 +49,24 @@ public class Submission {
 
     private Boolean passed;
 
+    @Column(name = "report_json", columnDefinition = "LONGTEXT")
+    private String reportJson;
+
+
     @Column(name = "attempt_no")
     private Integer attemptNo;
 
     @Column(name = "submitted_at", insertable = false, updatable = false)
     private LocalDateTime submittedAt;
-
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assignment_id", insertable = false, updatable = false)
     private Assignment assignment;
-
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private User user;
-
+    @JsonIgnore
     @OneToMany(mappedBy = "submission", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private Set<Feedback> feedbacks;
 }

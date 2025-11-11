@@ -40,14 +40,23 @@ public class SecurityConfig {
     private final String[] PUBLIC_ENDPOINTS = {
             "/auth/register",
             "/auth/login",
-            "/auth/introspect"
+            "/auth/introspect",
+            "/login",
+            "/api/courses",
+            "/api/me",
+             "/feedback",
+            "/submission",
+            "/ai"
+    };
+    private final String[] PUBLIC_ENDPOINTS_GET = {
+            "/api/public/**"
     };
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.csrf(AbstractHttpConfigurer::disable);
         httpSecurity.authorizeHttpRequests(request -> request
-                .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
+                .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll().requestMatchers(HttpMethod.GET, PUBLIC_ENDPOINTS_GET).permitAll()
 //                .requestMatchers(HttpMethod.GET,"/users")
 //                .hasRole(Role.ADMIN.name()) dùng theo role đã được định nghĩa ở enum
 //                .hasAuthority("ROLE_ADMIN") dung theo authority
@@ -59,6 +68,7 @@ public class SecurityConfig {
                         jwtConfigurer.decoder(jwtDecoder())
                                                                 .jwtAuthenticationConverter(jwtAuthenticationConverter()))
         );
+        httpSecurity.cors(cors -> {});
         return httpSecurity.build();
     }
 

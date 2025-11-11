@@ -29,7 +29,6 @@ public class KafkaMailConsumer {
     public void consume(ConsumerRecord<String, SendMailEvent> rec, Acknowledgment ack){
         ack.acknowledge();
         SendMailEvent event = rec.value();
-        log.debug("main topic");
         mailService.sendMailAsync(event.getToEmail(), event.getName(), event.getParams())
                 .exceptionally(throwable -> {
                     sendToDLT(rec, throwable); return null;
