@@ -1,6 +1,5 @@
 package com.project.apsas.service.impl;
 
-import com.project.apsas.dto.ApiResponse;
 import com.project.apsas.dto.response.ProfileResponse;
 import com.project.apsas.entity.User;
 import com.project.apsas.exception.AppException;
@@ -20,23 +19,14 @@ public class ProfileServiceImpl implements ProfileService {
     private final UserRepository userRepository;
 
     @Override
-    public ApiResponse<ProfileResponse> me(Jwt jwt) {
-        // Lấy userId từ claim "userId" → fallback "sub"
+    public ProfileResponse me(Jwt jwt) {
         String idStr = jwt.getClaimAsString("userId");
-        if (idStr == null || idStr.isBlank()) {
-            idStr = jwt.getSubject();
-        }
-        if (idStr == null || idStr.isBlank()) {
-
-            throw new AppException(ErrorCode.UNAUTHORIZED);
-        }
+        if (idStr == null || idStr.isBlank()) idStr = jwt.getSubject();
+        if (idStr == null || idStr.isBlank()) throw new AppException(ErrorCode.UNAUTHORIZED);
 
         final long userId;
-        try {
-            userId = Long.parseLong(idStr);
-        } catch (NumberFormatException e) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
-        }
+        try { userId = Long.parseLong(idStr); }
+        catch (NumberFormatException e) { throw new AppException(ErrorCode.UNAUTHORIZED); }
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
@@ -44,18 +34,12 @@ public class ProfileServiceImpl implements ProfileService {
         List<String> roles = jwt.getClaimAsStringList("roles");
         if (roles == null) roles = List.of();
 
-        ProfileResponse data = ProfileResponse.builder()
+        return ProfileResponse.builder()
                 .id(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
-                .avatar(null) // map nếu DB có cột avatar
+                .avatar(null)         // map nếu có field/avatar trong DB
                 .roles(roles)
-                .build();
-
-        return ApiResponse.<ProfileResponse>builder()
-                .code("0")
-                .message("SUCCESS")
-                .data(data)
                 .build();
     }
 }

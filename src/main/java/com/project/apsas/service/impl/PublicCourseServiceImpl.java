@@ -1,6 +1,5 @@
 package com.project.apsas.service.impl;
 
-import com.project.apsas.dto.ApiResponse;
 import com.project.apsas.dto.response.PagedResponse;
 import com.project.apsas.dto.response.PublicCourseItem;
 import com.project.apsas.exception.AppException;
@@ -20,7 +19,7 @@ public class PublicCourseServiceImpl implements PublicCourseService {
     private final CoursePublicRepository coursePublicRepository;
 
     @Override
-    public ApiResponse<PagedResponse<PublicCourseItem>> getPublicCourses(int page, int limit, String search) {
+    public PagedResponse<PublicCourseItem> getPublicCourses(int page, int limit, String search) {
         int pg = Math.max(page, 1);
         int lm = Math.min(Math.max(limit, 1), 60);
         int offset = (pg - 1) * lm;
@@ -44,11 +43,13 @@ public class PublicCourseServiceImpl implements PublicCourseService {
                 .studentsCount(r.getStudentsCount())
                 .lessonsCount(r.getLessonsCount())
                 .createdAt(r.getCreatedAt())
+                // Nếu PublicCourseItem.visibility là String → convert enum → String
                 .visibility(r.getVisibility())
+                // Nếu DTO dùng enum CourseVisibility: dùng .visibility(r.getVisibility()) thay vì .name()
                 .build()
         ).toList();
 
-        PagedResponse<PublicCourseItem> payload = PagedResponse.<PublicCourseItem>builder()
+        return PagedResponse.<PublicCourseItem>builder()
                 .data(items)
                 .pagination(PagedResponse.Pagination.builder()
                         .page(pg)
@@ -59,8 +60,5 @@ public class PublicCourseServiceImpl implements PublicCourseService {
                         .hasPrev(pg > 1)
                         .build())
                 .build();
-
-        return ApiResponse.<PagedResponse<PublicCourseItem>>builder()
-                .code("0").message("SUCCESS").data(payload).build();
     }
 }

@@ -1,6 +1,5 @@
 package com.project.apsas.service.impl;
 
-import com.project.apsas.dto.ApiResponse;
 import com.project.apsas.dto.response.CourseDetailResponse;
 import com.project.apsas.exception.AppException;
 import com.project.apsas.exception.ErrorCode;
@@ -19,7 +18,7 @@ public class CourseDetailServiceImpl implements CourseDetailService {
     private final CourseDetailRepository repo;
 
     @Override
-    public ApiResponse<CourseDetailResponse> getPublicDetail(Long courseId) {
+    public CourseDetailResponse getPublicDetail(Long courseId) {
         CourseDetailRow r = repo.findPublicDetail(courseId);
         if (r == null) throw new AppException(ErrorCode.NOT_FOUND);
 
@@ -31,11 +30,12 @@ public class CourseDetailServiceImpl implements CourseDetailService {
                         .build())
                 .toList();
 
-        CourseDetailResponse data = CourseDetailResponse.builder()
+        return CourseDetailResponse.builder()
                 .id(r.getId())
                 .name(r.getName())
                 .code(r.getCode())
-                .visibility(r.getVisibility())
+                // nếu projection trả String thì để r.getVisibility(); nếu enum thì .name()
+                .visibility(r.getVisibility() == null ? null : r.getVisibility())
                 .createdAt(r.getCreatedAt())
                 .instructor(CourseDetailResponse.Instructor.builder()
                         .id(r.getInstructorId())
@@ -47,8 +47,5 @@ public class CourseDetailServiceImpl implements CourseDetailService {
                 .lessonsCount(r.getLessonsCount())
                 .topLessons(topLessons)
                 .build();
-
-        return ApiResponse.<CourseDetailResponse>builder()
-                .code("0").message("SUCCESS").data(data).build();
     }
 }

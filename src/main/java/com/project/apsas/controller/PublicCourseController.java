@@ -5,7 +5,6 @@ import com.project.apsas.dto.response.PagedResponse;
 import com.project.apsas.dto.response.PublicCourseItem;
 import com.project.apsas.service.PublicCourseService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -16,11 +15,16 @@ public class PublicCourseController {
     private final PublicCourseService publicCourseService;
 
     @GetMapping("/courses")
-    public ResponseEntity<ApiResponse<PagedResponse<PublicCourseItem>>> getPublicCourses(
+    public ApiResponse<PagedResponse<PublicCourseItem>> getPublicCourses(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "12") int limit,
             @RequestParam(required = false) String search
     ) {
-        return ResponseEntity.ok(publicCourseService.getPublicCourses(page, limit, search));
+        var data = publicCourseService.getPublicCourses(page, limit, search);
+        return ApiResponse.<PagedResponse<PublicCourseItem>>builder()
+                .code("0")
+                .message("SUCCESS")
+                .data(data)
+                .build();
     }
 }
