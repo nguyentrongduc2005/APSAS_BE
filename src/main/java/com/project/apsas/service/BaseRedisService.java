@@ -7,7 +7,7 @@ import java.util.Set;
 
 public interface BaseRedisService {
     void set(String key, String value);
-    void setTimeToLive(String key, String value, long timeInSeconds);
+    void setTimeToLive(String key, long timeInSeconds);
     // cai time expire cho Day hay la time cung duoc tuy ae quyet dinh
 
 

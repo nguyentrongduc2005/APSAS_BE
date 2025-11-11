@@ -49,6 +49,7 @@ public class GlobalExceptionHandler {
         ApiResponse apiResponse = new ApiResponse();
         apiResponse.setCode(ErrorCode.INTERNAL_ERROR.getCode());
         apiResponse.setMessage(ErrorCode.INTERNAL_ERROR.getDefaultMessage());
+        ex.printStackTrace();
 
         return ResponseEntity.internalServerError().body(apiResponse);
     }

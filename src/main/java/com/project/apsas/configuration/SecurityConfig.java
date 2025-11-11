@@ -43,11 +43,13 @@ public class SecurityConfig {
             "/auth/introspect",
             "/login",
             "/api/courses",
-            "/api/me"
+            "/api/me",
+             "/feedback",
+            "/submission",
+            "/ai"
     };
     private final String[] PUBLIC_ENDPOINTS_GET = {
             "/api/public/**"
-
     };
 
     @Bean
