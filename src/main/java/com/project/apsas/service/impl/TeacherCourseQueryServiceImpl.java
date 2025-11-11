@@ -23,6 +23,8 @@ public class TeacherCourseQueryServiceImpl implements TeacherCourseQueryService 
     @Transactional(readOnly = true)
     public List<TeacherCourseSummaryResponse> getByTeacherId(Long teacherId) {
         if (teacherId == null) return List.of();
-        return courseRepository.findSummariesByTeacherId(teacherId);
+//        return courseRepository.findSummariesByTeacherId(teacherId);
+        return null;
     }
+
 }

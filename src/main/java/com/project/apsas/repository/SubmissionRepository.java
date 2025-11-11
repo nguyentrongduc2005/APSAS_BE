@@ -18,34 +18,34 @@ import java.util.Optional;
 
 @Repository
 public interface SubmissionRepository extends JpaRepository<Submission, Long> {
-     @Query("""
-        select count(s) 
-        from Submission s 
-        where s.assignment.course.id = :courseId 
-          and s.user.id = :userId
-    """)
-    int countByCourseIdAndUserId(@Param("courseId") Long courseId,
-                                 @Param("userId") Long userId);
-
-    @Query("""
-        select count(s) 
-        from Submission s 
-        where s.assignment.course.id = :courseId 
-          and s.user.id = :userId
-          and s.score is not null
-    """)
-    int countGradedByCourseIdAndUserId(@Param("courseId") Long courseId,
-                                       @Param("userId") Long userId);
-
-    @Query("""
-        select avg(s.score) 
-        from Submission s 
-        where s.assignment.course.id = :courseId 
-          and s.user.id = :userId
-          and s.score is not null
-    """)
-    Double avgScoreByCourseIdAndUserId(@Param("courseId") Long courseId,
-                                       @Param("userId") Long userId);
+//     @Query("""
+//        select count(s)
+//        from Submission s
+//        where s.assignment.course.id = :courseId
+//          and s.user.id = :userId
+//    """)
+//    int countByCourseIdAndUserId(@Param("courseId") Long courseId,
+//                                 @Param("userId") Long userId);
+//
+//    @Query("""
+//        select count(s)
+//        from Submission s
+//        where s.assignment.course.id = :courseId
+//          and s.user.id = :userId
+//          and s.score is not null
+//    """)
+//    int countGradedByCourseIdAndUserId(@Param("courseId") Long courseId,
+//                                       @Param("userId") Long userId);
+//
+//    @Query("""
+//        select avg(s.score)
+//        from Submission s
+//        where s.assignment.course.id = :courseId
+//          and s.user.id = :userId
+//          and s.score is not null
+//    """)
+//    Double avgScoreByCourseIdAndUserId(@Param("courseId") Long courseId,
+//                                       @Param("userId") Long userId);
     /**
      * Lấy tất cả submissions của một assignment
      */

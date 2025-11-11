@@ -37,30 +37,31 @@ public class StudentCourseServiceImpl implements StudentCourseService {
                                                 Pageable pageable) {
         Page<Course> page = courseRepository.searchPublic(keyword, visibility, pageable);
 
-        List<StudentCourseCardDto> content = page.getContent().stream().map(c -> {
-            Long courseId = c.getId();
-
-            int totalAssignments = courseAssignmentRepository.countByCourseId(courseId);
-            int mySubs           = submissionRepository.countByCourseIdAndUserId(courseId, studentId);
-            int myGradedSubs     = submissionRepository.countGradedByCourseIdAndUserId(courseId, studentId);
-
-            Double avgObj        = submissionRepository.avgScoreByCourseIdAndUserId(courseId, studentId);
-            double myAvgScore    = avg2(avgObj);
-            double myCompletion  = totalAssignments == 0 ? 0.0 : round2(myGradedSubs * 1.0 / totalAssignments);
-
-            return StudentCourseCardDto.builder()
-                    .id(courseId)
-                    .title(c.getName())
-                    .visibility(c.getVisibility() != null ? c.getVisibility().name() : null)
-                    .totalAssignments(totalAssignments)
-                    .mySubmissions(mySubs)
-                    .myGradedSubmissions(myGradedSubs)
-                    .myAverageScore(myAvgScore)
-                    .myCompletionRate(myCompletion)
-                    .build();
-        }).toList();
-
-        return new PageImpl<>(content, pageable, page.getTotalElements());
+//        List<StudentCourseCardDto> content = page.getContent().stream().map(c -> {
+//            Long courseId = c.getId();
+//
+//            int totalAssignments = courseAssignmentRepository.countByCourseId(courseId);
+//            int mySubs           = submissionRepository.countByCourseIdAndUserId(courseId, studentId);
+//            int myGradedSubs     = submissionRepository.countGradedByCourseIdAndUserId(courseId, studentId);
+//
+//            Double avgObj        = submissionRepository.avgScoreByCourseIdAndUserId(courseId, studentId);
+//            double myAvgScore    = avg2(avgObj);
+//            double myCompletion  = totalAssignments == 0 ? 0.0 : round2(myGradedSubs * 1.0 / totalAssignments);
+//
+//            return StudentCourseCardDto.builder()
+//                    .id(courseId)
+//                    .title(c.getName())
+//                    .visibility(c.getVisibility() != null ? c.getVisibility().name() : null)
+//                    .totalAssignments(totalAssignments)
+//                    .mySubmissions(mySubs)
+//                    .myGradedSubmissions(myGradedSubs)
+//                    .myAverageScore(myAvgScore)
+//                    .myCompletionRate(myCompletion)
+//                    .build();
+//        }).toList();
+//
+//        return new PageImpl<>(content, pageable, page.getTotalElements());
+        return null;
     }
 
     @Override
@@ -73,21 +74,22 @@ public class StudentCourseServiceImpl implements StudentCourseService {
             throw new RuntimeException("Access denied");
         }
 
-        int totalAssignments = courseAssignmentRepository.countByCourseId(courseId);
-        int mySubs           = submissionRepository.countByCourseIdAndUserId(courseId, studentId);
-        int myGradedSubs     = submissionRepository.countGradedByCourseIdAndUserId(courseId, studentId);
-        Double avgObj        = submissionRepository.avgScoreByCourseIdAndUserId(courseId, studentId);
-
-        return StudentCourseDetailsDto.builder()
-                .id(c.getId())
-                .title(c.getName())
-                .visibility(c.getVisibility() != null ? c.getVisibility().name() : null)
-                .totalAssignments(totalAssignments)
-                .mySubmissions(mySubs)
-                .myGradedSubmissions(myGradedSubs)
-                .myAverageScore(avg2(avgObj))
-                .myCompletionRate(totalAssignments == 0 ? 0.0 : round2(myGradedSubs * 1.0 / totalAssignments))
-                .build();
+//        int totalAssignments = courseAssignmentRepository.countByCourseId(courseId);
+//        int mySubs           = submissionRepository.countByCourseIdAndUserId(courseId, studentId);
+//        int myGradedSubs     = submissionRepository.countGradedByCourseIdAndUserId(courseId, studentId);
+//        Double avgObj        = submissionRepository.avgScoreByCourseIdAndUserId(courseId, studentId);
+//
+//        return StudentCourseDetailsDto.builder()
+//                .id(c.getId())
+//                .title(c.getName())
+//                .visibility(c.getVisibility() != null ? c.getVisibility().name() : null)
+//                .totalAssignments(totalAssignments)
+//                .mySubmissions(mySubs)
+//                .myGradedSubmissions(myGradedSubs)
+//                .myAverageScore(avg2(avgObj))
+//                .myCompletionRate(totalAssignments == 0 ? 0.0 : round2(myGradedSubs * 1.0 / totalAssignments))
+//
+        return null;
     }
 
     private static double round2(double v) {
