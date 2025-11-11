@@ -8,6 +8,9 @@ import org.springframework.data.repository.query.Param;
 
 import com.project.apsas.entity.Course;
 import com.project.apsas.enums.CourseVisibility;
+import com.project.apsas.entity.Course;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 public interface CourseRepository extends JpaRepository<Course, Long> {
 
@@ -37,4 +40,5 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
         """)
     java.util.List<com.project.apsas.dto.teacher.TeacherCourseSummaryResponse>
     findSummariesByTeacherId(@Param("teacherId") Long teacherId);
+    boolean existsByCode(String code);
 }

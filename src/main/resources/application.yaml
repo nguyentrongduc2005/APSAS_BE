@@ -6,6 +6,30 @@ server:
     include-message: never
 
 spring:
+  application:
+    name: CodeVerse
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  ai:
+    model:
+      chat: openai
+    openai:
+      api-key: ${GEMINI_API_KEY}        # dùng Gemini API key
+      chat:
+        base-url: https://generativelanguage.googleapis.com
+        api-key: ${GEMINI_API_KEY}     # hoặc spring.ai.openai.chat.api-key (tùy version)
+        options:
+          model: gemini-2.5-flash
+        completions-path: /v1beta/openai/chat/completions
+  task:
+    execution:
+      pool:
+        core-size: 4
+        max-size: 8
+        queue-capacity: 1000
+      thread-name-prefix: app-async-
   datasource:
     url: jdbc:mysql://127.0.0.1:3306/apsas_db?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: apsas
@@ -46,6 +70,19 @@ spring:
     listener:
       ack-mode: manual_immediate
       concurrency: 3
+#logging:
+#  level:
+#    org.springframework.kafka.config: DEBUG
+#    org.springframework.kafka.listener: DEBUG
+
+message-queue:
+  topic:
+    mail:
+      name: topic-mail
+      dlt: topic-mail.DLT
+      drop: topic-mail.DLT.DROP
+    feedback:
+      name: topic-ai
 
 cloudinary:
   cloud-name: ddcyjcpx0
@@ -56,11 +93,14 @@ cloudinary:
     resource-type: auto
 
 jwt:
-  signerKey: "your-256-bit-secret-your-256-bit-secret"
-
+  verify:
+    ttl-minutes: 10
+  refresh:
+    ttl-minutes: 120
+  signerKey: "JvLr4on9xnJj75gmh3fnVFdx9xELXish"
 brevo:
   base-url: https://api.brevo.com/v3
-  api-key: ${API_KEY_BREVO}
+  api-key: ${API_KEY_BREVO:dummy-key-for-dev}
   template-id: 3
   sender:
     mail: nguyentrongduc447@gmail.com
@@ -71,4 +111,12 @@ mvc:
 
 web:
   resources:
-    add-mappings: false
+    add-mappings: false 
+
+app:
+  name: CodeVerse
+  kafka:
+    topic:
+      verify-email: verify-email
+
+

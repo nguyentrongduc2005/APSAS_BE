@@ -1,12 +1,17 @@
 package com.project.apsas.dto.request;
 
-import lombok.AccessLevel;
-import lombok.Data;
-import lombok.experimental.FieldDefaults;
+import jakarta.validation.constraints.*;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
-@Data
-@FieldDefaults(level = AccessLevel.PRIVATE)
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor
 public class LoginRequest {
-    String email;
-    String password;
+    @NotBlank @Email
+    private String email;
+
+    @NotBlank
+    private String password;
 }

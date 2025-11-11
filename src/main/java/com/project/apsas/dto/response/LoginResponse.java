@@ -1,14 +1,12 @@
 package com.project.apsas.dto.response;
 
-import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
-import lombok.experimental.FieldDefaults;
 
 @Data
 @Builder
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class LoginResponse {
-    String email;
-    String password;
+    private String accessToken;   // JWT
+    private String refreshToken;  // lưu DB
+    private AuthUserDto user;     // id, name, email, roles, avatar
 }

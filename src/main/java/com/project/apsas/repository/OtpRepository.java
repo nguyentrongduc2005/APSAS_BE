@@ -7,4 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 @Repository
 public interface OtpRepository extends JpaRepository<Otp, Long> {
 
+    void deleteByUserEmail(String email);
 }
