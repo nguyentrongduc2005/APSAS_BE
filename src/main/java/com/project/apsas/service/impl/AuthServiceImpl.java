@@ -3,15 +3,15 @@ package com.project.apsas.service.impl;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSSigner;
+import com.nimbusds.jose.JWSVerifier;
 import com.nimbusds.jose.crypto.MACSigner;
+import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 
 import com.project.apsas.dto.event.SendMailEvent;
-import com.project.apsas.dto.request.LoginRequest;
-import com.project.apsas.dto.request.RegisterRequest;
-import com.project.apsas.dto.request.ResendCodeRequest;
-import com.project.apsas.dto.request.VerifyRequest;
+import com.project.apsas.dto.request.*;
+import com.project.apsas.dto.response.IntrospecResponse;
 import com.project.apsas.dto.response.LoginResponse;
 
 import com.project.apsas.dto.response.RegisterResponse;
@@ -45,6 +45,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.ParseException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -69,6 +70,13 @@ public class AuthServiceImpl implements AuthService {
     @NonFinal
     @Value("${jwt.signerKey}")
     String jwtSecret;
+    @NonFinal
+    @Value("${jwt.valid-duration}")
+    protected long VALID_DURATION;
+
+    @NonFinal
+    @Value("${jwt.refreshable-duration}")
+    protected long REFRESHABLE_DURATION;
     @NonFinal
 
     @Value("${app.name}")
@@ -236,6 +244,9 @@ public class AuthServiceImpl implements AuthService {
         return UUID.randomUUID().toString().replace("-", "");
     }
 
+
+
+
     private String generateAccessToken(User user) {
         try {
             JWSSigner signer = new MACSigner(jwtSecret.getBytes());
@@ -261,5 +272,34 @@ public class AuthServiceImpl implements AuthService {
             log.error("Generate access token error", e);
             throw new AppException(ErrorCode.INTERNAL_ERROR);
         }
+    }
+
+
+   public IntrospecResponse introspect(IntrospectRequest request) {
+
+        return null;
+    }
+    private SignedJWT verifyToken(String token, boolean isRefresh) throws JOSEException, ParseException {
+        JWSVerifier verifier = new MACVerifier(jwtSecret.getBytes());
+
+        SignedJWT signedJWT = SignedJWT.parse(token);
+
+        Date expiryTime = (isRefresh)
+                ? new Date(signedJWT
+                .getJWTClaimsSet()
+                .getIssueTime()
+                .toInstant()
+                .plus(REFRESHABLE_DURATION, ChronoUnit.SECONDS)
+                .toEpochMilli())
+                : signedJWT.getJWTClaimsSet().getExpirationTime();
+
+        var verified = signedJWT.verify(verifier);
+
+        if (!(verified && expiryTime.after(new Date()))) throw new AppException(ErrorCode.UNAUTHENTICATED);
+
+        if (invalidatedTokenRepository.existsById(signedJWT.getJWTClaimsSet().getJWTID()))
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+
+        return signedJWT;
     }
 }
