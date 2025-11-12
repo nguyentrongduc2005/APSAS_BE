@@ -44,7 +44,10 @@ public class ProfileServiceImpl implements ProfileService {
                 .bio(profile.getBio())
                 .phone(profile.getPhone())
                 .address(profile.getAddress())
-                .gender(profile.getGender().name())
+                .gender(profile.getGender() == null
+                    ? ""
+                        : profile.getGender().name()
+                        )
                 .email(user.getEmail())
                 .avatar(profile.getAvatarUrl())         // map nếu có field/avatar trong DB
                 .build();

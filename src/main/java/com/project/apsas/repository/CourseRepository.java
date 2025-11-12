@@ -26,13 +26,21 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
             User creator,
             Pageable pageable
     );
+    @Query("SELECT c FROM Course c JOIN c.enrollments e " +
+            "WHERE LOWER(c.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "AND e.user = :student") // <-- e.user là User Entity trong Enrollment
     Page<Course> findByNameContainingIgnoreCaseAndEnrollmentsContains(
-            String search,
-            User student,
+            @Param("search") String search,
+            @Param("student") User student, // <-- Tham số là User (Khớp với Service)
             Pageable pageable
     );
     Page<Course> findByCreator(User creator, Pageable pageable);
-    Page<Course> findByEnrollmentsContains(User student, Pageable pageable);
+    @Query("SELECT c FROM Course c JOIN c.enrollments e " +
+            "WHERE e.user = :student")
+    Page<Course> findByEnrollmentsContains(
+            @Param("student") User student,
+            Pageable pageable
+    );
 
     Page<Course> findByVisibility(CourseVisibility visibility, Pageable pageable);
     @Query("SELECT COUNT(c) FROM Course c WHERE c.creator.id = :creatorId")

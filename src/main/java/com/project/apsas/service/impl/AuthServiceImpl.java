@@ -15,10 +15,7 @@ import com.project.apsas.dto.response.IntrospecResponse;
 import com.project.apsas.dto.response.LoginResponse;
 
 import com.project.apsas.dto.response.RegisterResponse;
-import com.project.apsas.entity.Otp;
-import com.project.apsas.entity.RefreshToken;
-import com.project.apsas.entity.Role;
-import com.project.apsas.entity.User;
+import com.project.apsas.entity.*;
 
 import com.project.apsas.enums.UserStatus;
 
@@ -122,8 +119,16 @@ public class AuthServiceImpl implements AuthService {
         user.setStatus(UserStatus.INACTIVE);
 
 
-
-
+        Profile  profile = Profile.builder()
+                .dob(null)
+                .phone(null)
+                .bio(null)
+                .address(null)
+                .avatarUrl(null)
+                .gender(null)
+                .user(user)
+                .build();
+        user.setProfile(profile);
         // Tạo OTP
         String code = genOtp6();
         LocalDateTime expiresAt = LocalDateTime.ofInstant(
@@ -267,7 +272,7 @@ public class AuthServiceImpl implements AuthService {
                     .build();
 
             SignedJWT signedJWT = new SignedJWT(
-                    new com.nimbusds.jose.JWSHeader(JWSAlgorithm.HS256),
+                    new com.nimbusds.jose.JWSHeader(JWSAlgorithm.HS512),
                     claims
             );
             signedJWT.sign(signer);
@@ -354,49 +359,49 @@ public class AuthServiceImpl implements AuthService {
         return stringJoiner.toString();
     }
     // ================= REFRESH TOKEN =================
-    @Override
-    public LoginResponse refreshToken(RefreshTokenRequest request) {
-        String refreshTokenValue = request.getRefreshToken();
-
-        // Tìm user có refresh token này
-        RefreshToken refreshToken = refreshTokenRepository.findByTokenHash(refreshTokenValue)
-                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
-
-        // Kiểm tra refresh token có hết hạn chưa
-        if (refreshToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
-        }
-
-        // Lấy user
-        User user = userRepository.findById(refreshToken.getUserId())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-
-        // Verify refresh token hash
-        if (!passwordEncoder.matches(refreshTokenValue, refreshToken.getTokenHash())) {
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
-        }
-
-        // Generate token mới
-        String newAccessToken = generateAccessToken(user);
-        String newRefreshToken = generateRefreshToken();
-
-        // Update refresh token trong DB
-        LocalDateTime expiresAt = LocalDateTime.ofInstant(
-                Instant.now().plus(refreshTtlMinutes, ChronoUnit.MINUTES),
-                ZoneId.systemDefault()
-        );
-
-        refreshToken.setTokenHash(passwordEncoder.encode(newRefreshToken));
-        refreshToken.setExpiresAt(expiresAt);
-        refreshTokenRepository.save(refreshToken);
-
-        // Build response
-        LoginResponse res = mapper.toLoginResponse(user);
-        res.setAccessToken(newAccessToken);
-        res.setRefreshToken(newRefreshToken);
-
-        return res;
-    }
+//    @Override
+//    public LoginResponse refreshToken(RefreshTokenRequest request) {
+//        String refreshTokenValue = request.getRefreshToken();
+//
+//        // Tìm user có refresh token này
+//        RefreshToken refreshToken = refreshTokenRepository.findByTokenHash(refreshTokenValue)
+//                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
+//
+//        // Kiểm tra refresh token có hết hạn chưa
+//        if (refreshToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+//            throw new AppException(ErrorCode.UNAUTHENTICATED);
+//        }
+//
+//        // Lấy user
+//        User user = userRepository.findById(refreshToken.getUserId())
+//                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+//
+//        // Verify refresh token hash
+//        if (!passwordEncoder.matches(refreshTokenValue, refreshToken.getTokenHash())) {
+//            throw new AppException(ErrorCode.UNAUTHENTICATED);
+//        }
+//
+//        // Generate token mới
+//        String newAccessToken = generateAccessToken(user);
+//        String newRefreshToken = generateRefreshToken();
+//
+//        // Update refresh token trong DB
+//        LocalDateTime expiresAt = LocalDateTime.ofInstant(
+//                Instant.now().plus(refreshTtlMinutes, ChronoUnit.MINUTES),
+//                ZoneId.systemDefault()
+//        );
+//
+//        refreshToken.setTokenHash(passwordEncoder.encode(newRefreshToken));
+//        refreshToken.setExpiresAt(expiresAt);
+//        refreshTokenRepository.save(refreshToken);
+//
+//        // Build response
+//        LoginResponse res = mapper.toLoginResponse(user);
+//        res.setAccessToken(newAccessToken);
+//        res.setRefreshToken(newRefreshToken);
+//
+//        return res;
+//    }
 
     @Override
     public String currentId() {

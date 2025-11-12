@@ -14,7 +14,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -34,7 +36,7 @@ public class CourseController {
 //                .build();
 //    }
     @GetMapping("/student/my-courses")
-    @PreAuthorize("hasRole('STUDENT')")
+    @PreAuthorize("hasRole('ROLE_STUDENT')")
     public ApiResponse<Page<CourseItemStudentResponse>> getMyCoursesStudent(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -45,25 +47,26 @@ public class CourseController {
         Pageable pageable = PageRequest.of(page, size, sortObj);
         Page<CourseItemStudentResponse> data = service.getMyCoursesStudent(pageable, search);
         return ApiResponse.<Page<CourseItemStudentResponse>>builder()
-                .code("0")
+                .code("ok")
                 .message("SUCCESS")
                 .data(data)
                 .build();
     }
 
     @GetMapping("/lecture/my-courses")
-    @PreAuthorize("hasRole('LECTURE')")
+    @PreAuthorize("hasRole('LECTURER')")
     public ApiResponse<Page<CourseItemTeacherResponse>> getMyCoursesLecture(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "title,asc", required = false) String[] sort,
             @RequestParam(required = false) String search
     ) {
+        System.out.println(SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream().toList().toString());
         Sort sortObj = createSortObject(sort);
         Pageable pageable = PageRequest.of(page, size, sortObj);
         Page<CourseItemTeacherResponse> data = service.getMyCoursesTeacher(pageable, search);
         return ApiResponse.<Page<CourseItemTeacherResponse>>builder()
-                .code("0")
+                .code("ok")
                 .message("SUCCESS")
                 .data(data)
                 .build();

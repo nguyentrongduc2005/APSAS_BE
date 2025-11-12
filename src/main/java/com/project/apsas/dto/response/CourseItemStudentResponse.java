@@ -18,7 +18,7 @@ public class CourseItemStudentResponse {
 
     @Data
     @NoArgsConstructor @AllArgsConstructor @Builder
-    public class Lecture {
+    public static class Lecture {
         private Long id;
         private String name;
         private String avatarUrl;

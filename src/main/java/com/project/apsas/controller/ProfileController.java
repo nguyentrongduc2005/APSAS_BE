@@ -18,7 +18,7 @@ public class ProfileController {
     private final ProfileService profileService;
 
     @GetMapping()
-    @PostAuthorize("returnObject.data.id")
+    @PostAuthorize("returnObject.data.id.toString() == authentication.name")
     public ApiResponse<ProfileResponse> me() {
         var data = profileService.meFromJwt();
         return ApiResponse.<ProfileResponse>builder()

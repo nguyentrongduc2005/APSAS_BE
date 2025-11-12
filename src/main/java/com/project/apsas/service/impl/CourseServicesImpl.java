@@ -348,7 +348,11 @@ public class CourseServicesImpl implements CourseServices {
                 .lecture(CourseItemStudentResponse.Lecture.builder()
                         .id(course.getCreator().getId())
                         .name(course.getCreator().getName())
-                        .avatarUrl(course.getCreator().getProfile().getAvatarUrl())
+                        .avatarUrl(
+                                course.getCreator().getProfile() == null ?
+                                ""
+                                : course.getCreator().getProfile().getAvatarUrl()
+                        )
                         .build())
                 .totalAssignment(assignmentsCount)
                 .totalAssignmentCurrent(submittedAssignmentsCount)
