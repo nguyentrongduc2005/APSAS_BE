@@ -6,8 +6,10 @@ import com.project.apsas.entity.User;
 import com.project.apsas.exception.AppException;
 import com.project.apsas.exception.ErrorCode;
 import com.project.apsas.repository.UserRepository;
+import com.project.apsas.service.AuthService;
 import com.project.apsas.service.ProfileService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
@@ -18,16 +20,17 @@ import java.util.List;
 public class ProfileServiceImpl implements ProfileService {
 
     private final UserRepository userRepository;
+    private final AuthService authService;
 
     @Override
-    public ProfileResponse meFromJwt(Jwt jwt) {
-        String idStr = jwt.getClaimAsString("userId");
-        if (idStr == null || idStr.isBlank()) idStr = jwt.getSubject();
-        if (idStr == null || idStr.isBlank()) throw new AppException(ErrorCode.UNAUTHORIZED);
+    public ProfileResponse meFromJwt() {
 
-        final long userId;
-        try { userId = Long.parseLong(idStr); }
-        catch (NumberFormatException e) { throw new AppException(ErrorCode.UNAUTHORIZED); }
+        String idStr = authService.currentId();
+        Long userId;
+        try {
+            userId = Long.parseLong(idStr);
+
+        } catch (NumberFormatException e) { throw new AppException(ErrorCode.UNAUTHORIZED); }
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
@@ -43,7 +46,7 @@ public class ProfileServiceImpl implements ProfileService {
                 .address(profile.getAddress())
                 .gender(profile.getGender().name())
                 .email(user.getEmail())
-                .avatar(null)         // map nếu có field/avatar trong DB
+                .avatar(profile.getAvatarUrl())         // map nếu có field/avatar trong DB
                 .build();
     }
 }

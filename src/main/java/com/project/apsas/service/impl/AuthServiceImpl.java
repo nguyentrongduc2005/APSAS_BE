@@ -40,8 +40,10 @@ import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -261,5 +263,9 @@ public class AuthServiceImpl implements AuthService {
             log.error("Generate access token error", e);
             throw new AppException(ErrorCode.INTERNAL_ERROR);
         }
+    }
+    @Override
+    public String currentId() {
+        return ((Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getSubject();
     }
 }

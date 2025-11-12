@@ -11,5 +11,7 @@ public interface AuthService {
     RegisterResponse register(RegisterRequest request);          // giữ void
     void verify(VerifyRequest request);              // thêm verify
     LoginResponse login(LoginRequest request);
-    void resendCode(ResendCodeRequest request);      // đúng tên theo controller
+    void resendCode(ResendCodeRequest request);
+    String currentId();
+    // đúng tên theo controller
 }

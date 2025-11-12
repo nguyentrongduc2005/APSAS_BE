@@ -1,5 +1,6 @@
 package com.project.apsas.repository;
 
+import com.project.apsas.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -19,6 +20,18 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
             CourseVisibility visibility, // Tham số Enum lọc
             Pageable pageable      // Tham số phân trang và sắp xếp
     );
+
+    Page<Course> findByNameContainingIgnoreCaseAndCreator(
+            String search,
+            User creator,
+            Pageable pageable
+    );
+    Page<Course> findByNameContainingIgnoreCaseAndEnrollmentsContains(
+            String search,
+            User student,
+            Pageable pageable
+    );
+    Page<Course> findByEnrollmentsContains(User student, Pageable pageable);
 
     Page<Course> findByVisibility(CourseVisibility visibility, Pageable pageable);
     @Query("SELECT COUNT(c) FROM Course c WHERE c.creator.id = :creatorId")
