@@ -44,6 +44,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import java.text.ParseException;
 import java.time.Instant;
@@ -260,6 +261,7 @@ public class AuthServiceImpl implements AuthService {
                     .expirationTime(exp)
                     .claim("email", user.getEmail())
                     .claim("name", user.getName())
+                    .claim("scope", buildScope(user))
                     .build();
 
             SignedJWT signedJWT = new SignedJWT(
@@ -274,16 +276,49 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
+    // ================= INTROSPECT =================
+    @Override
+    public IntrospecResponse introspect(IntrospectRequest request) {
+        boolean valid = true;
 
-   public IntrospecResponse introspect(IntrospectRequest request) {
+        try {
+            String token = request.getToken();
 
-        return null;
+            // Kiểm tra token có null hoặc empty không
+            if (token == null || token.trim().isEmpty()) {
+                return IntrospecResponse.builder()
+                        .valid(false)
+                        .build();
+            }
+
+            // Verify token
+            verifyToken(token, false);
+
+        } catch (JOSEException e) {
+            log.error("Token signature verification failed: {}", e.getMessage());
+            valid = false;
+        } catch (ParseException e) {
+            log.error("Token parsing failed: {}", e.getMessage());
+            valid = false;
+        } catch (AppException e) {
+            log.error("Token validation failed: {}", e.getMessage());
+            valid = false;
+        } catch (Exception e) {
+            log.error("Unexpected error during token introspection", e);
+            valid = false;
+        }
+
+        return IntrospecResponse.builder()
+                .valid(valid)
+                .build();
     }
+
+    // ================= VERIFY TOKEN =================
     private SignedJWT verifyToken(String token, boolean isRefresh) throws JOSEException, ParseException {
         JWSVerifier verifier = new MACVerifier(jwtSecret.getBytes());
-
         SignedJWT signedJWT = SignedJWT.parse(token);
 
+        // Xác định thời gian hết hạn
         Date expiryTime = (isRefresh)
                 ? new Date(signedJWT
                 .getJWTClaimsSet()
@@ -293,13 +328,72 @@ public class AuthServiceImpl implements AuthService {
                 .toEpochMilli())
                 : signedJWT.getJWTClaimsSet().getExpirationTime();
 
-        var verified = signedJWT.verify(verifier);
+        // Verify signature
+        boolean verified = signedJWT.verify(verifier);
 
-        if (!(verified && expiryTime.after(new Date()))) throw new AppException(ErrorCode.UNAUTHENTICATED);
-
-        if (invalidatedTokenRepository.existsById(signedJWT.getJWTClaimsSet().getJWTID()))
+        // Kiểm tra token có hợp lệ và chưa hết hạn
+        if (!(verified && expiryTime.after(new Date()))) {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
 
         return signedJWT;
     }
+
+    private String buildScope(User user) {
+        StringJoiner stringJoiner = new StringJoiner(" ");
+
+        if (!CollectionUtils.isEmpty(user.getRoles()))
+            user.getRoles().forEach(role -> {
+                stringJoiner.add("ROLE_" + role.getName());
+                if (!CollectionUtils.isEmpty(role.getPermissions()))
+                    role.getPermissions().forEach(permission -> stringJoiner.add(permission.getName()));
+            });
+
+        return stringJoiner.toString();
+    }
+    // ================= REFRESH TOKEN =================
+    @Override
+    public LoginResponse refreshToken(RefreshTokenRequest request) {
+        String refreshTokenValue = request.getRefreshToken();
+
+        // Tìm user có refresh token này
+        RefreshToken refreshToken = refreshTokenRepository.findByTokenHash(refreshTokenValue)
+                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
+
+        // Kiểm tra refresh token có hết hạn chưa
+        if (refreshToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+
+        // Lấy user
+        User user = userRepository.findById(refreshToken.getUserId())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        // Verify refresh token hash
+        if (!passwordEncoder.matches(refreshTokenValue, refreshToken.getTokenHash())) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+
+        // Generate token mới
+        String newAccessToken = generateAccessToken(user);
+        String newRefreshToken = generateRefreshToken();
+
+        // Update refresh token trong DB
+        LocalDateTime expiresAt = LocalDateTime.ofInstant(
+                Instant.now().plus(refreshTtlMinutes, ChronoUnit.MINUTES),
+                ZoneId.systemDefault()
+        );
+
+        refreshToken.setTokenHash(passwordEncoder.encode(newRefreshToken));
+        refreshToken.setExpiresAt(expiresAt);
+        refreshTokenRepository.save(refreshToken);
+
+        // Build response
+        LoginResponse res = mapper.toLoginResponse(user);
+        res.setAccessToken(newAccessToken);
+        res.setRefreshToken(newRefreshToken);
+
+        return res;
+    }
+
 }
