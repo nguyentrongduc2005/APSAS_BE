@@ -1,9 +1,7 @@
 package com.project.apsas.service;
 
-import com.project.apsas.dto.request.LoginRequest;
-import com.project.apsas.dto.request.RegisterRequest;
-import com.project.apsas.dto.request.ResendCodeRequest;
-import com.project.apsas.dto.request.VerifyRequest;
+import com.project.apsas.dto.request.*;
+import com.project.apsas.dto.response.IntrospecResponse;
 import com.project.apsas.dto.response.LoginResponse;
 import com.project.apsas.dto.response.RegisterResponse;
 
@@ -12,6 +10,7 @@ public interface AuthService {
     void verify(VerifyRequest request);              // thêm verify
     LoginResponse login(LoginRequest request);
     void resendCode(ResendCodeRequest request);
+    IntrospecResponse introspect(IntrospectRequest request);// đúng tên theo controller
     String currentId();
     // đúng tên theo controller
 }
