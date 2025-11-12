@@ -26,6 +26,9 @@ public class Course {
     @Column(length = 160, nullable = false)
     private String name;
 
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
     @Column(length = 60)
     private String code;
 
@@ -50,7 +53,9 @@ public class Course {
 
     @OneToMany(mappedBy = "course", fetch = FetchType.LAZY)
     private Set<CourseAssignment> assignmentLinks = new HashSet<>();
-
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by", nullable = false) // <--- RẤT QUAN TRỌNG
+    private User creator;
     @OneToMany(mappedBy = "course", fetch = FetchType.LAZY)
     private Set<CourseContent> contentLinks = new HashSet<>();
 

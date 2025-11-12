@@ -45,7 +45,8 @@ public class User {
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Otp otp;
-
+    @OneToMany(mappedBy = "creator", fetch = FetchType.LAZY)
+    Set<Course> courses = new HashSet<>();
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     @lombok.Builder.Default
     private Set<Enrollment> enrollments = new HashSet<>();
@@ -60,5 +61,8 @@ public class User {
     
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private Progress progress;
+
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    RefreshToken refreshToken;
 
 }

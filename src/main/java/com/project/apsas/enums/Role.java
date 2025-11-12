@@ -2,7 +2,7 @@ package com.project.apsas.enums;
 
 public enum Role {
     ADMIN,
-    USER,
+    STUDENT,
     PROVIDER,
     LECTURER
 }

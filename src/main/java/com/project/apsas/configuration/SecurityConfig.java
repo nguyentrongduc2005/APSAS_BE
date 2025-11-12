@@ -19,11 +19,6 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
@@ -33,42 +28,45 @@ import javax.crypto.spec.SecretKeySpec;
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
-        @Value("${jwt.signerKey}")
-        private String signerKey;
+    @Value("${jwt.signerKey}")
+    private String signerKey;
 
 
     private final String[] PUBLIC_ENDPOINTS = {
             "/auth/register",
             "/auth/login",
             "/auth/introspect",
-            "/login",
+            "/auth/verify",
+            "/auth/resend-code",
             "/api/courses",
             "/api/me",
-             "/feedback",
+            "/feedback",
             "/submission",
             "/ai"
     };
+
     private final String[] PUBLIC_ENDPOINTS_GET = {
-            "/api/public/**"
+            "/courses",
+            "/courses/{courseId}/register-details",
     };
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.csrf(AbstractHttpConfigurer::disable);
         httpSecurity.authorizeHttpRequests(request -> request
-                .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll().requestMatchers(HttpMethod.GET, PUBLIC_ENDPOINTS_GET).permitAll()
+                        .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers(HttpMethod.GET, PUBLIC_ENDPOINTS_GET).permitAll()
 //                .requestMatchers(HttpMethod.GET,"/users")
 //                .hasRole(Role.ADMIN.name()) dùng theo role đã được định nghĩa ở enum
 //                .hasAuthority("ROLE_ADMIN") dung theo authority
                         // Get ra từ security placeholder cái role để phân quyền
-                .anyRequest().authenticated()
+                        .anyRequest().authenticated()
         );
         httpSecurity.oauth2ResourceServer(oauth2 ->
                 oauth2.jwt(jwtConfigurer ->
                         jwtConfigurer.decoder(jwtDecoder())
-                                                                .jwtAuthenticationConverter(jwtAuthenticationConverter()))
+                                .jwtAuthenticationConverter(jwtAuthenticationConverter()))
         );
-        httpSecurity.cors(cors -> {});
         return httpSecurity.build();
     }
 
@@ -82,6 +80,8 @@ public class SecurityConfig {
 
         UrlBasedCorsConfigurationSource basedCorsConfigurationSource = new UrlBasedCorsConfigurationSource();
         basedCorsConfigurationSource.registerCorsConfiguration("/**",corsConfiguration);
+
+
         return new CorsFilter();
     }
 
@@ -95,18 +95,21 @@ public class SecurityConfig {
                 .macAlgorithm(MacAlgorithm.HS512)
                 .build();
     }
+    @Bean
+    JwtAuthenticationConverter jwtAuthenticationConverter(){
+        JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
+        jwtGrantedAuthoritiesConverter.setAuthorityPrefix("ROLE_");
 
-        // Convert JWT to Authentication with authorities from token claim (e.g. roles)
-        private Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter() {
-                JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
-                // tokens may contain a claim like 'roles' (adjust if your tokens use a different claim)
-                grantedAuthoritiesConverter.setAuthoritiesClaimName("roles");
-                grantedAuthoritiesConverter.setAuthorityPrefix("ROLE_");
+        JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
+        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(jwtGrantedAuthoritiesConverter);
 
-                JwtAuthenticationConverter authenticationConverter = new JwtAuthenticationConverter();
-                authenticationConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
-                return authenticationConverter;
-        }
+        return jwtAuthenticationConverter;
+    }
+
+    @Bean
+    PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder(10);
+    }
 
 }
 

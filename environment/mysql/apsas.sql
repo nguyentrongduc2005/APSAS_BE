@@ -68,12 +68,15 @@ CREATE TABLE `courses` (
                            `id` BIGINT NOT NULL AUTO_INCREMENT,
                            `name` varchar(160) NOT NULL,
                            `code` varchar(60) DEFAULT NULL,
+                           `description` text DEFAULT NULL,
                            `visibility` enum('PUBLIC','PRIVATE','UNLISTED') DEFAULT 'PUBLIC',
                            `limit` int(10) UNSIGNED DEFAULT NULL,
                            `created_at` datetime DEFAULT current_timestamp(),
                            PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+ALTER TABLE `courses`
+    ADD COLUMN `created_by` BIGINT NOT NULL COMMENT 'ID của người dùng đã tạo khóa học';
 ALTER TABLE `courses`
     ADD COLUMN `type` VARCHAR(50) DEFAULT '' AFTER `visibility`,
   ADD COLUMN `avatar_url` VARCHAR(255) DEFAULT NULL AFTER `type`;
@@ -303,7 +306,12 @@ ALTER TABLE `assignments`
 
 ALTER TABLE `assignment_evaluations` -- none
 ;
-
+ALTER TABLE `courses`
+    ADD CONSTRAINT fk_courses_created_by
+        FOREIGN KEY (`created_by`)
+            REFERENCES `users` (`id`)
+            ON DELETE RESTRICT
+            ON UPDATE CASCADE;
 ALTER TABLE `assignment_evaluation_maps`
     ADD PRIMARY KEY (`assignment_id`,`evaluation_id`),
   ADD KEY `ix_aem_eval` (`evaluation_id`);

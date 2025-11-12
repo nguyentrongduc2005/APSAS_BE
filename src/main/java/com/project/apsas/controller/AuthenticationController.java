@@ -20,12 +20,12 @@ import java.text.ParseException;
 public class AuthenticationController {
     AuthService authService;
 
-    @PostMapping("/introspect")
-    ApiResponse<IntrospecResponse> introspect(IntrospectRequest introspectRequest) throws JOSEException, ParseException {
-        var result = authService.introspect(introspectRequest );
-        return ApiResponse.<IntrospecResponse>builder()
-                .data(result)
-                .build();
-    }
+//    @PostMapping("/introspect")
+//    ApiResponse<IntrospecResponse> introspect(IntrospectRequest introspectRequest) throws JOSEException, ParseException {
+//        var result = authService.introspect(introspectRequest );
+//        return ApiResponse.<IntrospecResponse>builder()
+//                .data(result)
+//                .build();
+//    }
 
 }

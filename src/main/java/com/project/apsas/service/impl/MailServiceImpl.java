@@ -58,6 +58,7 @@ public class MailServiceImpl implements MailService {
             SendEmailResponse response = brevoApiClient.sendEmail(sendEmailRequest);
             System.out.println("Gửi email (Feign) thành công! Message ID: " + response.getMessageId());
         } catch (Exception e) {
+            e.printStackTrace();
             throw new RuntimeException("send mail failed");
         }
     }
