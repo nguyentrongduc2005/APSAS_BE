@@ -10,10 +10,12 @@ public class CourseItemStudentResponse {
     private Long totalLession;
     private Long currentMember;
     private String visibility;
-    private Integer limit;
     private String type;
     private String avatarUrl;
     private Lecture lecture;
+    private Long totalAssignment;
+    private Long totalAssignmentCurrent;
+
     @Data
     @NoArgsConstructor @AllArgsConstructor @Builder
     public class Lecture {
@@ -21,6 +23,5 @@ public class CourseItemStudentResponse {
         private String name;
         private String avatarUrl;
     }
-
 
 }

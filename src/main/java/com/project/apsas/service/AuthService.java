@@ -12,5 +12,6 @@ public interface AuthService {
     void resendCode(ResendCodeRequest request);
     IntrospecResponse introspect(IntrospectRequest request);// đúng tên theo controller
     String currentId();
+    public LoginResponse refreshToken(RefreshTokenRequest request)
     // đúng tên theo controller
 }

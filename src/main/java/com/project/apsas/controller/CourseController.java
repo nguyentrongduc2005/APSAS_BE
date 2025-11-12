@@ -2,6 +2,7 @@ package com.project.apsas.controller;
 
 import com.project.apsas.dto.ApiResponse;
 
+import com.project.apsas.dto.response.CourseItemStudentResponse;
 import com.project.apsas.dto.response.CourseItemTeacherResponse;
 import com.project.apsas.dto.response.CourseRegisResponse;
 
@@ -32,9 +33,27 @@ public class CourseController {
 //                .data(data)
 //                .build();
 //    }
-    @GetMapping("/my-courses")
+    @GetMapping("/student/my-courses")
     @PreAuthorize("hasRole('STUDENT')")
-    public ApiResponse<Page<CourseItemTeacherResponse>> getMyCoursesStudent(
+    public ApiResponse<Page<CourseItemStudentResponse>> getMyCoursesStudent(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "title,asc", required = false) String[] sort,
+            @RequestParam(required = false) String search
+    ) {
+        Sort sortObj = createSortObject(sort);
+        Pageable pageable = PageRequest.of(page, size, sortObj);
+        Page<CourseItemStudentResponse> data = service.getMyCoursesStudent(pageable, search);
+        return ApiResponse.<Page<CourseItemStudentResponse>>builder()
+                .code("0")
+                .message("SUCCESS")
+                .data(data)
+                .build();
+    }
+
+    @GetMapping("/lecture/my-courses")
+    @PreAuthorize("hasRole('LECTURE')")
+    public ApiResponse<Page<CourseItemTeacherResponse>> getMyCoursesLecture(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "title,asc", required = false) String[] sort,

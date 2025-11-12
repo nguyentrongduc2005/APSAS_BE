@@ -31,6 +31,7 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
             User student,
             Pageable pageable
     );
+    Page<Course> findByCreator(User creator, Pageable pageable);
     Page<Course> findByEnrollmentsContains(User student, Pageable pageable);
 
     Page<Course> findByVisibility(CourseVisibility visibility, Pageable pageable);
