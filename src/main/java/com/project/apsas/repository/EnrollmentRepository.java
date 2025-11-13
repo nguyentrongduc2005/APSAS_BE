@@ -18,4 +18,6 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Enrollme
             "FROM Enrollment e JOIN e.course c " +
             "WHERE c.creator.id = :creatorId")
     Long countTotalStudentsByCreatorId(@Param("creatorId") Long creatorId);
+    @Query("SELECT COUNT(e) FROM Enrollment e WHERE e.user.id = :studentId")
+    long countByStudentId(@Param("studentId") Long studentId);
 }

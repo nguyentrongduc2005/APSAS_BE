@@ -49,6 +49,7 @@ public class SecurityConfig {
     private final String[] PUBLIC_ENDPOINTS_GET = {
             "/courses",
             "/courses/{courseId}/register-details",
+            "/progress/{studentId}",
     };
 
     @Bean
