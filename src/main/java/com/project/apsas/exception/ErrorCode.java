@@ -20,6 +20,10 @@ public enum ErrorCode {
     SUBMISSION_NOT_FOUND("E5002",HttpStatus.NOT_FOUND,"không tìm thấy submission"),
     USER_ESIXSTED("E5003", HttpStatus.BAD_REQUEST, "user đã tồn tại"),
     PASSWORD_INVALID("E5004", HttpStatus.BAD_REQUEST, "password invalid"),
+    TOKEN_EXPIRED("E5005", HttpStatus.UNAUTHORIZED, "token hết hạn"),
+    REFRESH_TOKEN_INVALID("E5006", HttpStatus.UNAUTHORIZED, "refresh token không hợp lệ"),
+    REFRESH_TOKEN_NOT_FOUND("E5007", HttpStatus.UNAUTHORIZED, "không tìm thấy refresh token"),
+    USER_NOT_FOUND("E5008", HttpStatus.NOT_FOUND, "không tìm thấy user"),
     ;
 
     private final String code;

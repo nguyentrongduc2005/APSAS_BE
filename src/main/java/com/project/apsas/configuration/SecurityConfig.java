@@ -37,12 +37,13 @@ public class SecurityConfig {
             "/auth/login",
             "/auth/introspect",
             "/auth/verify",
+            "/auth/refresh-token",
             "/auth/resend-code",
             "/api/courses",
             "/api/me",
             "/feedback",
             "/submission",
-            "/ai"
+            "/ai",
     };
 
     private final String[] PUBLIC_ENDPOINTS_GET = {
