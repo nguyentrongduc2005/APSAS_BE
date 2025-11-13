@@ -5,47 +5,45 @@ package com.project.apsas.repository;
     // ====== KPI THEO SINH VIÊN TRONG 1 KHÓA ======
 
    
+import com.project.apsas.dto.student.ProgressDTO;
 import com.project.apsas.entity.Submission;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.security.access.method.P;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface SubmissionRepository extends JpaRepository<Submission, Long> {
-//     @Query("""
-//        select count(s)
-//        from Submission s
-//        where s.assignment.course.id = :courseId
-//          and s.user.id = :userId
-//    """)
-//    int countByCourseIdAndUserId(@Param("courseId") Long courseId,
-//                                 @Param("userId") Long userId);
-//
-//    @Query("""
-//        select count(s)
-//        from Submission s
-//        where s.assignment.course.id = :courseId
-//          and s.user.id = :userId
-//          and s.score is not null
-//    """)
-//    int countGradedByCourseIdAndUserId(@Param("courseId") Long courseId,
-//                                       @Param("userId") Long userId);
-//
-//    @Query("""
-//        select avg(s.score)
-//        from Submission s
-//        where s.assignment.course.id = :courseId
-//          and s.user.id = :userId
-//          and s.score is not null
-//    """)
-//    Double avgScoreByCourseIdAndUserId(@Param("courseId") Long courseId,
-//                                       @Param("userId") Long userId);
+
+    @Query("""
+    SELECT NEW com.project.apsas.dto.student.ProgressDTO$DailyScore(
+        CAST(FUNCTION('DATE', s.submittedAt) AS LocalDate), 
+        CAST(AVG(s.score) AS Double)
+    )
+    FROM Submission s
+    WHERE s.user.id = :userId AND s.submittedAt >= :fromDate
+    GROUP BY FUNCTION('DATE', s.submittedAt)
+    ORDER BY FUNCTION('DATE', s.submittedAt)
+    """)
+    List<ProgressDTO.DailyScore> findLast7DaysScores(@Param("userId") Long userId, @Param("fromDate") LocalDate fromDate);
+
+    @Query("SELECT AVG(s.score) FROM Submission s WHERE s.user.id = :userId AND s.status = 'COMPLETE'")
+    Double findAverageScore(@Param("userId") Long userId);
+
+    @Query("SELECT COUNT(DISTINCT e.course.id) FROM Enrollment e WHERE e.user.id = :userId")
+    int countTotalCourses(@Param("userId") Long userId);
+
+
+
+
+
     /**
      * Lấy tất cả submissions của một assignment
      */
