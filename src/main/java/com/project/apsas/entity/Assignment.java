@@ -65,7 +65,7 @@ public class Assignment {
     private Set<CourseAssignment> courseLinks = new HashSet<>();
     
     @OneToMany(mappedBy = "assignment", fetch = FetchType.LAZY)
-    private Set<AssignmentEvaluationMaps> evaluationLinks = new HashSet<>();
+   private Set<AssignmentEvaluation> assignmentEvaluations = new HashSet<>();
 
     @OneToMany(mappedBy = "assignment", fetch = FetchType.LAZY)
     private Set<Submission> submissions = new HashSet<>();

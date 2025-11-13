@@ -83,6 +83,8 @@ message-queue:
       drop: topic-mail.DLT.DROP
     feedback:
       name: topic-ai
+    execute:
+      name: topic-execute
 
 cloudinary:
   cloud-name: ddcyjcpx0
@@ -112,7 +114,6 @@ brevo:
     name: CodeVerse
 jubge:
   base-url: https://ce.judge0.com
-  api-key: ${}
 
 mvc:
   throw-exception-if-no-handler-found: true

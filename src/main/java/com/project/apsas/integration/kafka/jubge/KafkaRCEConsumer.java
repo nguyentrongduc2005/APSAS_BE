@@ -1,9 +1,12 @@
-package com.project.apsas.integration.kafka.ai;
+package com.project.apsas.integration.kafka.jubge;
 
 import com.project.apsas.dto.event.FeedbackEvent;
-import com.project.apsas.dto.response.CodeFeedbackDTO;
+
+import com.project.apsas.dto.event.SubmitCodeEvent;
+import com.project.apsas.dto.mapping.ReportCongfigSubmission;
+import com.project.apsas.dto.request.SubmissionRequestDto;
 import com.project.apsas.repository.SubmissionRepository;
-import com.project.apsas.service.AIFeedbackService;
+import com.project.apsas.service.RCEService;
 import com.project.apsas.service.SubmissionService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -19,15 +22,15 @@ import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.stereotype.Component;
 
-
 @Component
 @RequiredArgsConstructor
 @Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class KafkaFeedbackConsumer {
-    AIFeedbackService aiFeedbackService;
-    SubmissionRepository  submissionRepository;
+public class KafkaRCEConsumer {
+
+    SubmissionRepository submissionRepository;
     SubmissionService submissionService;
+    RCEService  rceService;
 
     @RetryableTopic(
             attempts = "3",
@@ -36,68 +39,63 @@ public class KafkaFeedbackConsumer {
             dltStrategy = DltStrategy.FAIL_ON_ERROR,
             dltTopicSuffix = ".DLT"
     )
-    @KafkaListener(topics = "${message-queue.topic.feedback.name}", groupId = "group_ai")
+    @KafkaListener(topics = "${message-queue.topic.execute.name}", groupId = "group_execute")
     public void receiveFeedback(
-            ConsumerRecord<String, FeedbackEvent> record,
+            ConsumerRecord<String, SubmitCodeEvent> record,
             Acknowledgment ack,
             @Header(KafkaHeaders.DELIVERY_ATTEMPT) int deliveryAttempt
     ) {
         final int TOTAL_ATTEMPTS = 3;
-        FeedbackEvent event = record.value(); // Lấy event ra sớm để dùng trong catch
+        SubmitCodeEvent event = record.value();
 
         try {
-            log.info("▶ processing {}-{}@{} key={} payload={} (Attempt {}/{})",
-                    record.topic(), record.partition(), record.offset(), record.key(), record.value(),
+            log.info("▶ processing RCE {}-{}@{} key={} (Attempt {}/{})",
+                    record.topic(), record.partition(), record.offset(), record.key(),
                     deliveryAttempt, TOTAL_ATTEMPTS);
 
-            submissionRepository.findById(event.getSubmissionId())
-                    .orElseThrow(() -> new RuntimeException("không có bài nôp hợp lệ"));
+            // 1. Map từ Event (Kafka) sang DTO (Service)
+            // (Giả sử SubmitCodeEvent chứa các trường này)
+            SubmissionRequestDto requestDto = new SubmissionRequestDto();
+            requestDto.setCode(event.getCode());
+            requestDto.setLanguageId(event.getLanguageId());
+            requestDto.setConfigJson(event.getConfigJson());
 
-            // Gọi AI
-            CodeFeedbackDTO result =  aiFeedbackService.reviewAsync(
-                            event.getCode(),
-                            event.getLanguage(),
-                            event.getStatement_md())
-                    .join();
+            // 2. Gọi RCE service (Judge0) để chạy code
+            ReportCongfigSubmission report = rceService.evaluateCode(requestDto);
 
             // --- SUCCESS PATH (ĐƯỜNG THÀNH CÔNG) ---
-            // Nếu AI call thành công:
-            // 1. Cập nhật với 'result'
-            // 2. Truyền 'false' vì đã thành công, không cần retry
-            submissionService.updataFeedbackByAI(
+            // 3. Cập nhật submission với report đầy đủ.
+            // Truyền 'false' vì đã thành công, không cần retry.
+            submissionService.updataReportConfig(
                     event.getSubmissionId(),
-                    result,
-                    false // <-- Thành công, không retry
+                    report,
+                    false // <-- false = không retry
             );
 
-            // 3. Commit message
+            // 4. Commit message
             ack.acknowledge();
-            log.info("✔ done {}-{}@{} key={}", record.topic(), record.partition(), record.offset(), record.key());
+            log.info("✔ done RCE {}-{}@{} key={}", record.topic(), record.partition(), record.offset(), record.key());
 
         } catch (Exception e) {
-            log.warn("⚠ failed processing {}-{}@{} key={} (Attempt {}/{})",
+            log.warn("⚠ failed RCE {}-{}@{} key={} (Attempt {}/{})",
                     record.topic(), record.partition(), record.offset(), record.key(),
                     deliveryAttempt, TOTAL_ATTEMPTS, e);
 
             // --- FAILURE PATH (ĐƯỜNG THẤT BẠI) ---
-            // Đây là logic bạn yêu cầu:
-
-            // 1. Tính toán flag: 'true' cho lần 1, 2. 'false' cho lần 3 (lần cuối).
+            // 1. Tính toán flag retry
+            // 'true' cho lần 1, 2. 'false' cho lần 3 (lần cuối).
             boolean shouldRetryOnFailure = (deliveryAttempt < TOTAL_ATTEMPTS);
 
             try {
-                // 2. Gọi hàm update với 'result' là null và flag đã tính
-                // Hàm này sẽ:
-                // - Lần 1, 2: set true (chờ retry)
-                // - Lần 3: set false ("đã hết thử inset dù kh có j")
-                submissionService.updataFeedbackByAI(
+                // 2. Cập nhật submission với report=null
+                // và flag 'shouldRetryOnFailure'
+                submissionService.updataReportConfig(
                         event.getSubmissionId(),
-                        null, // <-- result là null vì AI call thất bại
+                        null, // <-- null report vì thất bại
                         shouldRetryOnFailure // <-- 'true' (lần 1,2) hoặc 'false' (lần 3)
                 );
             } catch (Exception updateEx) {
-                // Lỗi khi đang cố cập nhật trạng thái lỗi
-                log.error("!! Failed to update submission failure status for {}. Error: {}",
+                log.error("!! Failed to update RCE failure status for {}. Error: {}",
                         event.getSubmissionId(), updateEx.getMessage());
             }
 
@@ -105,6 +103,4 @@ public class KafkaFeedbackConsumer {
             throw new RuntimeException(e);
         }
     }
-
-
 }

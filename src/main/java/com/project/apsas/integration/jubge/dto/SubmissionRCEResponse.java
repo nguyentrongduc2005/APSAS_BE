@@ -14,18 +14,25 @@ public class SubmissionRCEResponse {
     private String stdout;
     private String stderr;
     private String message;
-    private String time; // Thời gian chạy (vd: "0.011")
-    private Integer memory; // Bộ nhớ (vd: 3600)
+    private String time;
+    private Integer memory;
+    private Status status;
+    private String token;
 
     @JsonProperty("compile_output")
     private String compileOutput;
 
-    private Status status;
     @Data
     @AllArgsConstructor
     @Builder
     public static class Status {
         private int id;
         private String description; // Vd: "Accepted", "Wrong Answer", "Time Limit Exceeded"
+    }
+
+    public boolean isProcessing() {
+        // ID 1 = In Queue
+        // ID 2 = Processing
+        return status != null && (status.getId() == 1 || status.getId() == 2);
     }
 }

@@ -2,6 +2,7 @@ package com.project.apsas.service;
 
 
 import com.project.apsas.dto.StudentSubmissionDTO;
+import com.project.apsas.dto.mapping.ReportCongfigSubmission;
 import com.project.apsas.dto.response.CodeFeedbackDTO;
 import com.project.apsas.dto.response.PagedResponse;
 import com.project.apsas.dto.response.SubmissionResponse;
@@ -13,7 +14,8 @@ import java.util.List;
  */
 
 public interface SubmissionService {
-    public void updataFeedbackByAI(Long submissionId, CodeFeedbackDTO codeFeedbackDTO);
+    public void updataFeedbackByAI(Long submissionId, CodeFeedbackDTO codeFeedbackDTO, boolean status);
+    public void updataReportConfig(Long submissionId, ReportCongfigSubmission reportCongfigSubmission, boolean status);
     public PagedResponse<SubmissionResponse> getSubmissionsByCourse(
             Long courseId,
             int page,

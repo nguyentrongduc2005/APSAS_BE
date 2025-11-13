@@ -25,7 +25,9 @@ public class AssignmentEvaluation {
     @Column(length = 160, nullable = false)
     private String name;
 
-
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assignment_id",nullable = false)
+    Assignment assignment;
 
     @Column(length = 80, nullable = false)
     private String type;
@@ -36,6 +38,5 @@ public class AssignmentEvaluation {
     @Column(name = "created_at", updatable = false, insertable = false)
     private LocalDateTime createdAt;
 
-    @OneToMany(mappedBy = "evaluation", fetch = FetchType.LAZY)
-    private Set<AssignmentEvaluationMaps> assignmentLinks = new HashSet<>();
+
 }

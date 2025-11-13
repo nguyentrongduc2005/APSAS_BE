@@ -1,6 +1,9 @@
 package com.project.apsas.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.apsas.dto.StudentSubmissionDTO;
+import com.project.apsas.dto.mapping.ReportCongfigSubmission;
 import com.project.apsas.dto.response.CodeFeedbackDTO;
 import com.project.apsas.dto.response.PagedResponse;
 import com.project.apsas.dto.response.SubmissionResponse;
@@ -20,6 +23,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Objects;
 
@@ -30,23 +35,72 @@ import java.util.Objects;
 public class SubmissionServiceImpl implements SubmissionService {
     SubmissionRepository submissionRepository;
     SubmissionMapper submissionMapper;
+    ObjectMapper objectMapper;
+
     @Override
-    public void updataFeedbackByAI(Long submissionId, CodeFeedbackDTO codeFeedbackDTO) {
+    public void updataReportConfig(Long submissionId, ReportCongfigSubmission reportCongfigSubmission, boolean status) {
+        if(!status) {
+            Submission submission = submissionRepository.findById(submissionId)
+                    .orElseThrow(() -> new AppException(ErrorCode.SUBMISSION_NOT_FOUND));
 
-        Submission submission = submissionRepository.findById(submissionId)
-                .orElseThrow(() -> new AppException(ErrorCode.SUBMISSION_NOT_FOUND));
+            // 2. Kiểm tra null (trường hợp RCE bị lỗi)
+            if (Objects.isNull(reportCongfigSubmission)) {
+                submission.setStatus(StatusSubmission.FAILED);
+            } else {
 
-        if (Objects.isNull(codeFeedbackDTO)) {
-            submission.setStatus(StatusSubmission.FAILED);
-        } else {
-            submissionMapper.updateSubmissionFromDto(codeFeedbackDTO, submission);
+                // 3. Map DTO report vào entity Submission
+                int totalCases = reportCongfigSubmission.getTotalTestCases();
+                int passCount = reportCongfigSubmission.getPassedTestCases();
 
-            if (submission.getStatus().equals(StatusSubmission.PENDING))
-                submission.setStatus(StatusSubmission.PROCESSING);
-            else if (submission.getStatus().equals(StatusSubmission.PROCESSING))
-                submission.setStatus(StatusSubmission.COMPLETE);
+                // 3a. Tính toán passed
+                submission.setPassed(totalCases > 0 && totalCases == passCount);
+
+                // 3b. Tính toán điểm số
+                BigDecimal score = (totalCases > 0)
+                        ? new BigDecimal((double) passCount * 100.0 / totalCases).setScale(2, RoundingMode.HALF_UP)
+                        : BigDecimal.ZERO;
+                submission.setScore(score);
+
+                // 3c. Chuyển toàn bộ report object thành chuỗi JSON để lưu
+                try {
+                    String reportJsonString = objectMapper.writeValueAsString(reportCongfigSubmission);
+                    submission.setReportJson(reportJsonString);
+                } catch (JsonProcessingException e) {
+                    // Nếu lỗi serialize, coi như quá trình thất bại
+                    submission.setStatus(StatusSubmission.FAILED);
+                    submission.setReportJson("{\"error\": \"Failed to serialize RCE report\"}");
+                }
+
+                // 4. Cập nhật trạng thái (State Machine)
+                // Nếu đang là PENDING (mới nộp), thì chuyển sang PROCESSING (chờ AI)
+                if (submission.getStatus().equals(StatusSubmission.PENDING)) {
+                    submission.setStatus(StatusSubmission.PROCESSING);
+                }
+            }
+
+            // 5. Lưu lại
+            submissionRepository.save(submission);
         }
-        submissionRepository.save(submission);
+    }
+
+    @Override
+    public void updataFeedbackByAI(Long submissionId, CodeFeedbackDTO codeFeedbackDTO, boolean status) {
+        if(!status){
+            Submission submission = submissionRepository.findById(submissionId)
+                    .orElseThrow(() -> new AppException(ErrorCode.SUBMISSION_NOT_FOUND));
+
+            if (Objects.isNull(codeFeedbackDTO)) {
+                submission.setStatus(StatusSubmission.FAILED);
+            } else {
+                submissionMapper.updateSubmissionFromDto(codeFeedbackDTO, submission);
+
+                if (submission.getStatus().equals(StatusSubmission.PENDING))
+                    submission.setStatus(StatusSubmission.PROCESSING);
+                else if (submission.getStatus().equals(StatusSubmission.PROCESSING))
+                    submission.setStatus(StatusSubmission.COMPLETE);
+            }
+            submissionRepository.save(submission);
+        }
     }
     @Override
     public PagedResponse<SubmissionResponse> getSubmissionsByCourse(
