@@ -40,7 +40,7 @@ public class KafkaFeedbackConsumer {
     public void receiveFeedback(
             ConsumerRecord<String, FeedbackEvent> record,
             Acknowledgment ack,
-            @Header(KafkaHeaders.DELIVERY_ATTEMPT) int deliveryAttempt
+            @Header(name = KafkaHeaders.DELIVERY_ATTEMPT, required = false, defaultValue = "1") int deliveryAttempt
     ) {
         final int TOTAL_ATTEMPTS = 3;
         FeedbackEvent event = record.value(); // Lấy event ra sớm để dùng trong catch
