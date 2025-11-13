@@ -11,5 +11,5 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 public interface ProfileService {
 
 
-    public ProfileResponse meFromJwt(Jwt jwt);
+    public ProfileResponse meFromJwt();
 }

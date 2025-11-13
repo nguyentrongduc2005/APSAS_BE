@@ -37,12 +37,13 @@ public class SecurityConfig {
             "/auth/login",
             "/auth/introspect",
             "/auth/verify",
+            "/auth/refresh-token",
             "/auth/resend-code",
             "/api/courses",
             "/api/me",
             "/feedback",
             "/submission",
-            "/ai"
+            "/ai",
     };
 
     private final String[] PUBLIC_ENDPOINTS_GET = {
@@ -57,8 +58,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.GET, PUBLIC_ENDPOINTS_GET).permitAll()
 //                .requestMatchers(HttpMethod.GET,"/users")
-//                .hasRole(Role.ADMIN.name()) dùng theo role đã được định nghĩa ở enum
-//                .hasAuthority("ROLE_ADMIN") dung theo authority
+//                .hasRole(Role.ADMIN.name()//                .hasAuthority("ROLE_ADMIN") dung theo authority) dùng theo role đã được định nghĩa ở enum
                         // Get ra từ security placeholder cái role để phân quyền
                         .anyRequest().authenticated()
         );
@@ -98,7 +98,7 @@ public class SecurityConfig {
     @Bean
     JwtAuthenticationConverter jwtAuthenticationConverter(){
         JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
-        jwtGrantedAuthoritiesConverter.setAuthorityPrefix("ROLE_");
+        jwtGrantedAuthoritiesConverter.setAuthorityPrefix("");
 
         JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
         jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(jwtGrantedAuthoritiesConverter);

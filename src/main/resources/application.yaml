@@ -97,7 +97,12 @@ jwt:
     ttl-minutes: 10
   refresh:
     ttl-minutes: 120
-  signerKey: "JvLr4on9xnJj75gmh3fnVFdx9xELXish"
+  signerKey: "1TjXchw5FloESb63Kc+DFhTARvpWL4jUGCwfGWxuG5SIf/1y/LgJxHnMqaF6A/ij"
+  valid-duration: 3600 # in second
+  refreshable-duration: 36000 # in seconds
+
+
+
 brevo:
   base-url: https://api.brevo.com/v3
   api-key: ${API_KEY_BREVO}
@@ -105,6 +110,9 @@ brevo:
   sender:
     mail: nguyentrongduc447@gmail.com
     name: CodeVerse
+jubge:
+  base-url: https://ce.judge0.com
+  api-key: ${}
 
 mvc:
   throw-exception-if-no-handler-found: true

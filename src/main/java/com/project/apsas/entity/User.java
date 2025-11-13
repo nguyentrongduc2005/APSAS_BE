@@ -2,11 +2,7 @@ package com.project.apsas.entity;
 
 import com.project.apsas.enums.UserStatus;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -38,31 +34,40 @@ public class User {
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @lombok.Builder.Default
+    @ToString.Exclude
     Set<Role> roles = new HashSet<>();
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ToString.Exclude
     private Profile profile;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ToString.Exclude
     private Otp otp;
     @OneToMany(mappedBy = "creator", fetch = FetchType.LAZY)
+    @ToString.Exclude
     Set<Course> courses = new HashSet<>();
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    @ToString.Exclude
     @lombok.Builder.Default
     private Set<Enrollment> enrollments = new HashSet<>();
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
-    @lombok.Builder.Default
+    @Builder.Default
+    @ToString.Exclude
     private Set<HelpRequest> helpRequests = new HashSet<>();
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     @lombok.Builder.Default
+    @ToString.Exclude
     private Set<Notification> notifications = new HashSet<>();
     
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @ToString.Exclude
     private Progress progress;
 
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @ToString.Exclude
     RefreshToken refreshToken;
 
 }

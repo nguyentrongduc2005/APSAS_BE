@@ -3,22 +3,19 @@ package com.project.apsas.service.impl;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSSigner;
+import com.nimbusds.jose.JWSVerifier;
 import com.nimbusds.jose.crypto.MACSigner;
+import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 
 import com.project.apsas.dto.event.SendMailEvent;
-import com.project.apsas.dto.request.LoginRequest;
-import com.project.apsas.dto.request.RegisterRequest;
-import com.project.apsas.dto.request.ResendCodeRequest;
-import com.project.apsas.dto.request.VerifyRequest;
+import com.project.apsas.dto.request.*;
+import com.project.apsas.dto.response.IntrospecResponse;
 import com.project.apsas.dto.response.LoginResponse;
 
 import com.project.apsas.dto.response.RegisterResponse;
-import com.project.apsas.entity.Otp;
-import com.project.apsas.entity.RefreshToken;
-import com.project.apsas.entity.Role;
-import com.project.apsas.entity.User;
+import com.project.apsas.entity.*;
 
 import com.project.apsas.enums.UserStatus;
 
@@ -40,11 +37,15 @@ import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
+import java.text.ParseException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -69,6 +70,13 @@ public class AuthServiceImpl implements AuthService {
     @NonFinal
     @Value("${jwt.signerKey}")
     String jwtSecret;
+    @NonFinal
+    @Value("${jwt.valid-duration}")
+    protected long VALID_DURATION;
+
+    @NonFinal
+    @Value("${jwt.refreshable-duration}")
+    protected long REFRESHABLE_DURATION;
     @NonFinal
 
     @Value("${app.name}")
@@ -111,8 +119,16 @@ public class AuthServiceImpl implements AuthService {
         user.setStatus(UserStatus.INACTIVE);
 
 
-
-
+        Profile  profile = Profile.builder()
+                .dob(null)
+                .phone(null)
+                .bio(null)
+                .address(null)
+                .avatarUrl(null)
+                .gender(null)
+                .user(user)
+                .build();
+        user.setProfile(profile);
         // Tạo OTP
         String code = genOtp6();
         LocalDateTime expiresAt = LocalDateTime.ofInstant(
@@ -236,6 +252,9 @@ public class AuthServiceImpl implements AuthService {
         return UUID.randomUUID().toString().replace("-", "");
     }
 
+
+
+
     private String generateAccessToken(User user) {
         try {
             JWSSigner signer = new MACSigner(jwtSecret.getBytes());
@@ -249,10 +268,11 @@ public class AuthServiceImpl implements AuthService {
                     .expirationTime(exp)
                     .claim("email", user.getEmail())
                     .claim("name", user.getName())
+                    .claim("scope", buildScope(user))
                     .build();
 
             SignedJWT signedJWT = new SignedJWT(
-                    new com.nimbusds.jose.JWSHeader(JWSAlgorithm.HS256),
+                    new com.nimbusds.jose.JWSHeader(JWSAlgorithm.HS512),
                     claims
             );
             signedJWT.sign(signer);
@@ -260,6 +280,153 @@ public class AuthServiceImpl implements AuthService {
         } catch (JOSEException e) {
             log.error("Generate access token error", e);
             throw new AppException(ErrorCode.INTERNAL_ERROR);
+        }
+    }
+
+    // ================= INTROSPECT =================
+    @Override
+    public IntrospecResponse introspect(IntrospectRequest request) {
+        boolean valid = true;
+
+        try {
+            String token = request.getToken();
+
+            // Kiểm tra token có null hoặc empty không
+            if (token == null || token.trim().isEmpty()) {
+                return IntrospecResponse.builder()
+                        .valid(false)
+                        .build();
+            }
+
+            // Verify token
+            verifyToken(token, false);
+
+        } catch (JOSEException e) {
+            log.error("Token signature verification failed: {}", e.getMessage());
+            valid = false;
+        } catch (ParseException e) {
+            log.error("Token parsing failed: {}", e.getMessage());
+            valid = false;
+        } catch (AppException e) {
+            log.error("Token validation failed: {}", e.getMessage());
+            valid = false;
+        } catch (Exception e) {
+            log.error("Unexpected error during token introspection", e);
+            valid = false;
+        }
+
+        return IntrospecResponse.builder()
+                .valid(valid)
+                .build();
+    }
+
+    // ================= VERIFY TOKEN =================
+    private SignedJWT verifyToken(String token, boolean isRefresh) throws JOSEException, ParseException {
+        JWSVerifier verifier = new MACVerifier(jwtSecret.getBytes());
+        SignedJWT signedJWT = SignedJWT.parse(token);
+
+        // Xác định thời gian hết hạn
+        Date expiryTime = (isRefresh)
+                ? new Date(signedJWT
+                .getJWTClaimsSet()
+                .getIssueTime()
+                .toInstant()
+                .plus(REFRESHABLE_DURATION, ChronoUnit.SECONDS)
+                .toEpochMilli())
+                : signedJWT.getJWTClaimsSet().getExpirationTime();
+
+        // Verify signature
+        boolean verified = signedJWT.verify(verifier);
+
+        // Kiểm tra token có hợp lệ và chưa hết hạn
+        if (!(verified && expiryTime.after(new Date()))) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+
+        return signedJWT;
+    }
+
+    private String buildScope(User user) {
+        StringJoiner stringJoiner = new StringJoiner(" ");
+
+        if (!CollectionUtils.isEmpty(user.getRoles()))
+            user.getRoles().forEach(role -> {
+                stringJoiner.add("ROLE_" + role.getName());
+                if (!CollectionUtils.isEmpty(role.getPermissions()))
+                    role.getPermissions().forEach(permission -> stringJoiner.add(permission.getName()));
+            });
+
+        return stringJoiner.toString();
+    }
+
+//     ================= REFRESH TOKEN =================
+//@Override
+//public LoginResponse refreshToken(RefreshTokenRequest request) {
+//    String refreshTokenValue = request.getRefreshToken();
+//
+//    // Bước 1: Kiểm tra null hoặc empty
+//    if (refreshTokenValue == null || refreshTokenValue.trim().isEmpty()) {
+//        throw new AppException(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
+//    }
+//
+//    // Bước 2: Lấy user hiện tại từ access token nếu có (hoặc client gửi kèm)
+//    String currentUserId = currentId(); // lấy từ SecurityContextHolder
+//    if (currentUserId == null) {
+//        throw new AppException(ErrorCode.USER_NOT_FOUND);
+//    }
+//
+//    Long userId = Long.parseLong(currentUserId);
+//
+//    // Bước 3: Tìm refresh token theo userId
+//    RefreshToken refreshToken = refreshTokenRepository.findByUserId(userId)
+//            .orElseThrow(() -> new AppException(ErrorCode.REFRESH_TOKEN_INVALID));
+//
+//    // Bước 4: Kiểm tra token trùng khớp (so sánh hash)
+//    if (!passwordEncoder.matches(refreshTokenValue, refreshToken.getTokenHash())) {
+//        throw new AppException(ErrorCode.REFRESH_TOKEN_INVALID);
+//    }
+//
+//    // Bước 5: Kiểm tra hết hạn
+//    if (refreshToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+//        throw new AppException(ErrorCode.REFRESH_TOKEN_INVALID);
+//    }
+//
+//    // Bước 6: Lấy user
+//    User user = refreshToken.getUser();
+//    if (user == null || user.getStatus() != UserStatus.ACTIVE) {
+//        throw new AppException(ErrorCode.USER_NOT_FOUND);
+//    }
+//
+//    // Bước 7: Sinh token mới
+//    String newAccessToken = generateAccessToken(user);
+//    String newRefreshToken = generateRefreshToken(); // random string mới
+//
+//    // Bước 8: Cập nhật refresh token trong DB
+//    LocalDateTime expiresAt = LocalDateTime.ofInstant(
+//            Instant.now().plus(refreshTtlMinutes, ChronoUnit.MINUTES),
+//            ZoneId.systemDefault()
+//    );
+//
+//    refreshToken.setTokenHash(passwordEncoder.encode(newRefreshToken));
+//    refreshToken.setExpiresAt(expiresAt);
+//    refreshTokenRepository.save(refreshToken);
+//
+//    // Bước 9: Trả response
+//    LoginResponse res = mapper.toLoginResponse(user);
+//    res.setAccessToken(newAccessToken);
+//    res.setRefreshToken(newRefreshToken);
+//    return res;
+//}
+
+    @Override
+    public String currentId() {
+        try {
+            return ((Jwt) SecurityContextHolder.getContext()
+                    .getAuthentication()
+                    .getPrincipal())
+                    .getSubject();
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
     }
 }

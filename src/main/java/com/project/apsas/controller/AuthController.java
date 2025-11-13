@@ -1,10 +1,9 @@
 package com.project.apsas.controller;
 
+import com.nimbusds.jose.JOSEException;
 import com.project.apsas.dto.ApiResponse;
-import com.project.apsas.dto.request.LoginRequest;
-import com.project.apsas.dto.request.RegisterRequest;
-import com.project.apsas.dto.request.ResendCodeRequest;
-import com.project.apsas.dto.request.VerifyRequest;
+import com.project.apsas.dto.request.*;
+import com.project.apsas.dto.response.IntrospecResponse;
 import com.project.apsas.dto.response.LoginResponse;
 import com.project.apsas.dto.response.RegisterResponse;
 import com.project.apsas.service.AuthService;
@@ -13,6 +12,8 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.web.bind.annotation.*;
+
+import java.text.ParseException;
 
 @RestController
 @RequestMapping("/auth")
@@ -59,4 +60,23 @@ public class AuthController {
                 .message("Đã gửi lại mã xác thực tới email")
                 .build();
     }
+    @PostMapping("/introspect")
+    public ApiResponse<IntrospecResponse> introspect(@Valid @RequestBody IntrospectRequest request){
+        IntrospecResponse response = authService.introspect(request);
+        return ApiResponse.<IntrospecResponse>builder()
+                .code("OK")
+                .message("Token hợp lệ")
+                .data(response)
+                .build();
+    }
+    @PostMapping("/refresh-token")
+    public ApiResponse<LoginResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest request){
+        LoginResponse response = authService.refreshToken(request);
+        return ApiResponse.<LoginResponse>builder()
+                .code("OK")
+                .message("Đã Cấp nhật Token Mới")
+                .data(response)
+                .build();
+    }
+
 }

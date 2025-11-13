@@ -19,9 +19,6 @@ public class Profile {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false, unique = true)
-    private Long userId;
-
     @Column(name = "avatar_url", length = 512)
     private String avatarUrl;
 
@@ -43,7 +40,8 @@ public class Profile {
     private LocalDateTime createdAt;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", insertable = false, updatable = false)
+    @JoinColumn(name = "user_id")
+    @ToString.Exclude
     private User user;
     
 
