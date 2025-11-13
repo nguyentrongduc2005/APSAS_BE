@@ -110,6 +110,9 @@ brevo:
   sender:
     mail: nguyentrongduc447@gmail.com
     name: CodeVerse
+jubge:
+  base-url: https://ce.judge0.com
+  api-key: ${}
 
 mvc:
   throw-exception-if-no-handler-found: true
