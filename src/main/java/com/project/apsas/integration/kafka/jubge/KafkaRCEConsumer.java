@@ -39,11 +39,11 @@ public class KafkaRCEConsumer {
             dltStrategy = DltStrategy.FAIL_ON_ERROR,
             dltTopicSuffix = ".DLT"
     )
-    @KafkaListener(topics = "${message-queue.topic.execute.name}", groupId = "group_execute")
-    public void receiveFeedback(
+        @KafkaListener(topics = "${message-queue.topic.execute.name}", groupId = "group_execute")
+    public void receiveSubmitcode(
             ConsumerRecord<String, SubmitCodeEvent> record,
             Acknowledgment ack,
-            @Header(KafkaHeaders.DELIVERY_ATTEMPT) int deliveryAttempt
+            @Header(name = KafkaHeaders.DELIVERY_ATTEMPT, required = false, defaultValue = "1") int deliveryAttempt
     ) {
         final int TOTAL_ATTEMPTS = 3;
         SubmitCodeEvent event = record.value();
