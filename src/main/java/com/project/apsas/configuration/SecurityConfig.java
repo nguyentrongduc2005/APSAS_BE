@@ -44,6 +44,7 @@ public class SecurityConfig {
             "/feedback",
             "/submission",
             "/ai",
+            "/test"
     };
 
     private final String[] PUBLIC_ENDPOINTS_GET = {
