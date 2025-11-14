@@ -23,10 +23,7 @@ import com.project.apsas.exception.AppException;
 import com.project.apsas.exception.ErrorCode;
 import com.project.apsas.integration.kafka.mail.KafkaMailProducer;
 import com.project.apsas.mapper.UserMapper;
-import com.project.apsas.repository.OtpRepository;
-import com.project.apsas.repository.RefreshTokenRepository;
-import com.project.apsas.repository.RoleRepository;
-import com.project.apsas.repository.UserRepository;
+import com.project.apsas.repository.*;
 
 import com.project.apsas.service.AuthService;
 
@@ -59,6 +56,7 @@ import java.util.stream.Collectors;
 @Transactional(rollbackFor = Exception.class)
 @Slf4j
 public class AuthServiceImpl implements AuthService {
+    private final ProgressRepository progressRepository;
 
     UserRepository userRepository;
     RoleRepository roleRepository;
@@ -129,6 +127,8 @@ public class AuthServiceImpl implements AuthService {
                 .user(user)
                 .build();
         user.setProfile(profile);
+
+
         // Tạo OTP
         String code = genOtp6();
         LocalDateTime expiresAt = LocalDateTime.ofInstant(
@@ -147,6 +147,17 @@ public class AuthServiceImpl implements AuthService {
 
         // Save user (sẽ tự động save otp nếu có cascade)
         userRepository.save(user);
+
+
+        Progress progress = Progress.builder()
+                .userId(user.getId())
+                .totalAttemptNo(0)
+                .acceptance(0.0f)
+                .build();
+
+        progressRepository.save(progress);
+
+
 
         sendOtpMail(email, user.getName(), code, VERIFY_TTL_MINUTES);
 
