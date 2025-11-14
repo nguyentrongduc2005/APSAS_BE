@@ -24,6 +24,7 @@ public enum ErrorCode {
     REFRESH_TOKEN_INVALID("E5006", HttpStatus.UNAUTHORIZED, "refresh token không hợp lệ"),
     REFRESH_TOKEN_NOT_FOUND("E5007", HttpStatus.UNAUTHORIZED, "không tìm thấy refresh token"),
     USER_NOT_FOUND("E5008", HttpStatus.NOT_FOUND, "không tìm thấy user"),
+    DATE_INVALID("E5009", HttpStatus.BAD_REQUEST, "ngày không hợp lệ"),
     ;
 
     private final String code;

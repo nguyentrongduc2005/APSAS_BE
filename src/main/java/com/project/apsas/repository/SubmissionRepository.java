@@ -5,6 +5,7 @@ package com.project.apsas.repository;
     // ====== KPI THEO SINH VIÊN TRONG 1 KHÓA ======
 
    
+import com.project.apsas.dto.student.DailyScoreDTO;
 import com.project.apsas.dto.student.ProgressDTO;
 import com.project.apsas.entity.Submission;
 import org.springframework.data.domain.Page;
@@ -16,6 +17,7 @@ import org.springframework.security.access.method.P;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,23 +25,75 @@ import java.util.Optional;
 public interface SubmissionRepository extends JpaRepository<Submission, Long> {
 
     @Query("""
-    SELECT NEW com.project.apsas.dto.student.ProgressDTO$DailyScore(
-        CAST(FUNCTION('DATE', s.submittedAt) AS LocalDate), 
-        CAST(AVG(s.score) AS Double)
+    SELECT NEW com.project.apsas.dto.student.DailyScoreDTO(
+        CAST(FUNCTION('DATE', s.submittedAt) AS LocalDate),
+        AVG(s.score)
     )
     FROM Submission s
-    WHERE s.user.id = :userId AND s.submittedAt >= :fromDate
+    WHERE s.userId = :userId
+      AND s.submittedAt BETWEEN :fromDate AND :toDate
     GROUP BY FUNCTION('DATE', s.submittedAt)
     ORDER BY FUNCTION('DATE', s.submittedAt)
-    """)
-    List<ProgressDTO.DailyScore> findLast7DaysScores(@Param("userId") Long userId, @Param("fromDate") LocalDate fromDate);
+""")
+    List<DailyScoreDTO> findScoresByDateRange(
+            @Param("userId") Long userId,
+            @Param("fromDate") LocalDateTime fromDate,
+            @Param("toDate") LocalDateTime toDate
+    );
 
-    @Query("SELECT AVG(s.score) FROM Submission s WHERE s.user.id = :userId AND s.status = 'COMPLETE'")
+    @Query("""
+    SELECT AVG(s.score)
+    FROM Submission s
+    WHERE s.userId = :userId AND s.status = 'COMPLETE'
+""")
     Double findAverageScore(@Param("userId") Long userId);
 
     @Query("SELECT COUNT(DISTINCT e.course.id) FROM Enrollment e WHERE e.user.id = :userId")
     int countTotalCourses(@Param("userId") Long userId);
 
+
+
+    @Query("""
+    SELECT AVG(s.score)
+    FROM Submission s
+    WHERE s.user.id = :userId
+      AND s.status = 'COMPLETE'
+      AND s.submittedAt BETWEEN :fromDate AND :toDate
+    """)
+    Double findAverageScoreInRange(
+            @Param("userId") Long userId,
+            @Param("fromDate") LocalDateTime fromDate,
+            @Param("toDate") LocalDateTime toDate
+    );
+
+
+    @Query("""
+    SELECT COUNT(s)
+    FROM Submission s
+    WHERE s.userId = :userId AND s.status = 'COMPLETE'
+""")
+    Long countCompletedAssignments(@Param("userId") Long userId);
+
+    @Query("""
+    SELECT COUNT(s)
+    FROM Submission s
+    WHERE s.userId = :userId
+      AND s.submittedAt BETWEEN :fromDate AND :toDate
+""")
+    Long countSubmissionsInRange(
+            @Param("userId") Long userId,
+            @Param("fromDate") LocalDateTime fromDate,
+            @Param("toDate") LocalDateTime toDate
+    );
+
+
+    @Query("""
+    SELECT DISTINCT CAST(FUNCTION('DATE', s.submittedAt) AS LocalDate)
+    FROM Submission s
+    WHERE s.userId = :userId
+    ORDER BY CAST(FUNCTION('DATE', s.submittedAt) AS LocalDate)
+""")
+    List<LocalDate> findAllActiveDates(@Param("userId") Long userId);
 
 
 
