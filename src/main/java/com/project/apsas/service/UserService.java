@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface UserService {
+
     ProgressDTO getStudentCurrentProgress(Long studentId);
     List<DailyScoreDTO> getStudentDailyScores(Long studentId, LocalDate from, LocalDate to);
 }

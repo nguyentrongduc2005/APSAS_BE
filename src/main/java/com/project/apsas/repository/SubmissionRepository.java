@@ -26,20 +26,21 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
 
     @Query("""
     SELECT NEW com.project.apsas.dto.student.DailyScoreDTO(
-        CAST(FUNCTION('DATE', s.submittedAt) AS LocalDate),
+        CAST(s.submittedAt AS DATE),
         AVG(s.score)
     )
     FROM Submission s
     WHERE s.userId = :userId
       AND s.submittedAt BETWEEN :fromDate AND :toDate
-    GROUP BY FUNCTION('DATE', s.submittedAt)
-    ORDER BY FUNCTION('DATE', s.submittedAt)
+    GROUP BY CAST(s.submittedAt AS DATE)
+    ORDER BY CAST(s.submittedAt AS DATE)
 """)
     List<DailyScoreDTO> findScoresByDateRange(
             @Param("userId") Long userId,
             @Param("fromDate") LocalDateTime fromDate,
             @Param("toDate") LocalDateTime toDate
     );
+
 
     @Query("""
     SELECT AVG(s.score)
