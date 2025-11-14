@@ -210,7 +210,7 @@ public class SubmissionServiceImpl implements SubmissionService {
 
         return SubmissionResponse.builder()
                 .id(submission.getId())
-                .assignmentId(submission.getAssignmentId())
+                .assignmentId(submission.getAssignment().getId())
                 .assignmentTitle(submission.getAssignment() != null ? submission.getAssignment().getTitle() : null)
                 .studentId(submission.getUserId())
                 .studentName(submission.getUser() != null ? submission.getUser().getName() : null)
