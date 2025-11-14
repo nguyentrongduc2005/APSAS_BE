@@ -24,6 +24,9 @@ public class Submission {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Column(name = "assignment_id", nullable = false)
+    private Long assignmentId;
+
     @Column(length = 40)
     private String language;
 
