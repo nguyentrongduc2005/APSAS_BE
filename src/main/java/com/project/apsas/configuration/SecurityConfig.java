@@ -44,6 +44,7 @@ public class SecurityConfig {
             "/feedback",
             "/submission",
             "/ai",
+            "/api/teacher/submissions/{submissionId}/feedback",
     };
 
     private final String[] PUBLIC_ENDPOINTS_GET = {
