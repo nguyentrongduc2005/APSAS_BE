@@ -13,9 +13,9 @@ import org.springframework.web.bind.annotation.*;
  * API để giáo viên xem submissions của học sinh
  */
 @RestController
-@RequestMapping("/api/teacher/submissions")
+@RequestMapping("/submissions")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('LECTURER', 'ADMIN')")
+
 public class SubmissionController {
 
     private final SubmissionService submissionService;
@@ -29,6 +29,7 @@ public class SubmissionController {
      * @param limit Items per page (default: 10, max: 100)
      * @return Paginated list of submissions
      */
+    @PreAuthorize("hasAnyRole('LECTURER', 'ADMIN')")
     @GetMapping("/course/{courseId}")
     public ResponseEntity<PagedResponse<SubmissionResponse>> getSubmissionsByCourse(
             @PathVariable Long courseId,
@@ -50,6 +51,7 @@ public class SubmissionController {
      * @param limit Items per page (default: 10, max: 100)
      * @return Paginated list of submissions
      */
+    @PreAuthorize("hasAnyRole('LECTURER', 'ADMIN')")
     @GetMapping("/course/{courseId}/assignment/{assignmentId}")
     public ResponseEntity<PagedResponse<SubmissionResponse>> getSubmissionsByAssignment(
             @PathVariable Long courseId,
@@ -70,6 +72,7 @@ public class SubmissionController {
      * @param studentId Student ID
      * @return Submission details
      */
+    @PreAuthorize("hasAnyRole('LECTURER', 'ADMIN')")
     @GetMapping("/assignment/{assignmentId}/student/{studentId}")
     public ResponseEntity<SubmissionResponse> getSubmissionDetail(
             @PathVariable Long assignmentId,
@@ -90,6 +93,7 @@ public class SubmissionController {
      * @param limit Items per page (default: 10, max: 100)
      * @return Paginated list of student submissions
      */
+    @PreAuthorize("hasAnyRole('LECTURER', 'ADMIN')")
     @GetMapping("/course/{courseId}/assignment/{assignmentId}/students")
     public ResponseEntity<PagedResponse<StudentSubmissionDTO>> getStudentsByAssignment(
             @PathVariable Long courseId,
@@ -101,4 +105,6 @@ public class SubmissionController {
                 .getStudentSubmissionsByAssignment(courseId, assignmentId, page, limit);
         return ResponseEntity.ok(response);
     }
+
+
 }

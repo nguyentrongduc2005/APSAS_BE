@@ -483,6 +483,20 @@ ALTER TABLE `skills`
         FOREIGN KEY (`created_by`) REFERENCES `users` (`id`)
             ON DELETE SET NULL
             ON UPDATE CASCADE;
+ALTER TABLE `submissions`
+    ADD COLUMN `course_id` BIGINT DEFAULT NULL AFTER `assignment_id`;
+
+-- Bước 2: Thêm index (chỉ mục) cho cột mới để truy vấn nhanh hơn
+-- (Ví dụ: Lấy tất cả bài nộp của 1 khóa học)
+ALTER TABLE `submissions`
+    ADD KEY `ix_submissions_course` (`course_id`);
+
+-- Bước 3: Thêm ràng buộc khóa ngoại (Foreign Key)
+ALTER TABLE `submissions`
+    ADD CONSTRAINT `fk_submissions_course`
+        FOREIGN KEY (`course_id`) REFERENCES `courses` (`id`)
+            ON DELETE CASCADE -- Nếu xóa khóa học, các bài nộp cũng bị xóa
+            ON UPDATE CASCADE;
 
 SET FOREIGN_KEY_CHECKS=1;
 COMMIT;

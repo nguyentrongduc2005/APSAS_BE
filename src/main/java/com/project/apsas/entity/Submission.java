@@ -21,9 +21,6 @@ public class Submission {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "assignment_id", nullable = false)
-    private Long assignmentId;
-
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
@@ -62,6 +59,10 @@ public class Submission {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assignment_id", insertable = false, updatable = false)
     private Assignment assignment;
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "course_id", insertable = false, updatable = false)
+    private Course Course;
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
