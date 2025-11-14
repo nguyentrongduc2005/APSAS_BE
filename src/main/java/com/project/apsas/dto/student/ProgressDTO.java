@@ -17,14 +17,7 @@ public class ProgressDTO {
     private long totalCourses;
     private int completedCourses;
     private double averageScore;
-    private List<DailyScore> last7DaysScores;
+    private List<DailyScoreDTO> dailyScoreDTOList;
 
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class DailyScore {
-        private LocalDate date;
-        private Double  score;
-    }
+
 }

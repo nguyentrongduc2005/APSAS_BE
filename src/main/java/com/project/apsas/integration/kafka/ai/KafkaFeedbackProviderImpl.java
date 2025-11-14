@@ -22,7 +22,7 @@ public class KafkaFeedbackProviderImpl implements KafkaFeedbackProvider {
             if (e != null) throw new RuntimeException(e);
 
             var md = res.getRecordMetadata();
-            log.info("✅ Sent {}-{}@{} key={}", md.topic(), md.partition(), md.offset(), key);
+            log.info("✔ Sent {}-{}@{} key={}", md.topic(), md.partition(), md.offset(), key);
         });
     }
 }
