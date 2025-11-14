@@ -7,6 +7,7 @@ package com.project.apsas.repository;
    
 import com.project.apsas.dto.student.DailyScoreDTO;
 import com.project.apsas.dto.student.ProgressDTO;
+import com.project.apsas.entity.Assignment;
 import com.project.apsas.entity.Submission;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,6 +24,8 @@ import java.util.Optional;
 
 @Repository
 public interface SubmissionRepository extends JpaRepository<Submission, Long> {
+
+    int countByCourseIdAndAssignmentAndUserId(Long courseId, Assignment assignment, Long userId);
 
     @Query("""
     SELECT NEW com.project.apsas.dto.student.DailyScoreDTO(

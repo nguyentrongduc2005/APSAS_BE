@@ -28,7 +28,7 @@ CREATE TABLE `assignments` (
                                `max_score` decimal(6,2) DEFAULT NULL,
                                `order_no` int(11) DEFAULT NULL,
                                `attempts_limit` int(10) UNSIGNED DEFAULT NULL,
-                               `proficiency` varchar(80) DEFAULT NULL,
+                               `proficiency` int(10) DEFAULT NULL,
                                `created_at` datetime DEFAULT current_timestamp(),
                                PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

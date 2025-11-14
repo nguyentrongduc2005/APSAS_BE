@@ -1,5 +1,7 @@
 package com.project.apsas.controller;
 
+import com.project.apsas.dto.request.CreateSubmissionRequest;
+import com.project.apsas.dto.response.CreateSubmissionResponse;
 import com.project.apsas.dto.response.PagedResponse;
 import com.project.apsas.dto.response.SubmissionResponse;
 import com.project.apsas.dto.StudentSubmissionDTO;
@@ -106,5 +108,10 @@ public class SubmissionController {
         return ResponseEntity.ok(response);
     }
 
-
+    @PreAuthorize("hasRole('STUDENT')")
+    @PostMapping("/create")
+    public ResponseEntity<CreateSubmissionResponse> createSubmission(
+            @RequestBody CreateSubmissionRequest createSubmissionRequest) {
+        return null;
+    }
 }

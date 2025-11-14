@@ -11,6 +11,8 @@ import java.util.Map;
 
 @Repository
 public interface EnrollmentRepository extends JpaRepository<Enrollment, Enrollment.PK> {
+    boolean existsEnrollmentByCourseIdAndUserId(Long courseId, Long userId);
+
     @Query("SELECT e.course.id, COUNT(e), e.course.limit FROM Enrollment e WHERE e.course.id IN :courseIds GROUP BY e.course.id, e.course.limit")
     List<Object[]> findStudentCountsByCourseIds(@Param("courseIds") List<Long> courseIds);
 

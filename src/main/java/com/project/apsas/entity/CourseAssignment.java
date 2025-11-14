@@ -45,6 +45,7 @@ public class CourseAssignment {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
+    @Builder
     public static class PK implements Serializable {
         private Long courseId;
         private Long assignmentId;

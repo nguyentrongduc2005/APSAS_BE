@@ -3,7 +3,9 @@ package com.project.apsas.service;
 
 import com.project.apsas.dto.StudentSubmissionDTO;
 import com.project.apsas.dto.mapping.ReportCongfigSubmission;
+import com.project.apsas.dto.request.CreateSubmissionRequest;
 import com.project.apsas.dto.response.CodeFeedbackDTO;
+import com.project.apsas.dto.response.CreateSubmissionResponse;
 import com.project.apsas.dto.response.PagedResponse;
 import com.project.apsas.dto.response.SubmissionResponse;
 
@@ -36,4 +38,5 @@ public interface SubmissionService {
             int page,
             int limit
     );
+    public CreateSubmissionResponse createSubmission(CreateSubmissionRequest createSubmissionRequest);
 }

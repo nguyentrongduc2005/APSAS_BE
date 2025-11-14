@@ -24,7 +24,8 @@ public class Submission {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-
+    @Column(name = "assignment_id", nullable = false)
+    private Long assignmentId;
 
     @Column(length = 40)
     private String language;
@@ -64,7 +65,7 @@ public class Submission {
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "course_id", insertable = false, updatable = false)
-    private Course Course;
+    private Course course;
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)

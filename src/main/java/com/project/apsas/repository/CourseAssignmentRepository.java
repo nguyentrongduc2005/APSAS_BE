@@ -17,4 +17,6 @@ public interface CourseAssignmentRepository extends JpaRepository<CourseAssignme
 
     @Query("SELECT ca.course.id, COUNT(ca) FROM CourseAssignment ca WHERE ca.course.id IN :courseIds GROUP BY ca.course.id")
     List<Object[]> findAssignmentLessonsByCourseIds(@Param("courseIds") List<Long> courseIds);
+
+    boolean existsCourseAssignmentByAssignmentIdAndCourseId(Long assignmentId, Long courseId);
 }

@@ -45,8 +45,8 @@ public class Assignment {
     @Column(name = "attempts_limit")
     private Integer attemptsLimit;
 
-    @Column(length = 80)
-    private String proficiency;
+
+    private int proficiency;
 
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
