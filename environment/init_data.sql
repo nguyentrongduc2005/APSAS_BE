@@ -301,21 +301,27 @@ SET @sample_course_id = (SELECT courses_id FROM courses_assignments WHERE assign
 
 -- Bài nộp PENDING (đang chờ chấm)
 INSERT INTO `submissions` (
-    `assignment_id`, `user_id`, `language`, `code`, `status`, `attempt_no`, `submitted_at`
+    `assignment_id`, `course_id`, `user_id`, `language`, `code`, `status`, `attempt_no`, `submitted_at`
 ) VALUES (
-             @sample_assignment_id, @sample_student_id, 'java',
+             @sample_assignment_id,
+             @sample_course_id, -- ĐÃ THÊM course_id
+             @sample_student_id,
+             'java',
              'public class Solution { ... // Code đang chờ chấm }',
              'PENDING', 1, NOW()
          );
 
 -- Bài nộp COMPLETE (đã chấm xong)
 INSERT INTO `submissions` (
-    `assignment_id`, `user_id`, `language`, `code`,
+    `assignment_id`, `course_id`, `user_id`, `language`, `code`,
     `report_json`, `score`, `status`, `suggestion`,
     `big_o_complexity_time`, `big_o_complexity_space`, `feedback`, `passed`,
     `attempt_no`, `submitted_at`
 ) VALUES (
-             @sample_assignment_id, @sample_student_id, 'java',
+             @sample_assignment_id,
+             @sample_course_id, -- ĐÃ THÊM course_id
+             @sample_student_id,
+             'java',
              'public class Solution { ... // Code tối ưu }',
              -- Cấu trúc JSON theo yêuCầu (ReportCongfigSubmission -> List<TestCaseResult>)
              '{
@@ -337,7 +343,7 @@ INSERT INTO `submissions` (
                          "status": "Accepted",
                          "time": 120.0,
                          "memory": 4100,
-                         "visibility": "HIDDEN",
+                         "visibility": "PRIVATE",
                          "stdin": "5 5",
                          "stdout": "10",
                          "expectedOutput": "10"
@@ -346,7 +352,7 @@ INSERT INTO `submissions` (
                          "status": "Accepted",
                          "time": 131.5,
                          "memory": 4098,
-                         "visibility": "HIDDEN",
+                         "visibility": "PRIVATE",
                          "stdin": "-1 -5",
                          "stdout": "-6",
                          "expectedOutput": "-6"
