@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(of = {"id"})
 @IdClass(ProgressSkillId.class)
 @Table(name = "progress_skills")
 public class ProgressSkill {

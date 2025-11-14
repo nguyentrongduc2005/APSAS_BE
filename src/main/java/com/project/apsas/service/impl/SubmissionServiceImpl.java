@@ -34,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -48,15 +49,14 @@ public class SubmissionServiceImpl implements SubmissionService {
     ObjectMapper objectMapper;
     AuthService authService;
     UserRepository userRepository;
-    CourseRepository courseRepository;
-    AssignmentRepository assignmentRepository;
+
     CourseAssignmentRepository courseAssignmentRepository;
     EnrollmentRepository enrollmentRepository;
     ProgressSkillRepository progressSkillRepository;
 
-    KafkaRCEProducer  kafkaRCEProducer;
+    KafkaRCEProducer kafkaRCEProducer;
 
-    KafkaFeedbackProvider  kafkaFeedbackProvider;
+    KafkaFeedbackProvider kafkaFeedbackProvider;
 
     @NonFinal
     @Value("${message-queue.topic.feedback.name}")
@@ -93,10 +93,11 @@ public class SubmissionServiceImpl implements SubmissionService {
                         ? new BigDecimal((double) passCount * 100.0 / totalCases).setScale(2, RoundingMode.HALF_UP)
                         : BigDecimal.ZERO;
                 submission.setScore(score);
-
-                progressSkill.setScore(score.multiply(new BigDecimal(profinciency)));
-
-                progressSkill.setLevel(progressSkill.getScore().intValue() % 1000);
+                if(progressSkill != null) {
+                    progressSkill.setScore(score.multiply(new BigDecimal(profinciency)));
+                    progressSkill.setLevel(progressSkill.getScore().intValue() % 1000);
+                    progressSkillRepository.save(progressSkill);
+                }
 
                 // 3c. Chuyển toàn bộ report object thành chuỗi JSON để lưu
                 try {
@@ -114,7 +115,7 @@ public class SubmissionServiceImpl implements SubmissionService {
                     submission.setStatus(StatusSubmission.PROCESSING);
                 }
             }
-            progressSkillRepository.save(progressSkill);
+
             // 5. Lưu lại
             submissionRepository.save(submission);
         }
@@ -355,42 +356,47 @@ public class SubmissionServiceImpl implements SubmissionService {
         CourseAssignment courseAssignment = courseAssignmentRepository.findById(
                 new CourseAssignment.PK(courseId, assignmentId)
         ).orElseThrow(() -> new AppException(ErrorCode.ASSIGNMENT_NOT_FOUND));
+        if(courseAssignment.getOpenAt().isAfter(LocalDateTime.now()))
+            throw new AppException(ErrorCode.ASSIGNMENT_NOT_OPEN);
+
+        if(courseAssignment.getDueAt().isBefore(LocalDateTime.now()))
+            throw new AppException(ErrorCode.ASSIGNMENT_HAVE_CLOSE);
 
         Assignment assignment = courseAssignment.getAssignment();
 
-        int attempt = submissionRepository.countByCourseIdAndAssignmentAndUserId(courseId, assignment, userId);
+        int attempt = submissionRepository.countByCourseIdAndAssignmentIdAndUserId(courseId, assignmentId, userId);
         if(attempt >= assignment.getAttemptsLimit())
             throw new AppException(ErrorCode.BAD_REQUEST);
         Submission submission = Submission.builder()
                 .code(req.getCode())
                 .userId(userId)
-                .assignment(assignment)
-                .user(user)
+                .courseId(courseId)
+                .assignmentId(assignment.getId())
                 .language(String.valueOf(req.getLanguageId()))
-                .course(courseAssignment.getCourse())
                 .attemptNo(attempt + 1)
                 .status(StatusSubmission.PENDING)
                 .build();
         submissionRepository.save(submission);
         // add skill cho user
-        ProgressSkill progressSkill = ProgressSkill.builder()
-                .skillId(assignment.getSkill().getId())
-                .progressId(user.getProgress().getId())
-                .level(1)
-                .score(BigDecimal.valueOf(0))
-                .build();
-        progressSkillRepository.save(progressSkill);
-
+        if(!(user.getProgress() == null)) {
+            ProgressSkill progressSkill = ProgressSkill.builder()
+                    .skillId(assignment.getSkill().getId())
+                    .progressId(user.getProgress().getId())
+                    .level(1)
+                    .score(BigDecimal.valueOf(0))
+                    .build();
+            progressSkillRepository.save(progressSkill);
+        }
         if(!assignment.getAssignmentEvaluations().stream().findFirst().isPresent())
             throw new AppException(ErrorCode.BAD_REQUEST);
         FeedbackEvent feedbackEvent = FeedbackEvent.builder()
                 .submissionId(submission.getId())
-                .code(submission.getCode())
+                .code(req.getCode())
                 .statement_md(assignment.getStatementMd())
                 .language(submission.getLanguage())
                 .build();
         SubmitCodeEvent submitCodeEvent = SubmitCodeEvent.builder()
-                .code(submission.getCode())
+                .code(req.getCode())
                 .submissionId(submission.getId())
                 .configJson(assignment.getAssignmentEvaluations().stream().findFirst().get().getConfigJson())
                 .languageId(Integer.parseInt(submission.getLanguage()))

@@ -2,10 +2,7 @@ package com.project.apsas.entity;
 
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -19,6 +16,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "assignments")
+@EqualsAndHashCode(of = {"id"})
 public class Assignment {
  @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -292,12 +292,12 @@ SELECT
             {
                 "in": "5 5",
                 "out": "10",
-                "visibility": "HIDDEN"
+                "visibility": "PRIVATE"
             },
             {
                 "in": "-1 -5",
                 "out": "-6",
-                "visibility": "HIDDEN"
+                "visibility": "PRIVATE"
             }
         ]
     }'

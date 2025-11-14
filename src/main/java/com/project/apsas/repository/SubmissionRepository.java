@@ -25,7 +25,7 @@ import java.util.Optional;
 @Repository
 public interface SubmissionRepository extends JpaRepository<Submission, Long> {
 
-    int countByCourseIdAndAssignmentAndUserId(Long courseId, Assignment assignment, Long userId);
+    int countByCourseIdAndAssignmentIdAndUserId(Long courseId, Long assignmentId, Long userId);
 
     @Query("""
     SELECT NEW com.project.apsas.dto.student.DailyScoreDTO(

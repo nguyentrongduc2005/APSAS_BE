@@ -14,6 +14,7 @@ import java.util.Set;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(of = {"id"})
 @Table(name = "submissions")
 public class Submission {
 
@@ -23,6 +24,10 @@ public class Submission {
 
     @Column(name = "user_id", nullable = false)
     private Long userId;
+
+
+    @Column(name = "course_id", nullable = false)
+    private Long courseId;
 
     @Column(name = "assignment_id", nullable = false)
     private Long assignmentId;

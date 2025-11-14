@@ -13,5 +13,5 @@ public class CreateSubmissionRequest {
     int languageId;
     Long assignmentId;
     Long courseId;
-    String Code;
+    String code;
 }

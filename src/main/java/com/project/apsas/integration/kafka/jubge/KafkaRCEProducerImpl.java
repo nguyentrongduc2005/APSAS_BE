@@ -20,7 +20,7 @@ public class KafkaRCEProducerImpl implements KafkaRCEProducer {
     public void push(String topic, String key, SubmitCodeEvent event) {
         kafkaTemplate.send(topic, key, event).whenComplete((res, e) -> {
             if (e != null) throw new RuntimeException(e);
-
+            System.out.println(event.getCode());
             var md = res.getRecordMetadata();
             log.info("✅ Sent {}-{}@{} key={}", md.topic(), md.partition(), md.offset(), key);
         });
