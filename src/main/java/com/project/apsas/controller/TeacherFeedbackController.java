@@ -1,51 +1,60 @@
 package com.project.apsas.controller;
 
-import com.project.apsas.dto.teacher.TeacherFeedbackRequest;
-import com.project.apsas.dto.teacher.TeacherFeedbackResponse;
-import com.project.apsas.service.TeacherFeedbackService;
-import lombok.AccessLevel;
+import com.project.apsas.dto.ApiResponse;
+import com.project.apsas.dto.request.TeacherFeedbackRequest;
+import com.project.apsas.dto.response.FeedbackResponse;
+import com.project.apsas.service.FeedbackService;
 import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * API cho giảng viên gửi feedback text cho submission của sinh viên
- */
 @RestController
-@RequestMapping("/api/teacher/submissions/{submissionId}/feedback")
+@RequestMapping("/api/teacher/submissions")
 @RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@PreAuthorize("hasAnyRole('LECTURER', 'ADMIN')")
 public class TeacherFeedbackController {
 
-    TeacherFeedbackService teacherFeedbackService;
+    private final FeedbackService feedbackService;
 
     /**
-     * Giảng viên tạo feedback cho một submission
+     * API: Giảng viên tạo feedback cho một submission
+     * POST /api/teacher/submissions/{submissionId}/feedbacks
      */
-    @PostMapping
-    @PreAuthorize("hasRole('LECTURER')")
-    public ResponseEntity<TeacherFeedbackResponse> createFeedback(
+    @PostMapping("/{submissionId}/feedbacks")
+    public ResponseEntity<ApiResponse<FeedbackResponse>> createTeacherFeedback(
             @PathVariable Long submissionId,
             @RequestBody TeacherFeedbackRequest request
     ) {
-        TeacherFeedbackResponse response = teacherFeedbackService.addFeedback(submissionId, request);
-        return ResponseEntity.ok(response);
+        FeedbackResponse resp = feedbackService.addTeacherFeedback(submissionId, request);
+
+        return ResponseEntity.ok(
+                ApiResponse.<FeedbackResponse>builder()
+                        .code("OK")
+                        .message("Feedback created successfully")
+                        .data(resp)
+                        .build()
+        );
     }
 
     /**
-     * Lấy danh sách feedback của một submission
+     * API: Lấy danh sách feedback của một submission
+     * GET /api/teacher/submissions/{submissionId}/feedbacks
      */
-    @GetMapping
-    @PreAuthorize("hasRole('LECTURER')")
-    public ResponseEntity<List<TeacherFeedbackResponse>> getFeedbacks(
+    @GetMapping("/{submissionId}/feedbacks")
+    public ResponseEntity<ApiResponse<List<FeedbackResponse>>> getFeedbacks(
             @PathVariable Long submissionId
     ) {
-        List<TeacherFeedbackResponse> feedbacks =
-                teacherFeedbackService.getFeedbacksBySubmission(submissionId);
-        return ResponseEntity.ok(feedbacks);
+        List<FeedbackResponse> resp = feedbackService.getFeedbacksOfSubmission(submissionId);
+
+        return ResponseEntity.ok(
+                ApiResponse.<List<FeedbackResponse>>builder()
+                        .code("OK")
+                        .message("List feedbacks")
+                        .data(resp)
+                        .build()
+        );
     }
 }

@@ -58,6 +58,8 @@ public class SecurityConfig {
         httpSecurity.authorizeHttpRequests(request -> request
                         .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.GET, PUBLIC_ENDPOINTS_GET).permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/teacher/submissions/*/feedbacks")
+                        .hasAnyRole(Role.LECTURER.name(), Role.ADMIN.name())
 //                .requestMatchers(HttpMethod.GET,"/users")
 //                .hasRole(Role.ADMIN.name()//                .hasAuthority("ROLE_ADMIN") dung theo authority) dùng theo role đã được định nghĩa ở enum
                         // Get ra từ security placeholder cái role để phân quyền
