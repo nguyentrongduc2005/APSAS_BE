@@ -289,54 +289,28 @@ public class SubmissionServiceImpl implements SubmissionService {
      * Lấy danh sách sinh viên đã nộp bài trong một assignment của course
      * @param courseId Course ID
      * @param assignmentId Assignment ID
-     * @param page Page number (1-based)
-     * @param limit Items per page
+     * @param pageable Pageable object (page, size, sort)
      * @return Paginated student submissions
      */
     @Override
-    public PagedResponse<StudentSubmissionDTO> getStudentSubmissionsByAssignment(
+    public Page<StudentSubmissionDTO> getStudentSubmissionsByAssignment(
             Long courseId,
             Long assignmentId,
-            int page,
-            int limit
+            Pageable pageable
     ) {
-        // Validate parameters
-        int pg = Math.max(page, 1);
-        int lm = Math.min(Math.max(limit, 1), 100);  // Max 100 per page
-
-        Pageable pageable = PageRequest.of(pg - 1, lm);
         Page<Object[]> results = submissionRepository.findStudentSubmissionsByCourseAndAssignment(
                 courseId, assignmentId, pageable
         );
 
-        List<StudentSubmissionDTO> data = results.getContent().stream()
-                .map(obj -> StudentSubmissionDTO.builder()
-                        .studentId((Long) obj[0])
-                        .studentName((String) obj[1])
-                        .studentEmail((String) obj[2])
-                        .score(obj[3] != null ? new java.math.BigDecimal(obj[3].toString()) : null)
-                        .passed((Boolean) obj[4])
-                        .submittedAt((java.time.LocalDateTime) obj[5])
-                        .attemptNo((Integer) obj[6])
-                        .assignmentTitle((String) obj[7])
-                        .build())
-                .toList();
-
-        int totalPages = results.getTotalPages();
-        boolean hasNext = results.hasNext();
-        boolean hasPrev = results.hasPrevious();
-
-        return PagedResponse.<StudentSubmissionDTO>builder()
-                .data(data)
-                .pagination(PagedResponse.Pagination.builder()
-                        .page(pg)
-                        .limit(lm)
-                        .totalItems(results.getTotalElements())
-                        .totalPages(totalPages)
-                        .hasNext(hasNext)
-                        .hasPrev(hasPrev)
-                        .build())
-                .build();
+        return results.map(obj -> StudentSubmissionDTO.builder()
+                .studentId((Long) obj[0])
+                .studentName((String) obj[1])
+                .studentEmail((String) obj[2])
+                .score(obj[3] != null ? new BigDecimal(obj[3].toString()) : null)
+                .passed((Boolean) obj[4])
+                .submittedAt((LocalDateTime) obj[5])
+                .attemptNo((Integer) obj[6])
+                .build());
     }
 
     @Override
