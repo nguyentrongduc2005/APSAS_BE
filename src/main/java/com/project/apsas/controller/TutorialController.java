@@ -16,6 +16,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -40,13 +43,14 @@ public class TutorialController {
     @PostMapping("/{tutorialId}/contents")
     public ApiResponse<CreateContentResponse> createContentForTutorial(
             @PathVariable Long tutorialId,
-            @RequestBody CreateContentRequest request // Thêm @Valid nếu bạn dùng validation
+            @RequestBody CreateContentRequest request, // Thêm @Valid nếu bạn dùng validation
+            @RequestPart(value = "files", required = false) List<MultipartFile> files
     ) {
 
         return ApiResponse.<CreateContentResponse>builder()
                 .code("ok")
                 .message("successfully created tutorial")
-                .data(contentService.createContent(tutorialId,request))
+                .data(contentService.createContent(tutorialId,request,files))
                 .build();
     }
     @PreAuthorize("hasRole('PROVIDER')")
@@ -62,4 +66,6 @@ public class TutorialController {
                 .data(assignmentService.createAssignment(tutorialId,request))
                 .build();
     }
+
+
 }
