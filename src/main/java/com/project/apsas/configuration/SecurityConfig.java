@@ -1,7 +1,9 @@
 package com.project.apsas.configuration;
 
 import com.project.apsas.enums.Role;
+import lombok.RequiredArgsConstructor;
 import org.apache.catalina.filters.CorsFilter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -44,7 +46,8 @@ public class SecurityConfig {
             "/feedback",
             "/submission",
             "/ai",
-            "/test"
+            "/test",
+            "login/oauth2/**"
     };
 
     private final String[] PUBLIC_ENDPOINTS_GET = {
@@ -54,7 +57,8 @@ public class SecurityConfig {
     };
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity httpSecurity, CustomOAuth2UserService customOAuth2UserService,
+                                           OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler) throws Exception {
         httpSecurity.csrf(AbstractHttpConfigurer::disable);
         httpSecurity.authorizeHttpRequests(request -> request
                         .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
@@ -69,6 +73,14 @@ public class SecurityConfig {
                         jwtConfigurer.decoder(jwtDecoder())
                                 .jwtAuthenticationConverter(jwtAuthenticationConverter()))
         );
+        httpSecurity.oauth2Login(oauth2 -> {
+            oauth2.userInfoEndpoint(userInfo -> userInfo
+                    .userService(customOAuth2UserService) // Bước 1: Find/Create user
+            );
+            oauth2.successHandler(
+                    oAuth2LoginSuccessHandler // Bước 2: Tạo token và redirect
+            );
+        });
         return httpSecurity.build();
     }
 
@@ -86,7 +98,6 @@ public class SecurityConfig {
 
         return new CorsFilter();
     }
-
 
 
     @Bean
@@ -108,10 +119,6 @@ public class SecurityConfig {
         return jwtAuthenticationConverter;
     }
 
-    @Bean
-    PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(10);
-    }
 
 }
 
