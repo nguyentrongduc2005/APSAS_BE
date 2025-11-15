@@ -14,10 +14,13 @@ import com.project.apsas.service.ProfileAvatarService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +31,9 @@ public class ProfileAvatarServiceImpl implements ProfileAvatarService {
     UserRepository userRepository;
     ProfileRepository profileRepository;
     CloudinaryService cloudinaryService;
+    @NonFinal
+    @Value("${cloudinary.option.folder-name}")
+    String folder;
 
     @Override
     public ProfileResponse updateMyAvatar(MultipartFile file) throws IOException {
@@ -59,26 +65,24 @@ public class ProfileAvatarServiceImpl implements ProfileAvatarService {
         // 4. Upload lên Cloudinary
         // Nếu trong application.yaml có folder-name riêng thì bạn có thể truyền vào
         // Ở đây ví dụ: folder = "avatars"
-        String folder = "avatars";
-        String publicId = "avatar_user_" + userId;
+        String publicId = UUID.randomUUID().toString();
+        boolean success = false;
+        try {
+            UploadResult uploadResult = cloudinaryService.upload(file, folder, publicId);
+            profile.setAvatarUrl(uploadResult.getUrl());
+            success = true;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
-        UploadResult uploadResult = cloudinaryService.upload(file, folder, publicId);
 
         // 5. Lưu URL avatar vào profile
-        profile.setAvatarUrl(uploadResult.getUrl());
+
         profileRepository.save(profile);
 
         // 6. Build ProfileResponse trả về giống các API profile khác
         return ProfileResponse.builder()
-                .id(user.getId())
-                .name(user.getName())
-                .email(user.getEmail())
-                .dob(profile.getDob())
-                .bio(profile.getBio())
-                .phone(profile.getPhone())
-                .address(profile.getAddress())
-                .gender(profile.getGender() != null ? profile.getGender().name() : null)
-                .avatar(profile.getAvatarUrl())
+                .success(success)
                 .build();
     }
 }
