@@ -131,6 +131,24 @@ public class SubmissionController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * Student xem các assignment đã nộp của chính mình
+     * CHỈ hiển thị assignments ĐÃ SUBMIT
+     * GET /api/submissions/my-submissions?page=0&size=10&sort=submittedAt,desc
+     *
+     * @param pageable Pageable object (page, size, sort)
+     * @return Paginated list of submitted assignments
+     */
+    @PreAuthorize("hasRole('STUDENT')")
+    @GetMapping("/my-submissions")
+    public ResponseEntity<Page<com.project.apsas.dto.StudentSubmittedAssignmentDTO>> getMySubmittedAssignments(
+            Pageable pageable
+    ) {
+        Page<com.project.apsas.dto.StudentSubmittedAssignmentDTO> response = submissionService
+                .getMySubmittedAssignments(pageable);
+        return ResponseEntity.ok(response);
+    }
+
     @PreAuthorize("hasRole('STUDENT')")
     @PostMapping("/create")
     public ApiResponse<CreateSubmissionResponse> createSubmission(

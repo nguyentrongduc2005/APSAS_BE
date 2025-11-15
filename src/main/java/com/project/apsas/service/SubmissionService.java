@@ -55,5 +55,16 @@ public interface SubmissionService {
             Pageable pageable
     );
     
+    /**
+     * Student xem các assignment đã nộp của chính mình
+     * Chỉ hiển thị assignments ĐÃ SUBMIT
+     * 
+     * @param pageable Pageable object
+     * @return Page of submitted assignments
+     */
+    public Page<com.project.apsas.dto.StudentSubmittedAssignmentDTO> getMySubmittedAssignments(
+            Pageable pageable
+    );
+    
     public CreateSubmissionResponse createSubmission(CreateSubmissionRequest createSubmissionRequest);
 }

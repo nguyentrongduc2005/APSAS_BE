@@ -470,4 +470,47 @@ public class SubmissionServiceImpl implements SubmissionService {
                 allSubmissions.size()
         );
     }
+
+    /**
+     * Student xem các assignment đã nộp của chính mình
+     */
+    @Override
+    public Page<com.project.apsas.dto.StudentSubmittedAssignmentDTO> getMySubmittedAssignments(
+            Pageable pageable
+    ) {
+        // 1. Lấy user ID hiện tại
+        Long currentUserId = Long.parseLong(authService.currentId());
+        
+        // 2. Lấy tất cả submissions của user với pagination
+        Page<Submission> submissions = submissionRepository
+                .findByUserIdOrderBySubmittedAtDesc(currentUserId, pageable);
+        
+        // 3. Map sang DTO
+        return submissions.map(submission -> {
+            Assignment assignment = submission.getAssignment();
+            Course course = submission.getCourse();
+            
+            return com.project.apsas.dto.StudentSubmittedAssignmentDTO.builder()
+                    // Assignment info
+                    .assignmentId(assignment.getId())
+                    .assignmentTitle(assignment.getTitle())
+                    .assignmentDescription(assignment.getStatementMd())
+                    .assignmentMaxScore(assignment.getMaxScore() != null ? assignment.getMaxScore().intValue() : null)
+                    // Course info
+                    .courseId(course.getId())
+                    .courseName(course.getName())
+                    // Submission info
+                    .submissionId(submission.getId())
+                    .status(submission.getStatus() != null ? submission.getStatus().name() : null)
+                    .score(submission.getScore() != null ? submission.getScore().doubleValue() : null)
+                    .passed(submission.getPassed())
+                    .submittedAt(submission.getSubmittedAt())
+                    .attemptNo(submission.getAttemptNo())
+                    .language(submission.getLanguage())
+                    .feedback(submission.getFeedback())
+                    // Additional info
+                    .isLatest(true) // Vì query đã sort theo submittedAt desc
+                    .build();
+        });
+    }
 }

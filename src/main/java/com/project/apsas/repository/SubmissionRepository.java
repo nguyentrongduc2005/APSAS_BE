@@ -198,4 +198,9 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
             Long assignmentId, 
             Long userId
     );
+    
+    /**
+     * Lấy tất cả submissions của một user, sắp xếp theo thời gian mới nhất
+     */
+    Page<Submission> findByUserIdOrderBySubmittedAtDesc(Long userId, Pageable pageable);
 }
