@@ -3,10 +3,12 @@ package com.project.apsas.dto.response.tutorial;
 import com.project.apsas.enums.TutorialStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.Setter;
 
 @Setter
 @Builder
+@Getter
 @AllArgsConstructor
 public class CreateTutorialResponse {
     private Long id;

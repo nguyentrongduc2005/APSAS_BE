@@ -59,7 +59,10 @@ public class Assignment {
     @JoinColumn(name = "skill_id", insertable = false, updatable = false)
     private Skill skill;
 
-    @OneToMany(mappedBy = "assignment", fetch = FetchType.LAZY)
+   @OneToMany(mappedBy = "assignment",
+           fetch = FetchType.LAZY,
+           cascade = CascadeType.ALL,
+           orphanRemoval = true)
     private Set<CourseAssignment> courseLinks = new HashSet<>();
     
     @OneToMany(mappedBy = "assignment", fetch = FetchType.LAZY)
