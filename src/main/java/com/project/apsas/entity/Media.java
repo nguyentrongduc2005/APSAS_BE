@@ -27,7 +27,8 @@ public class Media {
 
     @Column(nullable = false, length = 1024)
     private String url;
-
+    @Column(name = "public_id", length = 255)
+    private String pubicId;
     @Column(length = 255)
     private String caption;
 

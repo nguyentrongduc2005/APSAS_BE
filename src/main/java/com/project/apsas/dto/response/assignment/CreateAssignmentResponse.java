@@ -15,7 +15,7 @@ import java.util.List;
 public class CreateAssignmentResponse {
     private Long id;
     private Long tutorialId;
-    private Skill skill;
+    private SkillDto skill;
     private String title;
     private String statementHtml;
     private Integer orderNo;
