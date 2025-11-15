@@ -1,9 +1,11 @@
 package com.project.apsas.service.impl;
 
+import com.project.apsas.dto.request.CreateCourseFromTutorialRequest;
 import com.project.apsas.dto.response.*;
-import com.project.apsas.entity.Course;
-import com.project.apsas.entity.User;
+import com.project.apsas.entity.*;
 import com.project.apsas.enums.CourseVisibility;
+import com.project.apsas.enums.EnrollmentRole;
+import com.project.apsas.enums.TutorialStatus;
 import com.project.apsas.exception.AppException;
 import com.project.apsas.exception.ErrorCode;
 import com.project.apsas.repository.*;
@@ -15,8 +17,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,6 +35,7 @@ public class CourseServicesImpl implements CourseServices {
     private final AuthService authService;
     private final UserRepository userRepository;
     private final AssignmentRepository assignmentRepository;
+    private final TutorialRepository tutorialRepository;
 
     @Override
     public Page<PublicCourseItem> getPublicCourses(Pageable pageable, String search) {
@@ -380,6 +385,108 @@ public class CourseServicesImpl implements CourseServices {
                 .currentMember(studentsCount)
                 .totalLession(lessonsCountTotal)
                 .visibility(course.getVisibility().name())
+                .build();
+    }
+
+    @Override
+    public CreateCourseResponse createCourseFromTutorial(CreateCourseFromTutorialRequest request) {
+        // 1. Validate tutorial exists và status = PUBLISHED
+        Tutorial tutorial = tutorialRepository.findById(request.getTutorialId())
+                .orElseThrow(() -> new AppException(ErrorCode.TUTORIAL_NOT_EXISTED));
+        
+        if (tutorial.getStatus() != TutorialStatus.PUBLISHED) {
+            throw new AppException(ErrorCode.BAD_REQUEST, "Tutorial chưa được publish");
+        }
+
+        // 2. Get current user (creator)
+        String currentUserId = authService.currentId();
+        User currentUser = userRepository.findById(Long.valueOf(currentUserId))
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        // 3. Check permission: Chỉ creator của tutorial hoặc có quyền LECTURER mới được tạo course
+        // (Có thể mở rộng: nếu tutorial PUBLIC thì ai cũng tạo được)
+        boolean isCreator = tutorial.getCreatedBy().equals(currentUser.getId());
+        boolean hasLecturerRole = currentUser.getRoles().stream()
+                .anyMatch(role -> role.getName().equals("ROLE_LECTURER"));
+        
+        if (!isCreator && !hasLecturerRole) {
+            throw new AppException(ErrorCode.FORBIDDEN, "Bạn không có quyền tạo course từ tutorial này");
+        }
+
+        // 4. Generate course code nếu không có
+        String courseCode = request.getCode();
+        if (courseCode == null || courseCode.trim().isEmpty()) {
+            courseCode = "COURSE_" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        }
+
+        // 5. Validate course code không trùng
+        if (courseRepository.existsByCode(courseCode)) {
+            throw new AppException(ErrorCode.DUPLICATE, "Mã khóa học đã tồn tại");
+        }
+
+        // 6. Create Course entity
+        Course course = Course.builder()
+                .name(request.getName() != null ? request.getName() : tutorial.getTitle())
+                .code(courseCode)
+                .visibility(request.getVisibility() != null ? request.getVisibility() : CourseVisibility.PRIVATE)
+                .type(request.getType())
+                .avatarUrl(request.getAvatarUrl())
+                .limit(request.getLimit())
+                .description("Course created from tutorial: " + tutorial.getTitle())
+                .creator(currentUser)
+                .build();
+
+        Course savedCourse = courseRepository.save(course);
+
+        // 7. Link assignments from tutorial to course
+        int assignmentsLinked = 0;
+        if (tutorial.getAssignments() != null && !tutorial.getAssignments().isEmpty()) {
+            for (Assignment assignment : tutorial.getAssignments()) {
+                CourseAssignment courseAssignment = CourseAssignment.builder()
+                        .courseId(savedCourse.getId())
+                        .assignmentId(assignment.getId())
+                        .build();
+                courseAssignmentRepository.save(courseAssignment);
+                assignmentsLinked++;
+            }
+        }
+
+        // 8. Link contents from tutorial to course
+        int contentsLinked = 0;
+        if (tutorial.getContents() != null && !tutorial.getContents().isEmpty()) {
+            for (Content content : tutorial.getContents()) {
+                CourseContent courseContent = CourseContent.builder()
+                        .courseId(savedCourse.getId())
+                        .contentId(content.getId())
+                        .build();
+                courseContentRepository.save(courseContent);
+                contentsLinked++;
+            }
+        }
+
+        // 9. Create enrollment with role OWNER for creator
+        Enrollment ownerEnrollment = Enrollment.builder()
+                .userId(currentUser.getId())
+                .courseId(savedCourse.getId())
+                .role(EnrollmentRole.OWNER)
+                .build();
+        enrollmentRepository.save(ownerEnrollment);
+
+        // 10. Build response
+        return CreateCourseResponse.builder()
+                .id(savedCourse.getId())
+                .name(savedCourse.getName())
+                .code(savedCourse.getCode())
+                .description(savedCourse.getDescription())
+                .visibility(savedCourse.getVisibility().name())
+                .type(savedCourse.getType())
+                .avatarUrl(savedCourse.getAvatarUrl())
+                .limit(savedCourse.getLimit())
+                .createdAt(savedCourse.getCreatedAt())
+                .tutorialId(tutorial.getId())
+                .tutorialTitle(tutorial.getTitle())
+                .assignmentsCount(assignmentsLinked)
+                .contentsCount(contentsLinked)
                 .build();
     }
 }

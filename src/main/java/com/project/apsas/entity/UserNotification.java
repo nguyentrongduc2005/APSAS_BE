@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(of = {"id"})
 @IdClass(UserNotification.PK.class)
 @Table(name = "users_notifications")
 public class UserNotification {

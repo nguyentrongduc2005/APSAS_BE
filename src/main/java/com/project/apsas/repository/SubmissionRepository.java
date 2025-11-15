@@ -7,6 +7,7 @@ package com.project.apsas.repository;
    
 import com.project.apsas.dto.student.DailyScoreDTO;
 import com.project.apsas.dto.student.ProgressDTO;
+import com.project.apsas.entity.Assignment;
 import com.project.apsas.entity.Submission;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,22 +25,25 @@ import java.util.Optional;
 @Repository
 public interface SubmissionRepository extends JpaRepository<Submission, Long> {
 
+    int countByCourseIdAndAssignmentIdAndUserId(Long courseId, Long assignmentId, Long userId);
+
     @Query("""
     SELECT NEW com.project.apsas.dto.student.DailyScoreDTO(
-        CAST(FUNCTION('DATE', s.submittedAt) AS LocalDate),
+        CAST(s.submittedAt AS DATE),
         AVG(s.score)
     )
     FROM Submission s
     WHERE s.userId = :userId
       AND s.submittedAt BETWEEN :fromDate AND :toDate
-    GROUP BY FUNCTION('DATE', s.submittedAt)
-    ORDER BY FUNCTION('DATE', s.submittedAt)
+    GROUP BY CAST(s.submittedAt AS DATE)
+    ORDER BY CAST(s.submittedAt AS DATE)
 """)
     List<DailyScoreDTO> findScoresByDateRange(
             @Param("userId") Long userId,
             @Param("fromDate") LocalDateTime fromDate,
             @Param("toDate") LocalDateTime toDate
     );
+
 
     @Query("""
     SELECT AVG(s.score)
@@ -163,7 +167,7 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
 
     /**
      * Lấy danh sách sinh viên đã nộp bài trong một assignment của course
-     * Hiển thị thông tin: studentId, studentName, studentEmail, score, passed, submittedAt, attemptNo
+     * Chỉ hiển thị thông tin cơ bản: studentId, studentName, studentEmail, score, passed, submittedAt, attemptNo
      */
     @Query(value = """
         SELECT 
@@ -173,16 +177,12 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
             s.score,
             s.passed,
             s.submitted_at as submittedAt,
-            s.attempt_no as attemptNo,
-            a.title as assignmentTitle
+            s.attempt_no as attemptNo
         FROM submissions s
         JOIN users u ON s.user_id = u.id
-        JOIN assignments a ON s.assignment_id = a.id
-        WHERE a.id = :assignmentId 
-          AND a.id IN (
-              SELECT assignment_id FROM courses_assignments WHERE course_id = :courseId
-          )
-        GROUP BY u.id
+        WHERE s.assignment_id = :assignmentId 
+          AND s.course_id = :courseId
+        GROUP BY u.id, s.id
         ORDER BY s.submitted_at DESC
         """, nativeQuery = true)
     Page<Object[]> findStudentSubmissionsByCourseAndAssignment(

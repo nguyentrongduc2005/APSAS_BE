@@ -14,4 +14,9 @@ import java.time.LocalDate;
 public class DailyScoreDTO {
     private LocalDate date;
     private Double  score;
+    public DailyScoreDTO(java.sql.Date sqlDate, Double avgScore) {
+        this.date = (sqlDate != null) ? sqlDate.toLocalDate() : null;
+        this.score = avgScore;
+    }
+
 }

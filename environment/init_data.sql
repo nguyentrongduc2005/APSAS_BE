@@ -179,6 +179,24 @@ WHERE
 -- 7. TẠO BÀI TẬP (10 Assignments cho mỗi Tutorial = 100 Assignments)
 -- ========================================================
 
+-- === ĐÃ SỬA LẠI CỘT `proficiency` TỪ VARCHAR SANG INT ===
+CREATE TABLE IF NOT EXISTS `assignments` (
+                                             `id` BIGINT NOT NULL AUTO_INCREMENT,
+                                             `tutorial_id` BIGINT DEFAULT NULL,
+                                             `skill_id` BIGINT DEFAULT NULL,
+                                             `title` varchar(200) NOT NULL,
+    `statement_md` mediumtext DEFAULT NULL,
+    `max_score` decimal(6,2) DEFAULT NULL,
+    `order_no` int(11) DEFAULT NULL,
+    `attempts_limit` int(10) UNSIGNED DEFAULT NULL,
+    `proficiency` int(11) DEFAULT NULL, -- <-- ĐÃ SỬA
+    `created_at` datetime DEFAULT current_timestamp(),
+    PRIMARY KEY (`id`),
+    KEY `ix_assignments_tutorial` (`tutorial_id`),
+    KEY `ix_assignments_skill` (`skill_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
 INSERT INTO `assignments` (
     `tutorial_id`, `skill_id`, `title`, `statement_md`, `max_score`, `attempts_limit`,
     `order_no`, `proficiency`
@@ -197,11 +215,8 @@ SELECT
     100.00,
     10,
     nums.n, -- Gán order_no (từ 1 đến 10)
-    CASE FLOOR(RAND() * 3) -- Gán proficiency ngẫu nhiên
-        WHEN 0 THEN 'Dễ'
-        WHEN 1 THEN 'Trung bình'
-        ELSE 'Khó'
-        END
+    -- === ĐÃ SỬA LẠI GIÁ TRỊ TỪ CHỮ SANG SỐ (0, 1, 2) ===
+    FLOOR(RAND() * 3) -- Gán proficiency ngẫu nhiên (0: Dễ, 1: Trung bình, 2: Khó)
 FROM
     `tutorials` t
         CROSS JOIN
@@ -277,12 +292,12 @@ SELECT
             {
                 "in": "5 5",
                 "out": "10",
-                "visibility": "HIDDEN"
+                "visibility": "PRIVATE"
             },
             {
                 "in": "-1 -5",
                 "out": "-6",
-                "visibility": "HIDDEN"
+                "visibility": "PRIVATE"
             }
         ]
     }'

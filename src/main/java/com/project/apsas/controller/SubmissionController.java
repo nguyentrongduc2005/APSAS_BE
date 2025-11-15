@@ -1,10 +1,15 @@
 package com.project.apsas.controller;
 
+import com.project.apsas.dto.ApiResponse;
+import com.project.apsas.dto.request.CreateSubmissionRequest;
+import com.project.apsas.dto.response.CreateSubmissionResponse;
 import com.project.apsas.dto.response.PagedResponse;
 import com.project.apsas.dto.response.SubmissionResponse;
 import com.project.apsas.dto.StudentSubmissionDTO;
 import com.project.apsas.service.SubmissionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -85,26 +90,33 @@ public class SubmissionController {
 
     /**
      * Lấy danh sách sinh viên đã nộp bài trong một assignment của course
-     * GET /api/teacher/submissions/course/{courseId}/assignment/{assignmentId}/students?page=1&limit=10
+     * GET /api/teacher/submissions/course/{courseId}/assignment/{assignmentId}/students?page=0&size=10
      *
      * @param courseId Course ID
      * @param assignmentId Assignment ID
-     * @param page Page number (default: 1)
-     * @param limit Items per page (default: 10, max: 100)
+     * @param pageable Pageable object (page, size, sort)
      * @return Paginated list of student submissions
      */
     @PreAuthorize("hasAnyRole('LECTURER', 'ADMIN')")
     @GetMapping("/course/{courseId}/assignment/{assignmentId}/students")
-    public ResponseEntity<PagedResponse<StudentSubmissionDTO>> getStudentsByAssignment(
+    public ResponseEntity<Page<StudentSubmissionDTO>> getStudentsByAssignment(
             @PathVariable Long courseId,
             @PathVariable Long assignmentId,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int limit
+            Pageable pageable
     ) {
-        PagedResponse<StudentSubmissionDTO> response = submissionService
-                .getStudentSubmissionsByAssignment(courseId, assignmentId, page, limit);
+        Page<StudentSubmissionDTO> response = submissionService
+                .getStudentSubmissionsByAssignment(courseId, assignmentId, pageable);
         return ResponseEntity.ok(response);
     }
 
-
+    @PreAuthorize("hasRole('STUDENT')")
+    @PostMapping("/create")
+    public ApiResponse<CreateSubmissionResponse> createSubmission(
+            @RequestBody CreateSubmissionRequest createSubmissionRequest) {
+        return ApiResponse.<CreateSubmissionResponse>builder()
+                .code("ok")
+                .message("succcessfully")
+                .data(submissionService.createSubmission(createSubmissionRequest))
+                .build();
+    }
 }

@@ -8,6 +8,7 @@ import java.util.Objects;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+
 public class UserNotificationId implements Serializable {
 
     private Long userId;
