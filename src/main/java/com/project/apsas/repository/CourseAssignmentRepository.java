@@ -19,4 +19,7 @@ public interface CourseAssignmentRepository extends JpaRepository<CourseAssignme
     List<Object[]> findAssignmentLessonsByCourseIds(@Param("courseIds") List<Long> courseIds);
 
     boolean existsCourseAssignmentByAssignmentIdAndCourseId(Long assignmentId, Long courseId);
+    
+    @Query("SELECT ca FROM CourseAssignment ca WHERE ca.course.id = :courseId ORDER BY ca.orderNumber")
+    List<CourseAssignment> findAllByCourseIdOrderByOrderNumber(@Param("courseId") Long courseId);
 }

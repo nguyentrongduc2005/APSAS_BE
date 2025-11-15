@@ -39,5 +39,32 @@ public interface SubmissionService {
             Long assignmentId,
             Pageable pageable
     );
+    
+    /**
+     * Lấy tất cả submissions của một student trong một course
+     * Bao gồm cả assignments chưa nộp
+     * 
+     * @param courseId Course ID
+     * @param studentId Student ID
+     * @param pageable Pageable object
+     * @return Page of all submissions (submitted and not submitted)
+     */
+    public Page<com.project.apsas.dto.StudentAllSubmissionsDTO> getAllSubmissionsOfStudent(
+            Long courseId,
+            Long studentId,
+            Pageable pageable
+    );
+    
+    /**
+     * Student xem các assignment đã nộp của chính mình
+     * Chỉ hiển thị assignments ĐÃ SUBMIT
+     * 
+     * @param pageable Pageable object
+     * @return Page of submitted assignments
+     */
+    public Page<com.project.apsas.dto.StudentSubmittedAssignmentDTO> getMySubmittedAssignments(
+            Pageable pageable
+    );
+    
     public CreateSubmissionResponse createSubmission(CreateSubmissionRequest createSubmissionRequest);
 }
