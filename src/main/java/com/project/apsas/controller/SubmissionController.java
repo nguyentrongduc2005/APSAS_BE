@@ -1,5 +1,8 @@
 package com.project.apsas.controller;
 
+import com.project.apsas.dto.ApiResponse;
+import com.project.apsas.dto.request.CreateSubmissionRequest;
+import com.project.apsas.dto.response.CreateSubmissionResponse;
 import com.project.apsas.dto.response.PagedResponse;
 import com.project.apsas.dto.response.SubmissionResponse;
 import com.project.apsas.dto.StudentSubmissionDTO;
@@ -106,5 +109,14 @@ public class SubmissionController {
         return ResponseEntity.ok(response);
     }
 
-
+    @PreAuthorize("hasRole('STUDENT')")
+    @PostMapping("/create")
+    public ApiResponse<CreateSubmissionResponse> createSubmission(
+            @RequestBody CreateSubmissionRequest createSubmissionRequest) {
+        return ApiResponse.<CreateSubmissionResponse>builder()
+                .code("ok")
+                .message("succcessfully")
+                .data(submissionService.createSubmission(createSubmissionRequest))
+                .build();
+    }
 }

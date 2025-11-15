@@ -3,20 +3,29 @@ package com.project.apsas.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.apsas.dto.StudentSubmissionDTO;
+import com.project.apsas.dto.event.FeedbackEvent;
+import com.project.apsas.dto.event.SubmitCodeEvent;
 import com.project.apsas.dto.mapping.ReportCongfigSubmission;
+import com.project.apsas.dto.request.CreateSubmissionRequest;
 import com.project.apsas.dto.response.CodeFeedbackDTO;
+import com.project.apsas.dto.response.CreateSubmissionResponse;
 import com.project.apsas.dto.response.PagedResponse;
 import com.project.apsas.dto.response.SubmissionResponse;
-import com.project.apsas.entity.Submission;
+import com.project.apsas.entity.*;
 import com.project.apsas.enums.StatusSubmission;
 import com.project.apsas.exception.AppException;
 import com.project.apsas.exception.ErrorCode;
+import com.project.apsas.integration.kafka.ai.KafkaFeedbackProvider;
+import com.project.apsas.integration.kafka.jubge.KafkaRCEProducer;
 import com.project.apsas.mapper.SubmissionMapper;
-import com.project.apsas.repository.SubmissionRepository;
+import com.project.apsas.repository.*;
+import com.project.apsas.service.AuthService;
 import com.project.apsas.service.SubmissionService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -25,8 +34,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -36,12 +47,34 @@ public class SubmissionServiceImpl implements SubmissionService {
     SubmissionRepository submissionRepository;
     SubmissionMapper submissionMapper;
     ObjectMapper objectMapper;
+    AuthService authService;
+    UserRepository userRepository;
+
+    CourseAssignmentRepository courseAssignmentRepository;
+    EnrollmentRepository enrollmentRepository;
+    ProgressSkillRepository progressSkillRepository;
+
+    KafkaRCEProducer kafkaRCEProducer;
+
+    KafkaFeedbackProvider kafkaFeedbackProvider;
+
+    @NonFinal
+    @Value("${message-queue.topic.feedback.name}")
+    String feedbackTopic;
+    @NonFinal
+    @Value("${message-queue.topic.execute.name}")
+    String executeTopic;
 
     @Override
     public void updataReportConfig(Long submissionId, ReportCongfigSubmission reportCongfigSubmission, boolean status) {
         if(!status) {
             Submission submission = submissionRepository.findById(submissionId)
                     .orElseThrow(() -> new AppException(ErrorCode.SUBMISSION_NOT_FOUND));
+            ProgressSkill progressSkill = progressSkillRepository.findById(
+                    new ProgressSkillId(submission.getUserId(),
+                    submission.getAssignment().getSkillId())
+            ).orElse(null);
+            int profinciency = submission.getAssignment().getProficiency();
 
             // 2. Kiểm tra null (trường hợp RCE bị lỗi)
             if (Objects.isNull(reportCongfigSubmission)) {
@@ -60,6 +93,11 @@ public class SubmissionServiceImpl implements SubmissionService {
                         ? new BigDecimal((double) passCount * 100.0 / totalCases).setScale(2, RoundingMode.HALF_UP)
                         : BigDecimal.ZERO;
                 submission.setScore(score);
+                if(progressSkill != null) {
+                    progressSkill.setScore(score.multiply(new BigDecimal(profinciency)));
+                    progressSkill.setLevel(progressSkill.getScore().intValue() % 1000);
+                    progressSkillRepository.save(progressSkill);
+                }
 
                 // 3c. Chuyển toàn bộ report object thành chuỗi JSON để lưu
                 try {
@@ -298,6 +336,77 @@ public class SubmissionServiceImpl implements SubmissionService {
                         .hasNext(hasNext)
                         .hasPrev(hasPrev)
                         .build())
+                .build();
+    }
+
+    @Override
+    public CreateSubmissionResponse createSubmission(CreateSubmissionRequest req) {
+        Long userId = Long.parseLong(authService.currentId());
+        Long assignmentId = req.getAssignmentId();
+        Long courseId = req.getCourseId();
+
+        User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+
+        if(!enrollmentRepository.existsEnrollmentByCourseIdAndUserId(courseId, userId))
+            throw new AppException(ErrorCode.BAD_REQUEST);
+
+        if(!courseAssignmentRepository.existsCourseAssignmentByAssignmentIdAndCourseId(assignmentId, courseId))
+            throw new AppException(ErrorCode.BAD_REQUEST);
+
+        CourseAssignment courseAssignment = courseAssignmentRepository.findById(
+                new CourseAssignment.PK(courseId, assignmentId)
+        ).orElseThrow(() -> new AppException(ErrorCode.ASSIGNMENT_NOT_FOUND));
+        if(courseAssignment.getOpenAt().isAfter(LocalDateTime.now()))
+            throw new AppException(ErrorCode.ASSIGNMENT_NOT_OPEN);
+
+        if(courseAssignment.getDueAt().isBefore(LocalDateTime.now()))
+            throw new AppException(ErrorCode.ASSIGNMENT_HAVE_CLOSE);
+
+        Assignment assignment = courseAssignment.getAssignment();
+
+        int attempt = submissionRepository.countByCourseIdAndAssignmentIdAndUserId(courseId, assignmentId, userId);
+        if(attempt >= assignment.getAttemptsLimit())
+            throw new AppException(ErrorCode.BAD_REQUEST);
+        Submission submission = Submission.builder()
+                .code(req.getCode())
+                .userId(userId)
+                .courseId(courseId)
+                .assignmentId(assignment.getId())
+                .language(String.valueOf(req.getLanguageId()))
+                .attemptNo(attempt + 1)
+                .status(StatusSubmission.PENDING)
+                .build();
+        submissionRepository.save(submission);
+        // add skill cho user
+        if(!(user.getProgress() == null)) {
+            ProgressSkill progressSkill = ProgressSkill.builder()
+                    .skillId(assignment.getSkill().getId())
+                    .progressId(user.getProgress().getId())
+                    .level(1)
+                    .score(BigDecimal.valueOf(0))
+                    .build();
+            progressSkillRepository.save(progressSkill);
+        }
+        if(!assignment.getAssignmentEvaluations().stream().findFirst().isPresent())
+            throw new AppException(ErrorCode.BAD_REQUEST);
+        FeedbackEvent feedbackEvent = FeedbackEvent.builder()
+                .submissionId(submission.getId())
+                .code(req.getCode())
+                .statement_md(assignment.getStatementMd())
+                .language(submission.getLanguage())
+                .build();
+        SubmitCodeEvent submitCodeEvent = SubmitCodeEvent.builder()
+                .code(req.getCode())
+                .submissionId(submission.getId())
+                .configJson(assignment.getAssignmentEvaluations().stream().findFirst().get().getConfigJson())
+                .languageId(Integer.parseInt(submission.getLanguage()))
+                .build();
+        kafkaRCEProducer.push(executeTopic,submitCodeEvent.getSubmissionId().toString(),submitCodeEvent);
+
+        kafkaFeedbackProvider.push(feedbackTopic,submitCodeEvent.getSubmissionId().toString(),feedbackEvent);
+
+        return CreateSubmissionResponse.builder()
+                .submissionId(submission.getId())
                 .build();
     }
 }

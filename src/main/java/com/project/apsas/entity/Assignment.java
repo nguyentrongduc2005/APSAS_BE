@@ -2,10 +2,7 @@ package com.project.apsas.entity;
 
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -19,6 +16,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "assignments")
+@EqualsAndHashCode(of = {"id"})
 public class Assignment {
  @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,8 +43,8 @@ public class Assignment {
     @Column(name = "attempts_limit")
     private Integer attemptsLimit;
 
-    @Column(length = 80)
-    private String proficiency;
+
+    private int proficiency;
 
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
