@@ -314,19 +314,34 @@ SET @sample_student_id = (SELECT id FROM users WHERE email = 'student_1@apsas.ed
 SET @sample_assignment_id = (SELECT id FROM assignments ORDER BY id ASC LIMIT 1);
 SET @sample_course_id = (SELECT courses_id FROM courses_assignments WHERE assignments_id = @sample_assignment_id LIMIT 1);
 
--- Bài nộp PENDING (đang chờ chấm)
+-- Lấy thêm students và assignments để test
+SET @student_2_id = (SELECT id FROM users WHERE email = 'student_2@apsas.edu.vn' LIMIT 1);
+SET @student_3_id = (SELECT id FROM users WHERE email = 'student_3@apsas.edu.vn' LIMIT 1);
+SET @student_4_id = (SELECT id FROM users WHERE email = 'student_4@apsas.edu.vn' LIMIT 1);
+SET @student_5_id = (SELECT id FROM users WHERE email = 'student_5@apsas.edu.vn' LIMIT 1);
+SET @assignment_2_id = (SELECT id FROM assignments ORDER BY id ASC LIMIT 1 OFFSET 1);
+
+-- ===========================================
+-- SUBMISSIONS CHO ASSIGNMENT 1
+-- ===========================================
+
+-- Student 1: Bài nộp PENDING (đang chờ chấm)
 INSERT INTO `submissions` (
     `assignment_id`, `course_id`, `user_id`, `language`, `code`, `status`, `attempt_no`, `submitted_at`
 ) VALUES (
              @sample_assignment_id,
-             @sample_course_id, -- ĐÃ THÊM course_id
+             @sample_course_id,
              @sample_student_id,
              'java',
-             'public class Solution { ... // Code đang chờ chấm }',
+             'public class Solution { 
+                 public int sum(int a, int b) {
+                     return a + b; // Code đang chờ chấm
+                 }
+             }',
              'PENDING', 1, NOW()
          );
 
--- Bài nộp COMPLETE (đã chấm xong)
+-- Student 1: Bài nộp COMPLETE (đã chấm xong) - lần 2
 INSERT INTO `submissions` (
     `assignment_id`, `course_id`, `user_id`, `language`, `code`,
     `report_json`, `score`, `status`, `suggestion`,
@@ -334,10 +349,14 @@ INSERT INTO `submissions` (
     `attempt_no`, `submitted_at`
 ) VALUES (
              @sample_assignment_id,
-             @sample_course_id, -- ĐÃ THÊM course_id
+             @sample_course_id,
              @sample_student_id,
              'java',
-             'public class Solution { ... // Code tối ưu }',
+             'public class Solution { 
+                 public int sum(int a, int b) {
+                     return a + b; // Code tối ưu
+                 }
+             }',
              -- Cấu trúc JSON theo yêuCầu (ReportCongfigSubmission -> List<TestCaseResult>)
              '{
                  "averageTime": 120.5,
@@ -381,6 +400,153 @@ INSERT INTO `submissions` (
              1, 2, DATE_ADD(NOW(), INTERVAL 5 MINUTE)
          );
 SET @submission_complete_id = LAST_INSERT_ID();
+
+-- Student 2: Bài nộp COMPLETE (đã pass)
+INSERT INTO `submissions` (
+    `assignment_id`, `course_id`, `user_id`, `language`, `code`,
+    `report_json`, `score`, `status`, `suggestion`,
+    `big_o_complexity_time`, `big_o_complexity_space`, `feedback`, `passed`,
+    `attempt_no`, `submitted_at`
+) VALUES (
+             @sample_assignment_id,
+             @sample_course_id,
+             @student_2_id,
+             'python',
+             'def sum(a, b):
+    return a + b',
+             '{
+                 "averageTime": 100.0,
+                 "averageMemory": 3500.0,
+                 "totalTestCases": 3,
+                 "passedTestCases": 3,
+                 "testCases": [
+                     {"status": "Accepted", "time": 95.0, "memory": 3450, "visibility": "PUBLIC", "stdin": "1 2", "stdout": "3", "expectedOutput": "3"},
+                     {"status": "Accepted", "time": 100.0, "memory": 3500, "visibility": "PRIVATE", "stdin": "5 5", "stdout": "10", "expectedOutput": "10"},
+                     {"status": "Accepted", "time": 105.0, "memory": 3550, "visibility": "PRIVATE", "stdin": "-1 -5", "stdout": "-6", "expectedOutput": "-6"}
+                 ]
+             }',
+             100.00, 'COMPLETE', 'Code đơn giản và hiệu quả', 'O(1)', 'O(1)',
+             'Python solution khá tốt, cú pháp rõ ràng.', 1, 1, DATE_ADD(NOW(), INTERVAL 10 MINUTE)
+         );
+
+-- Student 3: Bài nộp COMPLETE (fail một số test case)
+INSERT INTO `submissions` (
+    `assignment_id`, `course_id`, `user_id`, `language`, `code`,
+    `report_json`, `score`, `status`, `suggestion`,
+    `big_o_complexity_time`, `big_o_complexity_space`, `feedback`, `passed`,
+    `attempt_no`, `submitted_at`
+) VALUES (
+             @sample_assignment_id,
+             @sample_course_id,
+             @student_3_id,
+             'java',
+             'public class Solution { 
+                 public int sum(int a, int b) {
+                     return Math.abs(a + b); // Lỗi logic với số âm
+                 }
+             }',
+             '{
+                 "averageTime": 115.0,
+                 "averageMemory": 4000.0,
+                 "totalTestCases": 3,
+                 "passedTestCases": 2,
+                 "testCases": [
+                     {"status": "Accepted", "time": 110.0, "memory": 3980, "visibility": "PUBLIC", "stdin": "1 2", "stdout": "3", "expectedOutput": "3"},
+                     {"status": "Accepted", "time": 115.0, "memory": 4000, "visibility": "PRIVATE", "stdin": "5 5", "stdout": "10", "expectedOutput": "10"},
+                     {"status": "Wrong Answer", "time": 120.0, "memory": 4020, "visibility": "PRIVATE", "stdin": "-1 -5", "stdout": "6", "expectedOutput": "-6"}
+                 ]
+             }',
+             66.67, 'COMPLETE', 'Cần xem lại xử lý số âm', 'O(1)', 'O(1)',
+             'Code có vấn đề với test case số âm. Không nên dùng Math.abs().', 0, 1, DATE_ADD(NOW(), INTERVAL 15 MINUTE)
+         );
+
+-- Student 4: Bài nộp PROCESSING (đang chấm)
+INSERT INTO `submissions` (
+    `assignment_id`, `course_id`, `user_id`, `language`, `code`, `status`, `attempt_no`, `submitted_at`
+) VALUES (
+             @sample_assignment_id,
+             @sample_course_id,
+             @student_4_id,
+             'javascript',
+             'function sum(a, b) { return a + b; }',
+             'PROCESSING', 1, DATE_ADD(NOW(), INTERVAL 20 MINUTE)
+         );
+
+-- Student 5: Bài nộp COMPLETE (pass)
+INSERT INTO `submissions` (
+    `assignment_id`, `course_id`, `user_id`, `language`, `code`,
+    `report_json`, `score`, `status`, `suggestion`,
+    `big_o_complexity_time`, `big_o_complexity_space`, `feedback`, `passed`,
+    `attempt_no`, `submitted_at`
+) VALUES (
+             @sample_assignment_id,
+             @sample_course_id,
+             @student_5_id,
+             'cpp',
+             'int sum(int a, int b) { return a + b; }',
+             '{
+                 "averageTime": 90.0,
+                 "averageMemory": 3200.0,
+                 "totalTestCases": 3,
+                 "passedTestCases": 3,
+                 "testCases": [
+                     {"status": "Accepted", "time": 85.0, "memory": 3150, "visibility": "PUBLIC", "stdin": "1 2", "stdout": "3", "expectedOutput": "3"},
+                     {"status": "Accepted", "time": 90.0, "memory": 3200, "visibility": "PRIVATE", "stdin": "5 5", "stdout": "10", "expectedOutput": "10"},
+                     {"status": "Accepted", "time": 95.0, "memory": 3250, "visibility": "PRIVATE", "stdin": "-1 -5", "stdout": "-6", "expectedOutput": "-6"}
+                 ]
+             }',
+             100.00, 'COMPLETE', 'Tốc độ xử lý nhanh nhất lớp!', 'O(1)', 'O(1)',
+             'C++ solution rất tối ưu về performance.', 1, 1, DATE_ADD(NOW(), INTERVAL 25 MINUTE)
+         );
+
+-- ===========================================
+-- SUBMISSIONS CHO ASSIGNMENT 2 (nếu có)
+-- ===========================================
+
+-- Student 1: Nộp assignment 2
+INSERT INTO `submissions` (
+    `assignment_id`, `course_id`, `user_id`, `language`, `code`,
+    `report_json`, `score`, `status`, `suggestion`,
+    `big_o_complexity_time`, `big_o_complexity_space`, `feedback`, `passed`,
+    `attempt_no`, `submitted_at`
+) VALUES (
+             @assignment_2_id,
+             @sample_course_id,
+             @sample_student_id,
+             'java',
+             'public class Solution { 
+                 public int[] twoSum(int[] nums, int target) {
+                     // Two Sum solution
+                     return new int[]{0, 1};
+                 }
+             }',
+             '{
+                 "averageTime": 150.0,
+                 "averageMemory": 5000.0,
+                 "totalTestCases": 2,
+                 "passedTestCases": 2,
+                 "testCases": [
+                     {"status": "Accepted", "time": 145.0, "memory": 4980, "visibility": "PUBLIC", "stdin": "[2,7,11,15] 9", "stdout": "[0,1]", "expectedOutput": "[0,1]"},
+                     {"status": "Accepted", "time": 155.0, "memory": 5020, "visibility": "PRIVATE", "stdin": "[3,2,4] 6", "stdout": "[1,2]", "expectedOutput": "[1,2]"}
+                 ]
+             }',
+             100.00, 'COMPLETE', 'Giải pháp tốt', 'O(n)', 'O(n)',
+             'Sử dụng HashMap hiệu quả.', 1, 1, DATE_ADD(NOW(), INTERVAL 30 MINUTE)
+         );
+
+-- Student 2: Nộp assignment 2
+INSERT INTO `submissions` (
+    `assignment_id`, `course_id`, `user_id`, `language`, `code`, `status`, `attempt_no`, `submitted_at`
+) VALUES (
+             @assignment_2_id,
+             @sample_course_id,
+             @student_2_id,
+             'python',
+             'def two_sum(nums, target):
+    # Processing...
+    pass',
+             'PENDING', 1, DATE_ADD(NOW(), INTERVAL 35 MINUTE)
+         );
 
 -- Feedback của Giảng viên cho bài nộp
 INSERT INTO `feedback` (`body`, `created_at`, `submission_id`) VALUES

@@ -190,4 +190,12 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
             @Param("assignmentId") Long assignmentId,
             Pageable pageable
     );
+    
+    /**
+     * Tìm submission mới nhất của một student cho một assignment
+     */
+    Optional<Submission> findTopByAssignmentIdAndUserIdOrderBySubmittedAtDesc(
+            Long assignmentId, 
+            Long userId
+    );
 }

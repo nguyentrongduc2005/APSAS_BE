@@ -383,4 +383,91 @@ public class SubmissionServiceImpl implements SubmissionService {
                 .submissionId(submission.getId())
                 .build();
     }
+
+    /**
+     * Lấy tất cả submissions của một student trong course
+     * Bao gồm cả assignments chưa nộp
+     */
+    @Override
+    public Page<com.project.apsas.dto.StudentAllSubmissionsDTO> getAllSubmissionsOfStudent(
+            Long courseId,
+            Long studentId,
+            Pageable pageable
+    ) {
+        // 1. Verify enrollment exists
+        Enrollment.PK enrollmentPK = new Enrollment.PK(studentId, courseId);
+        if (!enrollmentRepository.existsById(enrollmentPK)) {
+            throw new AppException(ErrorCode.USER_NOT_FOUND);
+        }
+        
+        // 2. Lấy tất cả assignments của course (không phân trang ở đây)
+        List<CourseAssignment> allCourseAssignments = courseAssignmentRepository
+                .findAllByCourseIdOrderByOrderNumber(courseId);
+        
+        // 3. Map sang DTO với thông tin submission (nếu có)
+        List<com.project.apsas.dto.StudentAllSubmissionsDTO> allSubmissions = allCourseAssignments.stream()
+                .map(ca -> {
+                    Assignment assignment = ca.getAssignment();
+                    
+                    // Tìm submission của student cho assignment này (lấy latest submission)
+                    Optional<Submission> submissionOpt = submissionRepository
+                            .findTopByAssignmentIdAndUserIdOrderBySubmittedAtDesc(
+                                    assignment.getId(), 
+                                    studentId
+                            );
+                    
+                    com.project.apsas.dto.StudentAllSubmissionsDTO.StudentAllSubmissionsDTOBuilder builder = 
+                            com.project.apsas.dto.StudentAllSubmissionsDTO.builder()
+                                // Assignment info
+                                .assignmentId(assignment.getId())
+                                .assignmentTitle(assignment.getTitle())
+                                .assignmentDescription(assignment.getStatementMd())
+                                .assignmentMaxScore(assignment.getMaxScore() != null ? assignment.getMaxScore().intValue() : null)
+                                .language(null); // Assignment không có language field
+                    
+                    if (submissionOpt.isPresent()) {
+                        Submission submission = submissionOpt.get();
+                        
+                        builder
+                            // Submission info
+                            .submissionId(submission.getId())
+                            .status(submission.getStatus() != null ? submission.getStatus().name() : null)
+                            .score(submission.getScore() != null ? submission.getScore().doubleValue() : null)
+                            .submittedAt(submission.getSubmittedAt())
+                            .feedback(submission.getFeedback())
+                            .attemptNo(submission.getAttemptNo())
+                            .passed(submission.getPassed())
+                            .language(submission.getLanguage())
+                            // Derived fields
+                            .hasSubmitted(true);
+                    } else {
+                        // Chưa nộp bài
+                        builder
+                            .submissionId(null)
+                            .status(null)
+                            .score(null)
+                            .submittedAt(null)
+                            .feedback(null)
+                            .attemptNo(null)
+                            .passed(null)
+                            .hasSubmitted(false);
+                    }
+                    
+                    return builder.build();
+                })
+                .toList();
+        
+        // 4. Manual pagination
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), allSubmissions.size());
+        
+        List<com.project.apsas.dto.StudentAllSubmissionsDTO> pageContent = 
+                allSubmissions.subList(start, end);
+        
+        return new org.springframework.data.domain.PageImpl<>(
+                pageContent, 
+                pageable, 
+                allSubmissions.size()
+        );
+    }
 }

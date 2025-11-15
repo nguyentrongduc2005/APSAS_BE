@@ -109,6 +109,28 @@ public class SubmissionController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * Lấy tất cả submissions của một student trong course
+     * Bao gồm cả assignments chưa nộp
+     * GET /api/submissions/course/{courseId}/student/{studentId}?page=0&size=10&sort=assignmentTitle,asc
+     *
+     * @param courseId Course ID
+     * @param studentId Student ID
+     * @param pageable Pageable object (page, size, sort)
+     * @return Paginated list of all assignments with submission status
+     */
+    @PreAuthorize("hasAnyRole('LECTURER', 'ADMIN', 'PROVIDER')")
+    @GetMapping("/course/{courseId}/student/{studentId}")
+    public ResponseEntity<Page<com.project.apsas.dto.StudentAllSubmissionsDTO>> getAllSubmissionsOfStudent(
+            @PathVariable Long courseId,
+            @PathVariable Long studentId,
+            Pageable pageable
+    ) {
+        Page<com.project.apsas.dto.StudentAllSubmissionsDTO> response = submissionService
+                .getAllSubmissionsOfStudent(courseId, studentId, pageable);
+        return ResponseEntity.ok(response);
+    }
+
     @PreAuthorize("hasRole('STUDENT')")
     @PostMapping("/create")
     public ApiResponse<CreateSubmissionResponse> createSubmission(
