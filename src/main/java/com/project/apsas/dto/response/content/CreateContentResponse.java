@@ -18,4 +18,6 @@ public class CreateContentResponse {
     private String bodyHtmlCached; // HTML đã được chuyển đổi
     private Integer orderNo;
     private ContentStatus status;
+    private int totalImage;
+    private int totalVideo;
 }
