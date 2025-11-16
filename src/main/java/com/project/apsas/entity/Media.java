@@ -2,10 +2,7 @@ package com.project.apsas.entity;
 
 import com.project.apsas.enums.MediaType;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -14,6 +11,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(of = {"id"})
 @Table(name = "media")
 public class Media {
  @Id
@@ -29,7 +27,8 @@ public class Media {
 
     @Column(nullable = false, length = 1024)
     private String url;
-
+    @Column(name = "public_id", length = 255)
+    private String pubicId;
     @Column(length = 255)
     private String caption;
 

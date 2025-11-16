@@ -1,5 +1,6 @@
 package com.project.apsas.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.project.apsas.enums.CategorySkill;
 import jakarta.persistence.*;
 import lombok.*;
@@ -11,6 +12,7 @@ import java.util.Set;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(of = {"id"})
 @Table(name = "skills")
 public class Skill {
 
@@ -28,8 +30,10 @@ public class Skill {
     private CategorySkill category;
 
     @OneToMany(mappedBy = "skill", fetch = FetchType.LAZY)
+    @JsonIgnore
     private Set<Assignment> assignments;
 
     @OneToMany(mappedBy = "skill", fetch = FetchType.LAZY)
+    @JsonIgnore
     private Set<ProgressSkill> progressSkills;
 }

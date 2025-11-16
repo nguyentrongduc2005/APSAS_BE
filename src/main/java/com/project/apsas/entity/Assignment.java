@@ -2,10 +2,7 @@ package com.project.apsas.entity;
 
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -19,6 +16,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "assignments")
+@EqualsAndHashCode(of = {"id"})
 public class Assignment {
  @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,8 +43,8 @@ public class Assignment {
     @Column(name = "attempts_limit")
     private Integer attemptsLimit;
 
-    @Column(length = 80)
-    private String proficiency;
+
+    private int proficiency;
 
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -57,17 +55,23 @@ public class Assignment {
     private Tutorial tutorial;
 
     // truy vấn kỹ năng liên quan
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "skill_id", insertable = false, updatable = false)
     private Skill skill;
 
-    @OneToMany(mappedBy = "assignment", fetch = FetchType.LAZY)
+   @OneToMany(mappedBy = "assignment",
+           fetch = FetchType.LAZY,
+           cascade = CascadeType.ALL,
+           orphanRemoval = true)
+    @Builder.Default
     private Set<CourseAssignment> courseLinks = new HashSet<>();
     
-    @OneToMany(mappedBy = "assignment", fetch = FetchType.LAZY)
-    private Set<AssignmentEvaluationMaps> evaluationLinks = new HashSet<>();
+    @OneToMany(mappedBy = "assignment", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @Builder.Default
+    private Set<AssignmentEvaluation> assignmentEvaluations = new HashSet<>();
 
-    @OneToMany(mappedBy = "assignment", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "assignment",cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
     private Set<Submission> submissions = new HashSet<>();
     
 }

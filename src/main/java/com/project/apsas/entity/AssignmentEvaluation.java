@@ -1,10 +1,7 @@
 package com.project.apsas.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -16,6 +13,7 @@ import java.util.Set;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(of = {"id"})
 @Table(name = "assignment_evaluations")
 public class AssignmentEvaluation {
     @Id
@@ -25,7 +23,9 @@ public class AssignmentEvaluation {
     @Column(length = 160, nullable = false)
     private String name;
 
-
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assignment_id",nullable = false)
+    Assignment assignment;
 
     @Column(length = 80, nullable = false)
     private String type;
@@ -36,6 +36,5 @@ public class AssignmentEvaluation {
     @Column(name = "created_at", updatable = false, insertable = false)
     private LocalDateTime createdAt;
 
-    @OneToMany(mappedBy = "evaluation", fetch = FetchType.LAZY)
-    private Set<AssignmentEvaluationMaps> assignmentLinks = new HashSet<>();
+
 }

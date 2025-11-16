@@ -1,6 +1,7 @@
 -- phpMyAdmin SQL Dump - Đã được tối ưu hóa cho Docker Init
 -- Tác giả: Chuyên gia Phần mềm
 -- Ngày: 2025-10-22
+-- PHIÊN BẢN ĐÃ CẬP NHẬT: Chuyển sang quan hệ 1-N (Assignment -> Evaluations)
 
 SET FOREIGN_KEY_CHECKS=0;
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -8,9 +9,9 @@ START TRANSACTION;
 SET time_zone = "+00:00";
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
- /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
- /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
- /*!40101 SET NAMES utf8mb4 */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
 
 -- Database: `apsas`
 
@@ -27,30 +28,22 @@ CREATE TABLE `assignments` (
                                `max_score` decimal(6,2) DEFAULT NULL,
                                `order_no` int(11) DEFAULT NULL,
                                `attempts_limit` int(10) UNSIGNED DEFAULT NULL,
-                               `proficiency` varchar(80) DEFAULT NULL,
+                               `proficiency` int(10) DEFAULT NULL,
                                `created_at` datetime DEFAULT current_timestamp(),
                                PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `assignment_evaluations` (
                                           `id` BIGINT NOT NULL AUTO_INCREMENT,
+                                          `assignment_id` BIGINT DEFAULT NULL, -- ĐÃ THÊM
                                           `name` varchar(160) NOT NULL,
                                           `type` varchar(80) NOT NULL,
-
                                           `config_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`config_json`)),
                                           `created_at` datetime DEFAULT current_timestamp(),
-
-
-
                                           PRIMARY KEY (`id`)
-
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE `assignment_evaluation_maps` (
-                                              `assignment_id` BIGINT NOT NULL,
-                                              `evaluation_id` BIGINT NOT NULL,
-                                              `weight` decimal(5,2) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+-- ĐÃ XÓA BẢNG 'assignment_evaluation_maps'
 
 CREATE TABLE `contents` (
                             `id` BIGINT NOT NULL AUTO_INCREMENT,
@@ -112,6 +105,7 @@ CREATE TABLE `media` (
                          `type` enum('IMAGE','VIDEO','AUDIO','FILE','LINK') NOT NULL,
                          `url` varchar(1024) NOT NULL,
                          `caption` varchar(255) DEFAULT NULL,
+                         `public_id` varchar(255) DEFAULT NULL,
                          `order_no` int(11) DEFAULT NULL,
                          `created_at` datetime DEFAULT current_timestamp(),
                          PRIMARY KEY (`id`)
@@ -250,7 +244,7 @@ CREATE TABLE `tutorials` (
                              `status` enum('DRAFT','PUBLISHED','ARCHIVED') DEFAULT 'DRAFT',
                              `created_at` datetime DEFAULT current_timestamp(),
                              PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_GENERAL_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `users` (
                          `id` BIGINT NOT NULL AUTO_INCREMENT,
@@ -304,17 +298,17 @@ ALTER TABLE `assignments`
     ADD KEY `ix_assignments_tutorial` (`tutorial_id`),
   ADD KEY `ix_assignments_skill` (`skill_id`);
 
-ALTER TABLE `assignment_evaluations` -- none
-;
+ALTER TABLE `assignment_evaluations`
+    ADD KEY `ix_evaluations_assignment` (`assignment_id`); -- ĐÃ THÊM
+
 ALTER TABLE `courses`
     ADD CONSTRAINT fk_courses_created_by
         FOREIGN KEY (`created_by`)
             REFERENCES `users` (`id`)
             ON DELETE RESTRICT
             ON UPDATE CASCADE;
-ALTER TABLE `assignment_evaluation_maps`
-    ADD PRIMARY KEY (`assignment_id`,`evaluation_id`),
-  ADD KEY `ix_aem_eval` (`evaluation_id`);
+
+-- ĐÃ XÓA INDEX CỦA 'assignment_evaluation_maps'
 
 ALTER TABLE `contents`
     ADD KEY `ix_contents_tutorial` (`tutorial_id`);
@@ -404,9 +398,15 @@ ALTER TABLE `assignments`
     ADD CONSTRAINT `assignments_ibfk_2` FOREIGN KEY (`skill_id`) REFERENCES `skills` (`id`),
   ADD CONSTRAINT `fk_assignments_tutorial` FOREIGN KEY (`tutorial_id`) REFERENCES `tutorials` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
-ALTER TABLE `assignment_evaluation_maps`
-    ADD CONSTRAINT `assignment_evaluation_maps_ibfk_1` FOREIGN KEY (`assignment_id`) REFERENCES `assignments` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `assignment_evaluation_maps_ibfk_2` FOREIGN KEY (`evaluation_id`) REFERENCES `assignment_evaluations` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+-- ĐÃ THÊM CONSTRAINT MỚI
+ALTER TABLE `assignment_evaluations`
+    ADD CONSTRAINT `fk_evaluations_assignment`
+        FOREIGN KEY (`assignment_id`)
+            REFERENCES `assignments` (`id`)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE;
+
+-- ĐÃ XÓA CONSTRAINTS CỦA 'assignment_evaluation_maps'
 
 ALTER TABLE `contents`
     ADD CONSTRAINT `fk_contents_tutorial` FOREIGN KEY (`tutorial_id`) REFERENCES `tutorials` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
@@ -472,18 +472,32 @@ ALTER TABLE `users_roles`
 
 -- ========================================================
 ALTER TABLE `skills`
-  ADD COLUMN `created_by` BIGINT DEFAULT NULL AFTER `category`;
+    ADD COLUMN `created_by` BIGINT DEFAULT NULL AFTER `category`;
 
 
 ALTER TABLE `skills`
-  ADD KEY `ix_skills_created_by` (`created_by`);
+    ADD KEY `ix_skills_created_by` (`created_by`);
 
 
 ALTER TABLE `skills`
-  ADD CONSTRAINT `fk_skills_created_by`
-    FOREIGN KEY (`created_by`) REFERENCES `users` (`id`)
-    ON DELETE SET NULL
-    ON UPDATE CASCADE;
+    ADD CONSTRAINT `fk_skills_created_by`
+        FOREIGN KEY (`created_by`) REFERENCES `users` (`id`)
+            ON DELETE SET NULL
+            ON UPDATE CASCADE;
+ALTER TABLE `submissions`
+    ADD COLUMN `course_id` BIGINT DEFAULT NULL AFTER `assignment_id`;
+
+-- Bước 2: Thêm index (chỉ mục) cho cột mới để truy vấn nhanh hơn
+-- (Ví dụ: Lấy tất cả bài nộp của 1 khóa học)
+ALTER TABLE `submissions`
+    ADD KEY `ix_submissions_course` (`course_id`);
+
+-- Bước 3: Thêm ràng buộc khóa ngoại (Foreign Key)
+ALTER TABLE `submissions`
+    ADD CONSTRAINT `fk_submissions_course`
+        FOREIGN KEY (`course_id`) REFERENCES `courses` (`id`)
+            ON DELETE CASCADE -- Nếu xóa khóa học, các bài nộp cũng bị xóa
+            ON UPDATE CASCADE;
 
 SET FOREIGN_KEY_CHECKS=1;
 COMMIT;

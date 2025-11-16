@@ -14,6 +14,7 @@ import java.util.Set;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(of = {"id"})
 @Table(name = "submissions")
 public class Submission {
 
@@ -21,11 +22,15 @@ public class Submission {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "assignment_id", nullable = false)
-    private Long assignmentId;
-
     @Column(name = "user_id", nullable = false)
     private Long userId;
+
+
+    @Column(name = "course_id", nullable = false)
+    private Long courseId;
+
+    @Column(name = "assignment_id", nullable = false)
+    private Long assignmentId;
 
     @Column(length = 40)
     private String language;
@@ -62,6 +67,10 @@ public class Submission {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assignment_id", insertable = false, updatable = false)
     private Assignment assignment;
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "course_id", insertable = false, updatable = false)
+    private Course course;
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)

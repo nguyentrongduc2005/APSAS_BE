@@ -13,6 +13,7 @@ import java.io.Serializable;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+
 @Table(name = "courses_contents")
 @IdClass(CourseContent.PK.class)
 public class CourseContent {

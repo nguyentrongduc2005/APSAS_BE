@@ -8,6 +8,10 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * DTO for listing students who submitted assignments
+ * Contains only basic information for display in lists
+ */
 @Data
 @Builder
 @NoArgsConstructor
@@ -20,5 +24,4 @@ public class StudentSubmissionDTO {
     private Boolean passed;
     private LocalDateTime submittedAt;
     private Integer attemptNo;
-    private String assignmentTitle;
 }

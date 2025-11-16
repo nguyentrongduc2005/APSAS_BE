@@ -3,6 +3,7 @@ package com.project.apsas.controller;
 import com.project.apsas.dto.ApiResponse;
 import com.project.apsas.dto.event.FeedbackEvent;
 import com.project.apsas.dto.event.SendMailEvent;
+import com.project.apsas.dto.event.SubmitCodeEvent;
 import com.project.apsas.dto.request.FeedbackRequest;
 import com.project.apsas.dto.request.LoginRequest;
 import com.project.apsas.dto.response.CodeFeedbackDTO;
@@ -16,6 +17,7 @@ import com.project.apsas.enums.UserStatus;
 import com.project.apsas.exception.AppException;
 import com.project.apsas.exception.ErrorCode;
 import com.project.apsas.integration.kafka.ai.KafkaFeedbackProvider;
+import com.project.apsas.integration.kafka.jubge.KafkaRCEProducer;
 import com.project.apsas.integration.kafka.mail.KafkaMailProducer;
 import com.project.apsas.repository.PermissionRepository;
 import com.project.apsas.repository.RoleRepository;
@@ -26,6 +28,7 @@ import com.project.apsas.service.AuthService;
 import com.project.apsas.service.CloudinaryService;
 import com.project.apsas.service.MailService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -60,6 +63,39 @@ public class demo {
     KafkaFeedbackProvider kafkaFeedbackProvider;
     @Autowired
     SubmissionRepository  submissionRepository;
+
+    @Autowired
+    KafkaRCEProducer kafkaRCEProducer;
+
+    @PostMapping("/test")
+    public String test(@RequestBody SubmitCodeEvent submitCodeEvent) {
+        try {
+            // In ra để kiểm tra xem đã nhận đúng dữ liệu chưa
+            System.out.println("Đã nhận sự kiện cho submissionId: " + submitCodeEvent.getSubmissionId());
+            System.out.println("Ngôn ngữ ID: " + submitCodeEvent.getLanguageId());
+
+            // **Logic test chính của bạn:**
+            // Giả sử producer có phương thức .send(event)
+            kafkaRCEProducer.push("topic-execute",submitCodeEvent.getSubmissionId().toString(),submitCodeEvent);
+
+            System.out.println("Đã gửi sự kiện tới Kafka thành công.");
+
+            // Trả về 200 OK nếu thành công
+            return "Đã gửi thành công sự kiện cho submissionId: " + submitCodeEvent.getSubmissionId();
+
+        } catch (Exception e) {
+            // Nếu Kafka bị lỗi hoặc có vấn đề
+            System.err.println("Lỗi khi gửi sự kiện Kafka: " + e.getMessage());
+
+            return "lỗi";
+        }
+
+
+    }
+
+
+
+
 
     @GetMapping("/hello")
     public String hello() {

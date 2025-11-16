@@ -1,5 +1,6 @@
 package com.project.apsas.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.project.apsas.enums.TutorialStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -12,6 +13,7 @@ import java.util.Set;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(of = {"id"})
 @Table(name = "tutorials")
 public class Tutorial {
 
@@ -35,6 +37,7 @@ public class Tutorial {
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "tutorial", fetch = FetchType.LAZY)
+    @JsonIgnore
     private Set<Assignment> assignments;
 
     @OneToMany(mappedBy = "tutorial", fetch = FetchType.LAZY)

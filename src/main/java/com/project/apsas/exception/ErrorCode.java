@@ -24,6 +24,14 @@ public enum ErrorCode {
     REFRESH_TOKEN_INVALID("E5006", HttpStatus.UNAUTHORIZED, "refresh token không hợp lệ"),
     REFRESH_TOKEN_NOT_FOUND("E5007", HttpStatus.UNAUTHORIZED, "không tìm thấy refresh token"),
     USER_NOT_FOUND("E5008", HttpStatus.NOT_FOUND, "không tìm thấy user"),
+    DATE_INVALID("E5009", HttpStatus.BAD_REQUEST, "ngày không hợp lệ"),
+    ASSIGNMENT_NOT_FOUND("E5010", HttpStatus.NOT_FOUND, "kh tìm thấy assigment"),
+    ASSIGNMENT_NOT_OPEN("E5011", HttpStatus.BAD_REQUEST, "bài tập chưa mở"),
+    ASSIGNMENT_HAVE_CLOSE("E5012", HttpStatus.BAD_REQUEST, "bài tập đã đống"),
+    TUTORIAL_NOT_EXISTED("E5013", HttpStatus.BAD_REQUEST, "tutorial không tồn tại"),
+    CONTENT_NOT_EXISTED("E5014", HttpStatus.BAD_REQUEST, "content không tồn tại"),
+    ASSIGNMENT_NOT_EXISTED("E5015", HttpStatus.BAD_REQUEST, "assignment không tồn tại")
+
     ;
 
     private final String code;

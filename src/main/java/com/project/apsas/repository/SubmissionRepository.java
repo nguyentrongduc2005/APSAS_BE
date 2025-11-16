@@ -5,47 +5,103 @@ package com.project.apsas.repository;
     // ====== KPI THEO SINH VIÊN TRONG 1 KHÓA ======
 
    
+import com.project.apsas.dto.student.DailyScoreDTO;
+import com.project.apsas.dto.student.ProgressDTO;
+import com.project.apsas.entity.Assignment;
 import com.project.apsas.entity.Submission;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.security.access.method.P;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface SubmissionRepository extends JpaRepository<Submission, Long> {
-//     @Query("""
-//        select count(s)
-//        from Submission s
-//        where s.assignment.course.id = :courseId
-//          and s.user.id = :userId
-//    """)
-//    int countByCourseIdAndUserId(@Param("courseId") Long courseId,
-//                                 @Param("userId") Long userId);
-//
-//    @Query("""
-//        select count(s)
-//        from Submission s
-//        where s.assignment.course.id = :courseId
-//          and s.user.id = :userId
-//          and s.score is not null
-//    """)
-//    int countGradedByCourseIdAndUserId(@Param("courseId") Long courseId,
-//                                       @Param("userId") Long userId);
-//
-//    @Query("""
-//        select avg(s.score)
-//        from Submission s
-//        where s.assignment.course.id = :courseId
-//          and s.user.id = :userId
-//          and s.score is not null
-//    """)
-//    Double avgScoreByCourseIdAndUserId(@Param("courseId") Long courseId,
-//                                       @Param("userId") Long userId);
+
+    int countByCourseIdAndAssignmentIdAndUserId(Long courseId, Long assignmentId, Long userId);
+
+    @Query("""
+    SELECT NEW com.project.apsas.dto.student.DailyScoreDTO(
+        CAST(s.submittedAt AS DATE),
+        AVG(s.score)
+    )
+    FROM Submission s
+    WHERE s.userId = :userId
+      AND s.submittedAt BETWEEN :fromDate AND :toDate
+    GROUP BY CAST(s.submittedAt AS DATE)
+    ORDER BY CAST(s.submittedAt AS DATE)
+""")
+    List<DailyScoreDTO> findScoresByDateRange(
+            @Param("userId") Long userId,
+            @Param("fromDate") LocalDateTime fromDate,
+            @Param("toDate") LocalDateTime toDate
+    );
+
+
+    @Query("""
+    SELECT AVG(s.score)
+    FROM Submission s
+    WHERE s.userId = :userId AND s.status = 'COMPLETE'
+""")
+    Double findAverageScore(@Param("userId") Long userId);
+
+    @Query("SELECT COUNT(DISTINCT e.course.id) FROM Enrollment e WHERE e.user.id = :userId")
+    int countTotalCourses(@Param("userId") Long userId);
+
+
+
+    @Query("""
+    SELECT AVG(s.score)
+    FROM Submission s
+    WHERE s.user.id = :userId
+      AND s.status = 'COMPLETE'
+      AND s.submittedAt BETWEEN :fromDate AND :toDate
+    """)
+    Double findAverageScoreInRange(
+            @Param("userId") Long userId,
+            @Param("fromDate") LocalDateTime fromDate,
+            @Param("toDate") LocalDateTime toDate
+    );
+
+
+    @Query("""
+    SELECT COUNT(s)
+    FROM Submission s
+    WHERE s.userId = :userId AND s.status = 'COMPLETE'
+""")
+    Long countCompletedAssignments(@Param("userId") Long userId);
+
+    @Query("""
+    SELECT COUNT(s)
+    FROM Submission s
+    WHERE s.userId = :userId
+      AND s.submittedAt BETWEEN :fromDate AND :toDate
+""")
+    Long countSubmissionsInRange(
+            @Param("userId") Long userId,
+            @Param("fromDate") LocalDateTime fromDate,
+            @Param("toDate") LocalDateTime toDate
+    );
+
+
+    @Query("""
+    SELECT DISTINCT CAST(FUNCTION('DATE', s.submittedAt) AS LocalDate)
+    FROM Submission s
+    WHERE s.userId = :userId
+    ORDER BY CAST(FUNCTION('DATE', s.submittedAt) AS LocalDate)
+""")
+    List<LocalDate> findAllActiveDates(@Param("userId") Long userId);
+
+
+
+
     /**
      * Lấy tất cả submissions của một assignment
      */
@@ -111,7 +167,7 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
 
     /**
      * Lấy danh sách sinh viên đã nộp bài trong một assignment của course
-     * Hiển thị thông tin: studentId, studentName, studentEmail, score, passed, submittedAt, attemptNo
+     * Chỉ hiển thị thông tin cơ bản: studentId, studentName, studentEmail, score, passed, submittedAt, attemptNo
      */
     @Query(value = """
         SELECT 
@@ -121,16 +177,12 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
             s.score,
             s.passed,
             s.submitted_at as submittedAt,
-            s.attempt_no as attemptNo,
-            a.title as assignmentTitle
+            s.attempt_no as attemptNo
         FROM submissions s
         JOIN users u ON s.user_id = u.id
-        JOIN assignments a ON s.assignment_id = a.id
-        WHERE a.id = :assignmentId 
-          AND a.id IN (
-              SELECT assignment_id FROM courses_assignments WHERE course_id = :courseId
-          )
-        GROUP BY u.id
+        WHERE s.assignment_id = :assignmentId 
+          AND s.course_id = :courseId
+        GROUP BY u.id, s.id
         ORDER BY s.submitted_at DESC
         """, nativeQuery = true)
     Page<Object[]> findStudentSubmissionsByCourseAndAssignment(
@@ -138,4 +190,17 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
             @Param("assignmentId") Long assignmentId,
             Pageable pageable
     );
+    
+    /**
+     * Tìm submission mới nhất của một student cho một assignment
+     */
+    Optional<Submission> findTopByAssignmentIdAndUserIdOrderBySubmittedAtDesc(
+            Long assignmentId, 
+            Long userId
+    );
+    
+    /**
+     * Lấy tất cả submissions của một user, sắp xếp theo thời gian mới nhất
+     */
+    Page<Submission> findByUserIdOrderBySubmittedAtDesc(Long userId, Pageable pageable);
 }

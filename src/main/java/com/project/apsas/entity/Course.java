@@ -3,10 +3,7 @@ package com.project.apsas.entity;
 import com.project.apsas.enums.CourseVisibility;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -17,6 +14,7 @@ import java.util.Set;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(of = {"id"})
 @Table(name = "courses")
 public class Course {
 @Id
@@ -49,17 +47,23 @@ public class Course {
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "course", fetch = FetchType.LAZY)
+    @Builder.Default
     private Set<Enrollment> enrollments = new HashSet<>();
 
     @OneToMany(mappedBy = "course", fetch = FetchType.LAZY)
+    @Builder.Default
     private Set<CourseAssignment> assignmentLinks = new HashSet<>();
+    
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by", nullable = false) // <--- RẤT QUAN TRỌNG
+    @JoinColumn(name = "created_by", nullable = false)
     private User creator;
+    
     @OneToMany(mappedBy = "course", fetch = FetchType.LAZY)
+    @Builder.Default
     private Set<CourseContent> contentLinks = new HashSet<>();
 
     @OneToMany(mappedBy = "course", fetch = FetchType.LAZY)
+    @Builder.Default
     private Set<HelpRequest> helpRequests = new HashSet<>();
 }
 

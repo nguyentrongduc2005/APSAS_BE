@@ -1,14 +1,15 @@
 package com.project.apsas.controller;
 
 import com.project.apsas.dto.ApiResponse;
-
+import com.project.apsas.dto.request.CreateCourseFromTutorialRequest;
 import com.project.apsas.dto.response.CourseItemStudentResponse;
 import com.project.apsas.dto.response.CourseItemTeacherResponse;
 import com.project.apsas.dto.response.CourseRegisResponse;
-
+import com.project.apsas.dto.response.CreateCourseResponse;
 import com.project.apsas.dto.response.PublicCourseItem;
 import com.project.apsas.service.CourseServices;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -113,6 +114,20 @@ public class CourseController {
         return ApiResponse.<CourseRegisResponse>builder()
                 .code("0")
                 .message("SUCCESS")
+                .data(data)
+                .build();
+    }
+
+    @PostMapping("/from-tutorial")
+    @PreAuthorize("hasAnyRole('ROLE_LECTURER', 'ROLE_PROVIDER')")
+    public ApiResponse<CreateCourseResponse> createCourseFromTutorial(
+            @RequestBody @Valid CreateCourseFromTutorialRequest request) {
+        
+        var data = service.createCourseFromTutorial(request);
+        
+        return ApiResponse.<CreateCourseResponse>builder()
+                .code("0")
+                .message("Tạo khóa học từ tutorial thành công")
                 .data(data)
                 .build();
     }

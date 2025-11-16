@@ -96,4 +96,24 @@ public class CloudinaryServiceImpl implements CloudinaryService {
 
         return cloudinary.uploader().destroy(publicId, options);
     }
+
+    public Map deleteFiles(List<String> publicIds) throws Exception {
+        if (publicIds == null || publicIds.isEmpty()) {
+            // Không có gì để xóa, trả về 1 Map rỗng
+            return new HashMap();
+        }
+
+        Map<String, Object> options = new HashMap<>();
+
+        // 1. Dùng 'resourceType' mặc định của class,
+        //    giống hệt như hàm 'upload' của bạn
+        options.put("resource_type", this.resourceType);
+
+        // 2. Tùy chọn: Xóa cache CDN ngay lập tức (nên dùng)
+        options.put("invalidate", true);
+
+        // 3. Gọi API 'delete_resources' (xóa hàng loạt)
+        //    Lưu ý: dùng .api() chứ không phải .uploader()
+        return cloudinary.api().deleteResources(publicIds, options);
+    }
 }

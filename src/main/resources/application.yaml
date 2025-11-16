@@ -35,6 +35,13 @@ spring:
     username: user
     password: 1234
     driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      auto-commit: false
+      connection-timeout: 30000
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 600000
+      max-lifetime: 1800000
 
   jpa:
     hibernate:
@@ -43,11 +50,31 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MariaDBDialect
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+        connection:
+          provider_disables_autocommit: true
   servlet:
     multipart:
       max-request-size: 10MB
       max-file-size: 10MB
-
+  security:
+      oauth2:
+        client:
+          registration:
+            google:
+              client-id: 983975577912-h8to98gdaf2eliiakkcmjohstg3ftp7a.apps.googleusercontent.com
+              client-secret: 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
+              scope: email, profile
+          provider:
+            google:
+              authorization-uri: https://accounts.google.com/o/oauth2/auth
+              token-uri: https://oauth2.googleapis.com/token
+              user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+  frontend:
+    url: http://localhost:5173
   kafka:
     bootstrap-servers: localhost:9094
     consumer:
@@ -83,6 +110,8 @@ message-queue:
       drop: topic-mail.DLT.DROP
     feedback:
       name: topic-ai
+    execute:
+      name: topic-execute
 
 cloudinary:
   cloud-name: ddcyjcpx0

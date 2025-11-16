@@ -19,4 +19,8 @@ public class SubmissionRCERequest {
 
     @JsonProperty("stdin")
     private String stdin;
+
+    // THÊM TRƯỜNG NÀY:
+    @JsonProperty("expected_output")
+    private String expectedOutput;
 }

@@ -2,9 +2,14 @@ package com.project.apsas.service;
 
 
 import com.project.apsas.dto.StudentSubmissionDTO;
+import com.project.apsas.dto.mapping.ReportCongfigSubmission;
+import com.project.apsas.dto.request.CreateSubmissionRequest;
 import com.project.apsas.dto.response.CodeFeedbackDTO;
+import com.project.apsas.dto.response.CreateSubmissionResponse;
 import com.project.apsas.dto.response.PagedResponse;
 import com.project.apsas.dto.response.SubmissionResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -13,7 +18,8 @@ import java.util.List;
  */
 
 public interface SubmissionService {
-    public void updataFeedbackByAI(Long submissionId, CodeFeedbackDTO codeFeedbackDTO);
+    public void updataFeedbackByAI(Long submissionId, CodeFeedbackDTO codeFeedbackDTO, boolean status);
+    public void updataReportConfig(Long submissionId, ReportCongfigSubmission reportCongfigSubmission, boolean status);
     public PagedResponse<SubmissionResponse> getSubmissionsByCourse(
             Long courseId,
             int page,
@@ -28,10 +34,37 @@ public interface SubmissionService {
     public SubmissionResponse getSubmissionDetail(Long assignmentId, Long studentId);
     public List<SubmissionResponse> getSubmissionsByStudent(Long studentId);
     public List<SubmissionResponse> getSubmissionsByAssignmentId(Long assignmentId);
-    public PagedResponse<StudentSubmissionDTO> getStudentSubmissionsByAssignment(
+    public Page<StudentSubmissionDTO> getStudentSubmissionsByAssignment(
             Long courseId,
             Long assignmentId,
-            int page,
-            int limit
+            Pageable pageable
     );
+    
+    /**
+     * Lấy tất cả submissions của một student trong một course
+     * Bao gồm cả assignments chưa nộp
+     * 
+     * @param courseId Course ID
+     * @param studentId Student ID
+     * @param pageable Pageable object
+     * @return Page of all submissions (submitted and not submitted)
+     */
+    public Page<com.project.apsas.dto.StudentAllSubmissionsDTO> getAllSubmissionsOfStudent(
+            Long courseId,
+            Long studentId,
+            Pageable pageable
+    );
+    
+    /**
+     * Student xem các assignment đã nộp của chính mình
+     * Chỉ hiển thị assignments ĐÃ SUBMIT
+     * 
+     * @param pageable Pageable object
+     * @return Page of submitted assignments
+     */
+    public Page<com.project.apsas.dto.StudentSubmittedAssignmentDTO> getMySubmittedAssignments(
+            Pageable pageable
+    );
+    
+    public CreateSubmissionResponse createSubmission(CreateSubmissionRequest createSubmissionRequest);
 }
