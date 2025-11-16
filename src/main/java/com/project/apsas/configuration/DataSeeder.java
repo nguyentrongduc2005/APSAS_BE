@@ -19,7 +19,6 @@ import com.project.apsas.repository.RoleRepository;
 import com.project.apsas.repository.UserRepository;
 
 @Component
-@Transactional
 public class DataSeeder implements ApplicationRunner {
     private final PermissionRepository permRepo;
     private final RoleRepository roleRepo;
@@ -33,8 +32,20 @@ public class DataSeeder implements ApplicationRunner {
         this.permRepo = p; this.roleRepo = r; this.userRepo = u; this.encoder = e; this.admin = a;
     }
 
-    @Override public void run(ApplicationArguments args) {
+    @Override 
+    @Transactional
+    public void run(ApplicationArguments args) {
         if (!seedEnabled) return;
+        
+        try {
+            seedData();
+        } catch (Exception e) {
+            System.err.println("⚠️ DataSeeder failed (database may already be seeded): " + e.getMessage());
+            // Không throw exception để app vẫn start được
+        }
+    }
+    
+    private void seedData() {
 
         // 1) permissions (map theo sidebar)
         List<String> P = List.of(
@@ -67,11 +78,19 @@ public class DataSeeder implements ApplicationRunner {
 
         for (var e : R.entrySet()) {
             String roleName = e.getKey();
+            
+            // Check if role already exists with permissions
+            Optional<Role> existingRole = roleRepo.findByName(roleName);
+            if (existingRole.isPresent() && !existingRole.get().getPermissions().isEmpty()) {
+                continue; // Skip if already seeded
+            }
+            
             Set<Permission> perms = e.getValue().stream()
                     .map(n -> permRepo.findByName(n).orElseThrow()).collect(Collectors.toCollection(LinkedHashSet::new));
 
-            Role role = roleRepo.findByName(roleName)
-                    .orElseGet(() -> roleRepo.save(Role.builder().name(roleName).description(roleName).build()));
+            Role role = existingRole.orElseGet(() -> 
+                roleRepo.save(Role.builder().name(roleName).description(roleName).build())
+            );
             role.setPermissions(perms);
             roleRepo.save(role); // cập nhật roles_permissions(roles_id, permissions_id)
         }

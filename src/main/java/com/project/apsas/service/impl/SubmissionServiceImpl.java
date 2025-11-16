@@ -402,7 +402,7 @@ public class SubmissionServiceImpl implements SubmissionService {
         
         // 2. Lấy tất cả assignments của course (không phân trang ở đây)
         List<CourseAssignment> allCourseAssignments = courseAssignmentRepository
-                .findAllByCourseIdOrderByOrderNumber(courseId);
+                .findAllByCourseId(courseId);
         
         // 3. Map sang DTO với thông tin submission (nếu có)
         List<com.project.apsas.dto.StudentAllSubmissionsDTO> allSubmissions = allCourseAssignments.stream()
