@@ -20,7 +20,6 @@ import com.project.apsas.repository.RoleRepository;
 import com.project.apsas.repository.UserRepository;
 
 @Component
-@Slf4j
 public class DataSeeder implements ApplicationRunner {
     private final PermissionRepository permRepo;
     private final RoleRepository roleRepo;
@@ -34,12 +33,20 @@ public class DataSeeder implements ApplicationRunner {
         this.permRepo = p; this.roleRepo = r; this.userRepo = u; this.encoder = e; this.admin = a;
     }
 
-    @Override
+    @Override 
+    @Transactional
     public void run(ApplicationArguments args) {
-        if (!seedEnabled) {
-            log.info("Data seeding is disabled");
-            return;
+        if (!seedEnabled) return;
+        
+        try {
+            seedData();
+        } catch (Exception e) {
+            System.err.println("⚠️ DataSeeder failed (database may already be seeded): " + e.getMessage());
+            // Không throw exception để app vẫn start được
         }
+    }
+    
+    private void seedData() {
 
         try {
             log.info("Starting data seeding...");
@@ -108,36 +115,23 @@ public class DataSeeder implements ApplicationRunner {
         );
         R.put("ADMIN", allPermissions);
 
-        for (var entry : R.entrySet()) {
-            String roleName = entry.getKey();
-            try {
-                Set<Permission> perms = entry.getValue().stream()
-                        .map(n -> permRepo.findByName(n).orElseThrow(
-                                () -> new RuntimeException("Permission not found: " + n)))
-                        .collect(Collectors.toCollection(LinkedHashSet::new));
-
-                Optional<Role> existingRole = roleRepo.findByName(roleName);
-                Role role;
-                
-                if (existingRole.isPresent()) {
-                    role = existingRole.get();
-                    log.debug("Role {} already exists, updating permissions", roleName);
-                } else {
-                    role = Role.builder()
-                            .name(roleName)
-                            .description(roleName)
-                            .build();
-                    role = roleRepo.save(role);
-                    log.debug("Created new role: {}", roleName);
-                }
-                
-                // Update permissions
-                role.setPermissions(perms);
-                roleRepo.save(role);
-                
-            } catch (Exception e) {
-                log.error("Error seeding role {}: {}", roleName, e.getMessage());
+        for (var e : R.entrySet()) {
+            String roleName = e.getKey();
+            
+            // Check if role already exists with permissions
+            Optional<Role> existingRole = roleRepo.findByName(roleName);
+            if (existingRole.isPresent() && !existingRole.get().getPermissions().isEmpty()) {
+                continue; // Skip if already seeded
             }
+            
+            Set<Permission> perms = e.getValue().stream()
+                    .map(n -> permRepo.findByName(n).orElseThrow()).collect(Collectors.toCollection(LinkedHashSet::new));
+
+            Role role = existingRole.orElseGet(() -> 
+                roleRepo.save(Role.builder().name(roleName).description(roleName).build())
+            );
+            role.setPermissions(perms);
+            roleRepo.save(role); // cập nhật roles_permissions(roles_id, permissions_id)
         }
     }
 

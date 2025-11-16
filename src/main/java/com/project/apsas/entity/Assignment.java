@@ -63,12 +63,15 @@ public class Assignment {
            fetch = FetchType.LAZY,
            cascade = CascadeType.ALL,
            orphanRemoval = true)
+    @Builder.Default
     private Set<CourseAssignment> courseLinks = new HashSet<>();
     
     @OneToMany(mappedBy = "assignment", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-   private Set<AssignmentEvaluation> assignmentEvaluations = new HashSet<>();
+    @Builder.Default
+    private Set<AssignmentEvaluation> assignmentEvaluations = new HashSet<>();
 
     @OneToMany(mappedBy = "assignment",cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
     private Set<Submission> submissions = new HashSet<>();
     
 }

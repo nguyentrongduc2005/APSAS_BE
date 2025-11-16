@@ -36,14 +36,12 @@ spring:
     password: 1234
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
-      # Connection pool settings
+      auto-commit: false
+      connection-timeout: 30000
       maximum-pool-size: 10
       minimum-idle: 5
-      connection-timeout: 30000      # 30 seconds
-      idle-timeout: 600000           # 10 minutes
-      max-lifetime: 1800000          # 30 minutes
-      # Prevent connection leak
-      leak-detection-threshold: 60000 # 1 minute
+      idle-timeout: 600000
+      max-lifetime: 1800000
 
   jpa:
     hibernate:
@@ -52,15 +50,12 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MariaDBDialect
-        # Transaction timeout settings
         jdbc:
           batch_size: 20
         order_inserts: true
         order_updates: true
-        # Lock timeout (milliseconds) - prevent deadlock waiting forever
-        jakarta.persistence.lock.timeout: 10000  # 10 seconds
-        # Query timeout (seconds)
-        jakarta.persistence.query.timeout: 30
+        connection:
+          provider_disables_autocommit: true
   servlet:
     multipart:
       max-request-size: 10MB
@@ -146,6 +141,7 @@ brevo:
     name: CodeVerse
 jubge:
   base-url: https://ce.judge0.com
+
 
 mvc:
   throw-exception-if-no-handler-found: true

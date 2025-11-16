@@ -46,6 +46,7 @@ public class User {
     private Otp otp;
     @OneToMany(mappedBy = "creator", fetch = FetchType.LAZY)
     @ToString.Exclude
+    @Builder.Default
     Set<Course> courses = new HashSet<>();
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     @ToString.Exclude
