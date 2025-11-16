@@ -12,6 +12,7 @@ import com.project.apsas.dto.response.assignment.CreateAssignmentResponse;
 import com.project.apsas.dto.response.content.CreateContentResponse;
 import com.project.apsas.dto.response.content.UpdateContentResponse;
 import com.project.apsas.dto.response.tutorial.CreateTutorialResponse;
+import com.project.apsas.dto.response.tutorial.DetailTutorialResponse;
 import com.project.apsas.service.AssignmentService;
 import com.project.apsas.service.ContentService;
 import com.project.apsas.service.TutorialService;
@@ -128,6 +129,15 @@ public class TutorialController {
                 .message("Successfully updated assignment")
                 // Gọi hàm service mới, trả về DTO giống 'create'
                 .data(assignmentService.updateAssignment(assignmentId, request))
+                .build();
+    }
+
+    @GetMapping("/{id}")
+    public ApiResponse<DetailTutorialResponse> getTutorialDetail(@PathVariable Long id) {
+        return ApiResponse.<DetailTutorialResponse>builder()
+                .code("ok")
+                .message("successfully get tutorial")
+                .data(tutorialService.getTutorialDetail(id))
                 .build();
     }
 }
