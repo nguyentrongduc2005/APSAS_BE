@@ -1,12 +1,35 @@
-# runing
-> cd environment
+# APSAS - Automated Programming Skills Assessment System
 
-> docker compose up -d
+Hệ thống tự động chấm code, đánh giá kỹ năng và đưa ra phản hồi cá nhân hóa, giúp nâng cao trải nghiệm học tập cho sinh viên và giảm tải công việc cho giảng viên.
 
-> run intellj bình thường
+## 🚀 Quick Start
 
-# APSAS
-hệ thống Automated Programming Skills Assessment System (APSAS) được đề xuất nhằm tự động hóa việc chấm code, đánh giá kỹ năng và đưa ra phản hồi cá nhân hóa, giúp nâng cao trải nghiệm học tập cho sinh viên và giảm tải công việc cho giảng viên
+### 1. Start Docker Services
+```bash
+cd environment
+docker compose up -d
+```
+
+### 2. Run Application
+
+**Cách 1: Normal Start (Quick)**
+```powershell
+.\run-local.ps1
+```
+
+**Cách 2: Start với Cleanup** (nếu gặp lỗi)
+```powershell
+.\run-local.ps1 -Cleanup
+```
+
+**Cách 3: Force Cleanup** (không hỏi)
+```powershell
+.\run-local.ps1 -Cleanup -Force
+```
+
+📖 **Chi tiết:** Xem [STARTUP_GUIDE.md](STARTUP_GUIDE.md)
+
+---
 
 ## 2) Backend Architecture (Monolith-Modular, DDD-oriented)
 
