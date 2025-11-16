@@ -17,6 +17,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -49,5 +52,22 @@ public class TutorialServiceImpl implements TutorialService {
                 .createdBy(result.getCreatedBy())
                 .status(result.getStatus())
                 .build();
+    }
+
+    @Override
+    public List<CreateTutorialResponse> getMyTutorials() {
+        Long currentUserId = Long.parseLong(authService.currentId());
+
+        List<Tutorial> tutorials = tutorialRepository.findByCreatedBy(currentUserId);
+
+        return tutorials.stream()
+                .map(t -> CreateTutorialResponse.builder()
+                        .id(t.getId())
+                        .title(t.getTitle())
+                        .summary(t.getSummary())
+                        .createdBy(t.getCreatedBy())
+                        .status(t.getStatus())
+                        .build())
+                .collect(Collectors.toList());
     }
 }

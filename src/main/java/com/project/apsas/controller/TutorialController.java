@@ -17,6 +17,8 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -60,6 +62,17 @@ public class TutorialController {
                 .code("ok")
                 .message("successfully created tutorial")
                 .data(assignmentService.createAssignment(tutorialId,request))
+                .build();
+    }
+    @PreAuthorize("hasRole('PROVIDER')")
+    @PostMapping("/my")
+    public ApiResponse<List<CreateTutorialResponse>> getMyTutorials() {
+        List<CreateTutorialResponse> data = tutorialService.getMyTutorials();
+
+        return ApiResponse.<List<CreateTutorialResponse>>builder()
+                .code("ok")
+                .message("success")
+                .data(data)
                 .build();
     }
 }
