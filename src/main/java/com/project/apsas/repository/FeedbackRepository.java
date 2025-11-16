@@ -1,14 +1,14 @@
 package com.project.apsas.repository;
 
 import com.project.apsas.entity.Feedback;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
 @Repository
 public interface FeedbackRepository extends JpaRepository<Feedback, Long> {
 
-    // Lấy danh sách feedback theo submission, sắp xếp theo thời gian tạo
-    List<Feedback> findBySubmissionIdOrderByCreatedAtAsc(Long submissionId);
+    // Lấy tất cả feedback của 1 submission, sort theo thời gian mới nhất trước
+    List<Feedback> findAllBySubmissionIdOrderByCreatedAtDesc(Long submissionId);
 }

@@ -1,7 +1,9 @@
 package com.project.apsas.configuration;
 
 import com.project.apsas.enums.Role;
+import lombok.RequiredArgsConstructor;
 import org.apache.catalina.filters.CorsFilter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -44,22 +46,24 @@ public class SecurityConfig {
             "/feedback",
             "/submission",
             "/ai",
-            "/api/teacher/submissions/{submissionId}/feedback",
+            "/test",
+            "login/oauth2/**"
     };
 
     private final String[] PUBLIC_ENDPOINTS_GET = {
             "/courses",
             "/courses/{courseId}/register-details",
+            "/progress/{studentId}",
+            "/submissions/**",
     };
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity httpSecurity, CustomOAuth2UserService customOAuth2UserService,
+                                           OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler) throws Exception {
         httpSecurity.csrf(AbstractHttpConfigurer::disable);
         httpSecurity.authorizeHttpRequests(request -> request
                         .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.GET, PUBLIC_ENDPOINTS_GET).permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/teacher/submissions/*/feedbacks")
-                        .hasAnyRole(Role.LECTURER.name(), Role.ADMIN.name())
 //                .requestMatchers(HttpMethod.GET,"/users")
 //                .hasRole(Role.ADMIN.name()//                .hasAuthority("ROLE_ADMIN") dung theo authority) dùng theo role đã được định nghĩa ở enum
                         // Get ra từ security placeholder cái role để phân quyền
@@ -70,6 +74,14 @@ public class SecurityConfig {
                         jwtConfigurer.decoder(jwtDecoder())
                                 .jwtAuthenticationConverter(jwtAuthenticationConverter()))
         );
+        httpSecurity.oauth2Login(oauth2 -> {
+            oauth2.userInfoEndpoint(userInfo -> userInfo
+                    .userService(customOAuth2UserService) // Bước 1: Find/Create user
+            );
+            oauth2.successHandler(
+                    oAuth2LoginSuccessHandler // Bước 2: Tạo token và redirect
+            );
+        });
         return httpSecurity.build();
     }
 
@@ -87,7 +99,6 @@ public class SecurityConfig {
 
         return new CorsFilter();
     }
-
 
 
     @Bean
@@ -109,10 +120,6 @@ public class SecurityConfig {
         return jwtAuthenticationConverter;
     }
 
-    @Bean
-    PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(10);
-    }
 
 }
 
