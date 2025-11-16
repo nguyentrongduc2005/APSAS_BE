@@ -20,6 +20,7 @@ import com.project.apsas.repository.RoleRepository;
 import com.project.apsas.repository.UserRepository;
 
 @Component
+@Slf4j
 public class DataSeeder implements ApplicationRunner {
     private final PermissionRepository permRepo;
     private final RoleRepository roleRepo;

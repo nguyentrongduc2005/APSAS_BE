@@ -49,28 +49,5 @@ public class TeacherFeedbackServiceImpl implements TeacherFeedbackService {
                 .build();
     }
 
-    @Override
-    public List<TeacherFeedbackDTO> getFeedbacksOfSubmission(Long submissionId) {
 
-        // Đảm bảo submission tồn tại
-        submissionRepository.findById(submissionId)
-                .orElseThrow(() -> new AppException(ErrorCode.SUBMISSION_NOT_FOUND));
-
-        // Không sửa FeedbackRepository → dùng findAll() rồi filter trong memory
-        return feedbackRepository.findAll().stream()
-                .filter(f -> submissionId.equals(f.getSubmissionId()))
-                .sorted(
-                        Comparator.comparing(
-                                Feedback::getCreatedAt,
-                                Comparator.nullsLast(Comparator.naturalOrder())
-                        ).reversed()
-                )
-                .map(f -> TeacherFeedbackDTO.builder()
-                        .id(f.getId())
-                        .body(f.getBody())
-                        .createdAt(f.getCreatedAt())
-                        .build()
-                )
-                .toList();
-    }
 }
