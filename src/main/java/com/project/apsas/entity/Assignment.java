@@ -55,7 +55,7 @@ public class Assignment {
     private Tutorial tutorial;
 
     // truy vấn kỹ năng liên quan
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "skill_id", insertable = false, updatable = false)
     private Skill skill;
 
@@ -65,10 +65,10 @@ public class Assignment {
            orphanRemoval = true)
     private Set<CourseAssignment> courseLinks = new HashSet<>();
     
-    @OneToMany(mappedBy = "assignment", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "assignment", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
    private Set<AssignmentEvaluation> assignmentEvaluations = new HashSet<>();
 
-    @OneToMany(mappedBy = "assignment", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "assignment",cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<Submission> submissions = new HashSet<>();
     
 }

@@ -10,7 +10,7 @@ import lombok.Setter;
 @Getter
 @AllArgsConstructor
 @Builder
-public class CreateContentResponse {
+public class UpdateContentResponse {
     private Long id;
     private Long tutorialId;
     private String title;

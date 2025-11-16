@@ -1,6 +1,7 @@
 package com.project.apsas.service.impl;
 
 import com.project.apsas.dto.request.tutorial.CreateTutorialRequest;
+import com.project.apsas.dto.request.tutorial.UpdateTutorialRequest;
 import com.project.apsas.dto.response.tutorial.CreateTutorialResponse;
 import com.project.apsas.entity.Tutorial;
 import com.project.apsas.entity.User;
@@ -49,5 +50,26 @@ public class TutorialServiceImpl implements TutorialService {
                 .createdBy(result.getCreatedBy())
                 .status(result.getStatus())
                 .build();
+    }
+
+    @Override
+    public Boolean updateTutorial(UpdateTutorialRequest request, Long tutorialId) {
+        Long userId =  Long.parseLong(authService.currentId());
+
+        Tutorial tutorial = tutorialRepository.findById(tutorialId).orElseThrow(() ->
+                new AppException(ErrorCode.NOT_FOUND));
+        if (!tutorial.getCreatedBy().equals(userId))
+            throw new AppException(ErrorCode.FORBIDDEN);
+
+        if (request.getTitle() != null) {
+            tutorial.setTitle(request.getTitle());
+        }
+        if (request.getSummary() != null) {
+            tutorial.setSummary(request.getSummary());
+        }
+
+        Tutorial result = tutorialRepository.save(tutorial);
+
+        return result != null;
     }
 }

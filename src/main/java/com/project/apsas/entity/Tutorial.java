@@ -1,5 +1,6 @@
 package com.project.apsas.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.project.apsas.enums.TutorialStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -36,6 +37,7 @@ public class Tutorial {
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "tutorial", fetch = FetchType.LAZY)
+    @JsonIgnore
     private Set<Assignment> assignments;
 
     @OneToMany(mappedBy = "tutorial", fetch = FetchType.LAZY)
