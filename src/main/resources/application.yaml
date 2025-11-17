@@ -97,8 +97,12 @@ spring:
     listener:
       ack-mode: manual_immediate
       concurrency: 3
-#logging:
-#  level:
+logging:
+  level:
+    root: INFO
+    com.project.apsas: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 #    org.springframework.kafka.config: DEBUG
 #    org.springframework.kafka.listener: DEBUG
 
