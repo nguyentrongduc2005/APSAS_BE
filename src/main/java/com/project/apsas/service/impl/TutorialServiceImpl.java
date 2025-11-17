@@ -11,6 +11,7 @@ import com.project.apsas.entity.Assignment;
 import com.project.apsas.entity.Content;
 import com.project.apsas.entity.Tutorial;
 import com.project.apsas.entity.User;
+import com.project.apsas.enums.ContentStatus;
 import com.project.apsas.enums.TutorialStatus;
 import com.project.apsas.exception.AppException;
 import com.project.apsas.exception.ErrorCode;
@@ -24,6 +25,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -31,6 +33,8 @@ import java.util.stream.Collectors;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+
+@Slf4j
 
 @Service
 @RequiredArgsConstructor
@@ -142,6 +146,38 @@ public class TutorialServiceImpl implements TutorialService {
                 .build();
     }
 
-
+    @Override
+    public Boolean submitTutorialForReview(Long tutorialId) {
+        Long currentUserId = Long.parseLong(authService.currentId());
+        
+        Tutorial tutorial = tutorialRepository.findById(tutorialId)
+                .orElseThrow(() -> new AppException(ErrorCode.TUTORIAL_NOT_EXISTED));
+        
+        // Chỉ creator mới submit được
+        if (!tutorial.getCreatedBy().equals(currentUserId)) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+        
+        // Chỉ submit từ DRAFT
+        if (tutorial.getStatus() != TutorialStatus.DRAFT) {
+            throw new AppException(ErrorCode.BAD_REQUEST);
+        }
+        
+        // Kiểm tra phải có ít nhất 1 content
+        if (tutorial.getContents() == null || tutorial.getContents().isEmpty()) {
+            throw new AppException(ErrorCode.BAD_REQUEST);
+        }
+        
+        // Chuyển tutorial và tất cả content sang PENDING
+        tutorial.setStatus(TutorialStatus.PENDING);
+        tutorial.getContents().forEach(content -> {
+            content.setStatus(ContentStatus.PENDING);
+        });
+        
+        tutorialRepository.save(tutorial);
+        log.info("Provider {} submitted tutorial {} for review", currentUserId, tutorialId);
+        
+        return true;
+    }
 
 }

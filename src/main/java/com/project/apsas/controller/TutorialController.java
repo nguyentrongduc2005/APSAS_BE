@@ -150,4 +150,14 @@ public class TutorialController {
                 .data(tutorialService.getTutorialDetail(id))
                 .build();
     }
+
+    @PreAuthorize("hasRole('PROVIDER')")
+    @PostMapping("/{tutorialId}/submit")
+    public ApiResponse<Boolean> submitTutorialForReview(@PathVariable Long tutorialId) {
+        return ApiResponse.<Boolean>builder()
+                .code("ok")
+                .message("Tutorial submitted for review successfully")
+                .data(tutorialService.submitTutorialForReview(tutorialId))
+                .build();
+    }
 }
