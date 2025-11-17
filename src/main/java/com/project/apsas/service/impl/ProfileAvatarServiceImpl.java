@@ -82,6 +82,7 @@ public class ProfileAvatarServiceImpl implements ProfileAvatarService {
 
         // 6. Build ProfileResponse trả về giống các API profile khác
         return ProfileResponse.builder()
+                .avatar(profile.getAvatarUrl())
                 .success(success)
                 .build();
     }

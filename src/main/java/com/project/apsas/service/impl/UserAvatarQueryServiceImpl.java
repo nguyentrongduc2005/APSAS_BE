@@ -80,64 +80,64 @@ public class UserAvatarQueryServiceImpl implements UserAvatarQueryService {
                 .build();
     }
 
-    @Override
-    public SmallAvatarResponse uploadMyAvatar(MultipartFile file) throws IOException {
-        if (file == null || file.isEmpty()) {
-            throw new AppException(ErrorCode.VALIDATION_FAILED);
-        }
-
-        String idStr = authService.currentId();
-        if (!StringUtils.hasText(idStr)) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
-        }
-
-        Long userId;
-        try {
-            userId = Long.parseLong(idStr);
-        } catch (NumberFormatException e) {
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
-        }
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-
-        Profile profile = user.getProfile();
-        if (profile == null) {
-            profile = new Profile();
-            profile.setUser(user);
-        }
-
-        String avatarUrl = null;
-        String smallAvatarUrl = null;
-        boolean success = false;
-
-        String publicId = UUID.randomUUID().toString();
-        try {
-            UploadResult uploadResult = cloudinaryService.upload(file, folder, publicId);
-            avatarUrl = uploadResult.getUrl();
-            profile.setAvatarUrl(avatarUrl);
-            success = true;
-
-            if (uploadResult.getPublicId() != null) {
-                smallAvatarUrl = cloudinaryService.getAvatarThumbnailUrl(uploadResult.getPublicId());
-            } else {
-                smallAvatarUrl = buildSmallAvatarUrlFromOriginal(avatarUrl);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        profileRepository.save(profile);
-
-        return SmallAvatarResponse.builder()
-                .userId(userId)
-                .name(user.getName())
-                .email(user.getEmail())
-                .avatarUrl(avatarUrl)
-                .smallAvatarUrl(smallAvatarUrl)
-                .success(success)
-                .build();
-    }
+//    @Override
+//    public SmallAvatarResponse uploadMyAvatar(MultipartFile file) throws IOException {
+//        if (file == null || file.isEmpty()) {
+//            throw new AppException(ErrorCode.VALIDATION_FAILED);
+//        }
+//
+//        String idStr = authService.currentId();
+//        if (!StringUtils.hasText(idStr)) {
+//            throw new AppException(ErrorCode.UNAUTHORIZED);
+//        }
+//
+//        Long userId;
+//        try {
+//            userId = Long.parseLong(idStr);
+//        } catch (NumberFormatException e) {
+//            throw new AppException(ErrorCode.UNAUTHENTICATED);
+//        }
+//
+//        User user = userRepository.findById(userId)
+//                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+//
+//        Profile profile = user.getProfile();
+//        if (profile == null) {
+//            profile = new Profile();
+//            profile.setUser(user);
+//        }
+//
+//        String avatarUrl = null;
+//        String smallAvatarUrl = null;
+//        boolean success = false;
+//
+//        String publicId = UUID.randomUUID().toString();
+//        try {
+//            UploadResult uploadResult = cloudinaryService.upload(file, folder, publicId);
+//            avatarUrl = uploadResult.getUrl();
+//            profile.setAvatarUrl(avatarUrl);
+//            success = true;
+//
+//            if (uploadResult.getPublicId() != null) {
+//                smallAvatarUrl = cloudinaryService.getAvatarThumbnailUrl(uploadResult.getPublicId());
+//            } else {
+//                smallAvatarUrl = buildSmallAvatarUrlFromOriginal(avatarUrl);
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//
+//        profileRepository.save(profile);
+//
+//        return SmallAvatarResponse.builder()
+//                .userId(userId)
+//                .name(user.getName())
+//                .email(user.getEmail())
+//                .avatarUrl(avatarUrl)
+//                .smallAvatarUrl(smallAvatarUrl)
+//                .success(success)
+//                .build();
+//    }
 
     private String buildSmallAvatarUrlFromOriginal(String avatarUrl) {
         if (!StringUtils.hasText(avatarUrl)) {
