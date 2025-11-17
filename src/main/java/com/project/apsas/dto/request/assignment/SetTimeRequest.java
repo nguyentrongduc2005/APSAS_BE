@@ -1,18 +1,23 @@
 package com.project.apsas.dto.request.assignment;
 
-import jakarta.validation.constraints.AssertTrue;
-import jakarta.validation.constraints.Future;
-import jakarta.validation.constraints.FutureOrPresent;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDateTime;
 
 @Data
 public class SetTimeRequest {
 
-    LocalDateTime openAt;
 
-    LocalDateTime dueAt;
+
+    // Sửa lỗi: Thêm @DateTimeFormat để Spring hiểu "yyyy-MM-dd HH:mm:ss"
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime openAt;
+
+
+    // Sửa lỗi: Thêm @DateTimeFormat để Spring hiểu "yyyy-MM-dd HH:mm:ss"
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime dueAt;
+
 
 }
