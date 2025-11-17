@@ -84,7 +84,7 @@ public class TutorialController {
                 .build();
     }
     @PreAuthorize("hasRole('PROVIDER')")
-    @PostMapping("/my")
+    @GetMapping("/my")
     public ApiResponse<List<CreateTutorialResponse>> getMyTutorials() {
         return ApiResponse.<List<CreateTutorialResponse>>builder()
                 .code("ok")

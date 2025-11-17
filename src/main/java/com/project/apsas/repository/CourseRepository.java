@@ -13,7 +13,12 @@ import com.project.apsas.entity.Course;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
+
 public interface CourseRepository extends JpaRepository<Course, Long> {
+
+
 
     Page<Course> findByNameContainingIgnoreCaseAndVisibility(
             String search,
@@ -73,4 +78,7 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
 //    java.util.List<com.project.apsas.dto.teacher.TeacherCourseSummaryResponse>
 //    findSummariesByTeacherId(@Param("teacherId") Long teacherId);
     boolean existsByCode(String code);
+
+
+    Optional<Course> findByCode(String code);
 }

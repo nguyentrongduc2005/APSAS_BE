@@ -18,4 +18,7 @@ public interface CourseContentRepository extends JpaRepository<CourseContent, Co
     // Giả sử Entity Content có trường 'visibility'
     @Query("SELECT cc.course.id, COUNT(cc) FROM CourseContent cc WHERE cc.course.id IN :courseIds GROUP BY cc.course.id")
     List<Object[]> findPublicLessonsByCourseIds(@Param("courseIds") List<Long> courseIds);
+
+    @Query("SELECT COUNT(cc) FROM CourseContent cc WHERE cc.course.id = :courseId")
+    int countByCourseId(@Param("courseId") Long courseId);
 }

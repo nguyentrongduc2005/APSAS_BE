@@ -45,6 +45,9 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Enrollme
     """)
     List<Enrollment> findAllEnrollments(@Param("userId") Long userId);
 
+    boolean existsByUserIdAndCourseId(Long userId, Long courseId);
 
+    // Đếm số lượng học viên hiện tại trong khóa
+    long countByCourseId(Long courseId);
 
 }

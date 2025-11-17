@@ -2,11 +2,13 @@ package com.project.apsas.controller;
 
 import com.project.apsas.dto.ApiResponse;
 import com.project.apsas.dto.request.CreateCourseFromTutorialRequest;
+import com.project.apsas.dto.request.course.JoinCourseRequest;
 import com.project.apsas.dto.response.CourseItemStudentResponse;
 import com.project.apsas.dto.response.CourseItemTeacherResponse;
 import com.project.apsas.dto.response.CourseRegisResponse;
 import com.project.apsas.dto.response.CreateCourseResponse;
 import com.project.apsas.dto.response.PublicCourseItem;
+import com.project.apsas.dto.response.course.JoinCourseResponse;
 import com.project.apsas.service.CourseServices;
 
 import jakarta.validation.Valid;
@@ -129,6 +131,15 @@ public class CourseController {
                 .code("0")
                 .message("Tạo khóa học từ tutorial thành công")
                 .data(data)
+                .build();
+    }
+    @PreAuthorize("hasRole('STUDENT')")
+    @PostMapping("/join")
+    public ApiResponse<JoinCourseResponse> joinCourse(@RequestBody JoinCourseRequest request) {
+        return ApiResponse.<JoinCourseResponse>builder()
+                .code("ok")
+                .message("SUCCESS")
+                .data(service.joinCourse(request))
                 .build();
     }
 

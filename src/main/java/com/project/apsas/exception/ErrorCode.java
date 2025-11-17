@@ -30,7 +30,8 @@ public enum ErrorCode {
     ASSIGNMENT_HAVE_CLOSE("E5012", HttpStatus.BAD_REQUEST, "bài tập đã đống"),
     TUTORIAL_NOT_EXISTED("E5013", HttpStatus.BAD_REQUEST, "tutorial không tồn tại"),
     CONTENT_NOT_EXISTED("E5014", HttpStatus.BAD_REQUEST, "content không tồn tại"),
-    ASSIGNMENT_NOT_EXISTED("E5015", HttpStatus.BAD_REQUEST, "assignment không tồn tại")
+    ASSIGNMENT_NOT_EXISTED("E5015", HttpStatus.BAD_REQUEST, "assignment không tồn tại"),
+    LIMITED("E5016", HttpStatus.BAD_REQUEST, "đã đến giới hạn")
 
     ;
 
