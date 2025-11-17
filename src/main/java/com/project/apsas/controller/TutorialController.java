@@ -86,13 +86,11 @@ public class TutorialController {
     @PreAuthorize("hasRole('PROVIDER')")
     @PostMapping("/my")
     public ApiResponse<List<CreateTutorialResponse>> getMyTutorials() {
-        List<CreateTutorialResponse> data = tutorialService.getMyTutorials();
-
         return ApiResponse.<List<CreateTutorialResponse>>builder()
                 .code("ok")
                 .message("success")
-                .data(data)
-     }
+                .data(tutorialService.getMyTutorials()).build();
+    }
     @PreAuthorize("hasRole('PROVIDER')")
     @PatchMapping("/{tutorialId}")
     public ApiResponse<Boolean> updateTutorial(@RequestBody UpdateTutorialRequest request,
