@@ -47,9 +47,11 @@ public class Content {
     private Tutorial tutorial;  
 
     @OneToMany(mappedBy = "content", fetch = FetchType.LAZY)
+    @Builder.Default
     private Set<CourseContent> courseLinks = new HashSet<>();
 
     @OneToMany(mappedBy = "content", fetch = FetchType.LAZY)
+    @Builder.Default
     private Set<Media> mediaList = new HashSet<>();
 
 }

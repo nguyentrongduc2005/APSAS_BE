@@ -5,16 +5,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.apsas.dto.mapping.ConfigJson;
 import com.project.apsas.dto.mapping.TestCase;
 import com.project.apsas.dto.request.assignment.CreateAssigmentRequest;
+import com.project.apsas.dto.request.assignment.UpdateAssignmentRequest;
 import com.project.apsas.dto.response.assignment.CreateAssignmentResponse;
 import com.project.apsas.dto.response.assignment.TestCaseConfig;
 import com.project.apsas.entity.Assignment;
 import com.project.apsas.entity.AssignmentEvaluation;
+import com.project.apsas.entity.Tutorial;
 import com.project.apsas.exception.AppException;
 import com.project.apsas.exception.ErrorCode;
 import com.project.apsas.mapper.AssignmentMapper;
 import com.project.apsas.repository.AssignmentRepository;
+import com.project.apsas.repository.SkillRepository;
 import com.project.apsas.repository.TutorialRepository;
 import com.project.apsas.service.AssignmentService;
+import com.project.apsas.service.AuthService;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
@@ -22,9 +26,7 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,6 +42,8 @@ public class AssignmentServiceImpl implements AssignmentService {
     TutorialRepository tutorialRepository;
     AssignmentMapper assignmentMapper;
     ObjectMapper objectMapper;
+    SkillRepository skillRepository;
+    private final AuthService authService;
 
     @Override
     @Transactional
@@ -78,6 +82,7 @@ public class AssignmentServiceImpl implements AssignmentService {
         // 4. Lưu vào CSDL
         Assignment savedAssignment = assignmentRepository.save(newAssignment);
 
+        savedAssignment.setSkill(skillRepository.findById(savedAssignment.getSkillId()).get());
         // 5. Map sang Response DTO (bằng MapStruct)
         CreateAssignmentResponse res = assignmentMapper.toCreateResponse(savedAssignment);
 
@@ -116,4 +121,105 @@ public class AssignmentServiceImpl implements AssignmentService {
      * Phương thức helper để chuyển đổi từ Entity sang Response DTO
      */
 
+    @Override
+    public CreateAssignmentResponse updateAssignment(Long assignmentId, UpdateAssignmentRequest request)
+            throws JsonProcessingException {
+        // 1. Lấy Assignment (cha) và Tutorial
+        Assignment existingAssignment = assignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> new AppException(ErrorCode.ASSIGNMENT_NOT_EXISTED));
+
+        Tutorial tutorial = tutorialRepository.findById(existingAssignment.getTutorialId())
+                .orElseThrow(() -> new AppException(ErrorCode.TUTORIAL_NOT_EXISTED));
+
+        // 2. CHECK BẢO MẬT (Giả sử Tutorial có `createdBy`)
+        Long currentUsername = Long.parseLong(authService.currentId());
+        if (!tutorial.getCreatedBy().equals(currentUsername)) {
+            throw new AppException(ErrorCode.FORBIDDEN); // Không có quyền
+        }
+
+        // 3. Cập nhật các trường của Assignment (cha)
+        // (Dùng MapStruct hoặc thủ công)
+        existingAssignment.setSkillId(request.getSkillId());
+        existingAssignment.setTitle(request.getTitle());
+        existingAssignment.setStatementMd(request.getStatementMd());
+        existingAssignment.setMaxScore(request.getMaxScore());
+        existingAssignment.setAttemptsLimit(request.getAttemptsLimit());
+        existingAssignment.setProficiency(request.getProficiency());
+        existingAssignment.setOrderNo(request.getOrderNo());
+
+        // 4. XỬ LÝ ĐỒNG BỘ EVALUATIONS (CON)
+        // (Đây là logic quan trọng nhất)
+
+        // Lấy map (id -> entity) của các 'con' hiện có
+        Map<Long, AssignmentEvaluation> existingEvalsMap = existingAssignment
+                .getAssignmentEvaluations().stream()
+                .collect(Collectors.toMap(AssignmentEvaluation::getId, eval -> eval));
+
+        // Tạo một Set (danh sách) 'con' mới
+        Set<AssignmentEvaluation> newEvaluationsSet = new HashSet<>();
+
+        if (request.getEvaluations() != null) {
+            for (var evalRequest : request.getEvaluations()) {
+
+                if (evalRequest.getId() == null) {
+                    // TRƯỜNG HỢP 1: THÊM MỚI (id = null)
+                    AssignmentEvaluation newEval = AssignmentEvaluation.builder()
+                            .name(evalRequest.getName())
+                            .type(evalRequest.getType())
+                            .configJson(evalRequest.getConfigJson())
+                            .assignment(existingAssignment) // Gán 'cha'
+                            .build();
+                    newEvaluationsSet.add(newEval);
+
+                } else {
+                    // TRƯỜNG HỢP 2: CẬP NHẬT (id != null)
+                    AssignmentEvaluation existingEval = existingEvalsMap.get(evalRequest.getId());
+                    if (existingEval != null) {
+                        // Lấy 'con' từ Map và cập nhật
+                        existingEval.setName(evalRequest.getName());
+                        existingEval.setType(evalRequest.getType());
+                        existingEval.setConfigJson(evalRequest.getConfigJson());
+                        newEvaluationsSet.add(existingEval);
+                    }
+                    // (Nếu existingEval == null -> client gửi ID bậy, ta bỏ qua)
+                }
+            }
+        }
+
+        // TRƯỜNG HỢP 3: XÓA
+        // Nhờ có 'orphanRemoval=true', ta chỉ cần xóa 'con' khỏi 'cha'
+        // và 'con' sẽ tự động bị xóa khỏi DB.
+        existingAssignment.getAssignmentEvaluations().clear();
+        existingAssignment.getAssignmentEvaluations().addAll(newEvaluationsSet);
+
+        // 5. Lưu (cha) vào CSDL
+        // (Nhờ @Transactional và CascadeType.ALL, Hibernate sẽ tự động
+        // tìm, thêm, sửa, xóa các 'con' trong 'newEvaluationsSet')
+        Assignment savedAssignment = assignmentRepository.save(existingAssignment);
+
+
+
+        // 6. Xử lý logic Test Case Config (Giống hệt hàm create)
+        // (Copy y chang logic từ hàm 'createAssignment' của bạn)
+
+        CreateAssignmentResponse res = assignmentMapper.toCreateResponse(savedAssignment);
+        var firstEvaluationOpt = savedAssignment.getAssignmentEvaluations().stream().findFirst();
+        List<TestCaseConfig> finalTestCaseConfigs = new ArrayList<>();
+
+        if (firstEvaluationOpt.isPresent()) {
+            String configJson = firstEvaluationOpt.get().getConfigJson();
+            ConfigJson configJsonObject = objectMapper.readValue(configJson, ConfigJson.class);
+            List<TestCase> testCasesFromConfig = configJsonObject.getTestCases();
+
+            if (testCasesFromConfig != null) {
+                List<TestCase> testCasesPublic = testCasesFromConfig.stream()
+                        .filter(testCase -> "PUBLIC".equals(testCase.getVisibility().name()))
+                        .toList();
+                finalTestCaseConfigs = assignmentMapper.toTestCaseConfigs(testCasesPublic);
+            }
+        }
+        res.setTestCaseConfigs(finalTestCaseConfigs);
+
+        return res;
+    }
 }

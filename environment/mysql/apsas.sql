@@ -105,6 +105,7 @@ CREATE TABLE `media` (
                          `type` enum('IMAGE','VIDEO','AUDIO','FILE','LINK') NOT NULL,
                          `url` varchar(1024) NOT NULL,
                          `caption` varchar(255) DEFAULT NULL,
+                         `public_id` varchar(255) DEFAULT NULL,
                          `order_no` int(11) DEFAULT NULL,
                          `created_at` datetime DEFAULT current_timestamp(),
                          PRIMARY KEY (`id`)
