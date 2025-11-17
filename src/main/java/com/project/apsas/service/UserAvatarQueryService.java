@@ -9,5 +9,4 @@ public interface UserAvatarQueryService {
 
     SmallAvatarResponse getMySmallAvatar();
 
-    SmallAvatarResponse uploadMyAvatar(MultipartFile file) throws IOException;
 }
