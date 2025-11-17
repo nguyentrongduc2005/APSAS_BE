@@ -26,6 +26,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -66,6 +68,22 @@ public class TutorialServiceImpl implements TutorialService {
                 .build();
     }
 
+    @Override
+    public List<CreateTutorialResponse> getMyTutorials() {
+        Long currentUserId = Long.parseLong(authService.currentId());
+
+        List<Tutorial> tutorials = tutorialRepository.findByCreatedBy(currentUserId);
+
+        return tutorials.stream()
+                .map(t -> CreateTutorialResponse.builder()
+                        .id(t.getId())
+                        .title(t.getTitle())
+                        .summary(t.getSummary())
+                        .createdBy(t.getCreatedBy())
+                        .status(t.getStatus())
+                        .build())
+                .collect(Collectors.toList());
+    }
     @Override
     public Boolean updateTutorial(UpdateTutorialRequest request, Long tutorialId) {
         Long userId =  Long.parseLong(authService.currentId());

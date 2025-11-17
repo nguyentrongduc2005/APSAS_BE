@@ -26,6 +26,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -81,6 +83,16 @@ public class TutorialController {
                 .data(assignmentService.createAssignment(tutorialId,request))
                 .build();
     }
+    @PreAuthorize("hasRole('PROVIDER')")
+    @PostMapping("/my")
+    public ApiResponse<List<CreateTutorialResponse>> getMyTutorials() {
+        List<CreateTutorialResponse> data = tutorialService.getMyTutorials();
+
+        return ApiResponse.<List<CreateTutorialResponse>>builder()
+                .code("ok")
+                .message("success")
+                .data(data)
+     }
     @PreAuthorize("hasRole('PROVIDER')")
     @PatchMapping("/{tutorialId}")
     public ApiResponse<Boolean> updateTutorial(@RequestBody UpdateTutorialRequest request,
