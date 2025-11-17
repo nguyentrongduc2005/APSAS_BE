@@ -6,6 +6,7 @@ server:
     include-message: never
 
 spring:
+
   application:
     name: CodeVerse
   data:
@@ -31,7 +32,7 @@ spring:
         queue-capacity: 1000
       thread-name-prefix: app-async-
   datasource:
-    url: jdbc:mysql://127.0.0.1:3308/apsas_db?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://127.0.0.1:3308/apsas_db?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
     username: user
     password: 1234
     driver-class-name: com.mysql.cj.jdbc.Driver

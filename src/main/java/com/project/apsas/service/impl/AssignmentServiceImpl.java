@@ -8,13 +8,12 @@ import com.project.apsas.dto.request.assignment.CreateAssigmentRequest;
 import com.project.apsas.dto.request.assignment.UpdateAssignmentRequest;
 import com.project.apsas.dto.response.assignment.CreateAssignmentResponse;
 import com.project.apsas.dto.response.assignment.TestCaseConfig;
-import com.project.apsas.entity.Assignment;
-import com.project.apsas.entity.AssignmentEvaluation;
-import com.project.apsas.entity.Tutorial;
+import com.project.apsas.entity.*;
 import com.project.apsas.exception.AppException;
 import com.project.apsas.exception.ErrorCode;
 import com.project.apsas.mapper.AssignmentMapper;
 import com.project.apsas.repository.AssignmentRepository;
+import com.project.apsas.repository.CourseAssignmentRepository;
 import com.project.apsas.repository.SkillRepository;
 import com.project.apsas.repository.TutorialRepository;
 import com.project.apsas.service.AssignmentService;
@@ -26,6 +25,7 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -43,7 +43,9 @@ public class AssignmentServiceImpl implements AssignmentService {
     AssignmentMapper assignmentMapper;
     ObjectMapper objectMapper;
     SkillRepository skillRepository;
-    private final AuthService authService;
+    AuthService authService;
+    CourseAssignmentRepository courseAssignmentRepository;
+
 
     @Override
     @Transactional
@@ -221,5 +223,27 @@ public class AssignmentServiceImpl implements AssignmentService {
         res.setTestCaseConfigs(finalTestCaseConfigs);
 
         return res;
+    }
+
+    @Override
+    public void setTime(Long assignmentId, Long courseId, LocalDateTime openAt, LocalDateTime dueAt) {
+        if(openAt == null || dueAt == null) throw new AppException(ErrorCode.BAD_REQUEST);
+
+        if(!dueAt.isAfter(openAt)) throw new AppException(ErrorCode.TIME_INVALID);
+
+
+        if(dueAt.isBefore(LocalDateTime.now())) throw new AppException(ErrorCode.TIME_INVALID);
+        Long userId = Long.parseLong(authService.currentId());
+        CourseAssignment courseAssignment = courseAssignmentRepository.findById(
+                CourseAssignment.PK.builder()
+                        .courseId(courseId)
+                        .assignmentId(assignmentId)
+                .build()).orElseThrow(() -> new AppException(ErrorCode.ASSIGNMENT_NOT_EXISTED));
+        Course course = courseAssignment.getCourse();
+        if(!course.getCreator().getId().equals(userId)) throw new AppException(ErrorCode.FORBIDDEN);
+        courseAssignment.setOpenAt(openAt);
+        courseAssignment.setDueAt(dueAt);
+
+        courseAssignmentRepository.save(courseAssignment);
     }
 }
