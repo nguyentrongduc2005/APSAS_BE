@@ -17,4 +17,11 @@ public class CreateTutorialResponse {
     private TutorialStatus status;
     private Long createdBy;
 
+    private int lessonCount;        // số content / bài học
+    private int assignmentCount;    // số assignment
+    private int courseCount;        // số khóa học đang dùng tutorial này
+
+    // ---- Thông tin creator (để FE render avatar) ----
+    private String creatorName;
+    private String creatorAvatar;
 }

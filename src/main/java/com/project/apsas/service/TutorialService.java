@@ -10,7 +10,17 @@ import java.util.List;
 public interface TutorialService {
     public CreateTutorialResponse createTutorial(CreateTutorialRequest request);
     // API lấy list tutorial của chính provider hiện tại
-    List<CreateTutorialResponse> getMyTutorials();
+    /**
+     * Lấy danh sách tutorial của chính user hiện tại
+     *
+     * @param keyword       chuỗi tìm kiếm theo title/summary (có thể null)
+     * @param status        filter theo status (PUBLISHED/DRAFT/ARCHIVED) - có thể null
+     * @param hasAssignment true = chỉ lấy tutorial có assignment, false = chỉ lấy tutorial không có assignment, null = bỏ qua filter này
+     */
+    List<CreateTutorialResponse> getMyTutorials(String keyword,
+                                                String status,
+                                                Boolean hasAssignment);
+
     public Boolean updateTutorial(UpdateTutorialRequest request, Long tutorialId);
 
     public DetailTutorialResponse getTutorialDetail(Long tutorialId);
