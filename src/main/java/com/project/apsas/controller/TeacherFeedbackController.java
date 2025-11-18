@@ -45,18 +45,5 @@ public class TeacherFeedbackController {
     /**
      * Lấy danh sách feedback cho 1 submission
      */
-    @PreAuthorize("hasAnyRole('LECTURER', 'ADMIN')")
-    @GetMapping("/{submissionId}/feedbacks")
-    public ApiResponse<List<TeacherFeedbackDTO>> getFeedbacks(
-            @PathVariable Long submissionId
-    ) {
-        List<TeacherFeedbackDTO> data =
-                teacherFeedbackService.getFeedbacksOfSubmission(submissionId);
 
-        return ApiResponse.<List<TeacherFeedbackDTO>>builder()
-                .code("ok")
-                .message("SUCCESS")
-                .data(data)
-                .build();
-    }
 }

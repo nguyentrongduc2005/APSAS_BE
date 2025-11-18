@@ -7,6 +7,7 @@ import com.project.apsas.dto.response.UploadResult;
 import com.project.apsas.dto.response.assignment.CreateAssignmentResponse;
 import com.project.apsas.dto.response.content.CreateContentResponse;
 import com.project.apsas.dto.response.content.UpdateContentResponse;
+import com.project.apsas.dto.response.tutorial.DetailContentResponse;
 import com.project.apsas.entity.Content;
 import com.project.apsas.entity.Media;
 import com.project.apsas.entity.Tutorial;
@@ -14,6 +15,7 @@ import com.project.apsas.enums.ContentStatus;
 import com.project.apsas.enums.MediaType;
 import com.project.apsas.exception.AppException;
 import com.project.apsas.exception.ErrorCode;
+import com.project.apsas.mapper.MediaMapper;
 import com.project.apsas.repository.ContentRepository;
 import com.project.apsas.repository.MediaRepository;
 import com.project.apsas.repository.TutorialRepository;
@@ -52,6 +54,7 @@ public class ContentServiceImpl implements ContentService {
     TutorialRepository tutorialRepository;
     CloudinaryService cloudinaryService;
     MediaRepository mediaRepository;
+    MediaMapper  mediaMapper;
     private final AuthService authService;
 
     @NonFinal
@@ -261,6 +264,22 @@ public class ContentServiceImpl implements ContentService {
                 .status(savedContent.getStatus())
                 .totalImage((int) totalImages)
                 .totalVideo((int) totalVideos)
+                .build();
+    }
+
+    @Override
+    public DetailContentResponse detailContentTutorial(Long contentId) {
+        Content content = contentRepository.findById(contentId).orElseThrow(() ->
+                new AppException(ErrorCode.CONTENT_NOT_EXISTED));
+
+        List<Media> finalMediaList = content.getMediaList().stream().toList();
+
+        return DetailContentResponse.builder()
+                .id(content.getId())
+                .title(content.getTitle())
+                .bodyHtml(content.getBodyHtmlCached())
+                .totalMedia(finalMediaList.size())
+                .mediaList(mediaMapper.toMediaList(finalMediaList))
                 .build();
     }
 }

@@ -1,6 +1,7 @@
 package com.project.apsas.repository;
 
 import com.project.apsas.entity.Enrollment;
+import com.project.apsas.enums.EnrollmentRole;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -44,6 +45,17 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Enrollme
     WHERE e.user.id = :userId
     """)
     List<Enrollment> findAllEnrollments(@Param("userId") Long userId);
+
+    boolean existsByUserIdAndCourseId(Long userId, Long courseId);
+
+    // Đếm số lượng học viên hiện tại trong khóa
+    long countByCourseId(Long courseId);
+
+    // Tìm tất cả enrollment của user với vai trò cụ thể
+    List<Enrollment> findByUserIdAndRole(Long userId, EnrollmentRole role);
+
+    @Query("SELECT COUNT(DISTINCT e.userId) FROM Enrollment e WHERE e.courseId IN :courseIds AND e.role = 'STUDENT'")
+    int countStudentsByCourseIds(@Param("courseIds") List<Long> courseIds);
 
 
 

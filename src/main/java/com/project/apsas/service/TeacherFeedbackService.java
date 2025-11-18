@@ -16,5 +16,5 @@ public interface TeacherFeedbackService {
     /**
      * Lấy danh sách feedback của 1 submission
      */
-    List<TeacherFeedbackDTO> getFeedbacksOfSubmission(Long submissionId);
+
 }

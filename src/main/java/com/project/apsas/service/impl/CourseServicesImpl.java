@@ -1,7 +1,9 @@
 package com.project.apsas.service.impl;
 
 import com.project.apsas.dto.request.CreateCourseFromTutorialRequest;
+import com.project.apsas.dto.request.course.JoinCourseRequest;
 import com.project.apsas.dto.response.*;
+import com.project.apsas.dto.response.course.JoinCourseResponse;
 import com.project.apsas.entity.*;
 import com.project.apsas.enums.CourseVisibility;
 import com.project.apsas.enums.EnrollmentRole;
@@ -488,5 +490,80 @@ public class CourseServicesImpl implements CourseServices {
                 .assignmentsCount(assignmentsLinked)
                 .contentsCount(contentsLinked)
                 .build();
+    }
+
+    @Override
+    public JoinCourseResponse joinCourse(JoinCourseRequest request) {
+        Course course;
+        Long userId = Long.parseLong(authService.currentId());
+        // LOGIC 1: Tìm khóa học
+        if (request.getCode() != null && !request.getCode().isEmpty()) {
+            // Nếu có code -> Tìm theo code (Dành cho Private hoặc tìm nhanh)
+            course = courseRepository.findByCode(request.getCode())
+                    .orElseThrow(() -> new AppException(ErrorCode.BAD_REQUEST));
+        } else if (request.getCourseId() != null) {
+            // Nếu chỉ có ID -> Tìm theo ID
+            course = courseRepository.findById(request.getCourseId())
+                    .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+
+            // Nếu tìm bằng ID mà khóa học là PRIVATE -> Chặn lại
+            if (course.getVisibility() == CourseVisibility.PRIVATE) {
+                throw new AppException(ErrorCode.BAD_REQUEST);
+            }
+        } else {
+            throw new AppException(ErrorCode.BAD_REQUEST);
+        }
+
+        // LOGIC 2: Kiểm tra xem user đã tham gia chưa
+        if (enrollmentRepository.existsByUserIdAndCourseId(userId, course.getId())) {
+            throw new AppException(ErrorCode.BAD_REQUEST);
+        }
+        long currenMember = 0;
+        // LOGIC 3: Kiểm tra Slot (Giới hạn số lượng)
+        if (course.getLimit() != null) {
+            currenMember = enrollmentRepository.countByCourseId(course.getId());
+            if (currenMember >= course.getLimit()) {
+                throw new AppException(ErrorCode.LIMITED);
+            }
+        }
+
+        // LOGIC 4: Lưu Enrollment
+        Enrollment enrollment = Enrollment.builder()
+                .userId(userId)
+                .courseId(course.getId())
+                .role(EnrollmentRole.STUDENT) // Mặc định là học viên
+                // .joinedAt(LocalDateTime.now()) // Database đã tự handle (insertable = false)
+                .build();
+
+        enrollmentRepository.save(enrollment);
+
+        long totalAssignment = courseAssignmentRepository.countByCourseId(course.getId());
+        long totalContent = courseContentRepository.countByCourseId(course.getId());
+        long totalLession = totalAssignment + totalContent;
+        User createBy = course.getCreator();
+        return JoinCourseResponse.builder()
+                .joined(true)
+                .course(
+                        CourseItemStudentResponse.builder()
+                                .id(course.getId())
+                                .name(course.getName())
+                                .type(course.getType())
+                                .avatarUrl(course.getAvatarUrl())
+                                .visibility(course.getVisibility().name())
+                                .totalLession(totalLession)
+                                .lecture(
+                                        CourseItemStudentResponse.Lecture.builder()
+                                                .avatarUrl(createBy.getProfile().getAvatarUrl())
+                                                .id(createBy.getId())
+                                                .name(createBy.getName())
+                                                .build()
+                                )
+                                .totalAssignment(totalAssignment)
+                                .totalAssignmentCurrent(0L)
+                                .currentMember(currenMember + 1)
+                                .build()
+                )
+                .build();
+
     }
 }

@@ -12,6 +12,8 @@ import com.project.apsas.dto.response.assignment.CreateAssignmentResponse;
 import com.project.apsas.dto.response.content.CreateContentResponse;
 import com.project.apsas.dto.response.content.UpdateContentResponse;
 import com.project.apsas.dto.response.tutorial.CreateTutorialResponse;
+import com.project.apsas.dto.response.tutorial.DetailContentResponse;
+import com.project.apsas.dto.response.tutorial.DetailTutorialResponse;
 import com.project.apsas.service.AssignmentService;
 import com.project.apsas.service.ContentService;
 import com.project.apsas.service.TutorialService;
@@ -22,6 +24,8 @@ import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 import java.util.List;
 
@@ -81,6 +85,14 @@ public class TutorialController {
                 .build();
     }
     @PreAuthorize("hasRole('PROVIDER')")
+    @GetMapping("/my")
+    public ApiResponse<List<CreateTutorialResponse>> getMyTutorials() {
+        return ApiResponse.<List<CreateTutorialResponse>>builder()
+                .code("ok")
+                .message("success")
+                .data(tutorialService.getMyTutorials()).build();
+    }
+    @PreAuthorize("hasRole('PROVIDER')")
     @PatchMapping("/{tutorialId}")
     public ApiResponse<Boolean> updateTutorial(@RequestBody UpdateTutorialRequest request,
                                                @PathVariable Long tutorialId){
@@ -128,6 +140,34 @@ public class TutorialController {
                 .message("Successfully updated assignment")
                 // Gọi hàm service mới, trả về DTO giống 'create'
                 .data(assignmentService.updateAssignment(assignmentId, request))
+                .build();
+    }
+
+    @GetMapping("/{id}")
+    public ApiResponse<DetailTutorialResponse> getTutorialDetail(@PathVariable Long id) {
+        return ApiResponse.<DetailTutorialResponse>builder()
+                .code("ok")
+                .message("successfully get tutorial")
+                .data(tutorialService.getTutorialDetail(id))
+                .build();
+    }
+
+    @GetMapping("/contents/{contentId}")
+    public ApiResponse<DetailContentResponse> getContentDetail(@PathVariable Long contentId) {
+        return ApiResponse.<DetailContentResponse>builder()
+                .code("ok")
+                .message("successfully get tutorial")
+                .data(contentService.detailContentTutorial(contentId))
+                .build();
+    }
+
+    @PreAuthorize("hasRole('PROVIDER')")
+    @PostMapping("/{tutorialId}/submit")
+    public ApiResponse<Boolean> submitTutorialForReview(@PathVariable Long tutorialId) {
+        return ApiResponse.<Boolean>builder()
+                .code("ok")
+                .message("Tutorial submitted for review successfully")
+                .data(tutorialService.submitTutorialForReview(tutorialId))
                 .build();
     }
 }

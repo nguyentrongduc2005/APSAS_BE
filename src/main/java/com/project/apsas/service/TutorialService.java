@@ -3,8 +3,18 @@ package com.project.apsas.service;
 import com.project.apsas.dto.request.tutorial.CreateTutorialRequest;
 import com.project.apsas.dto.request.tutorial.UpdateTutorialRequest;
 import com.project.apsas.dto.response.tutorial.CreateTutorialResponse;
+import com.project.apsas.dto.response.tutorial.DetailTutorialResponse;
+
+import java.util.List;
 
 public interface TutorialService {
     public CreateTutorialResponse createTutorial(CreateTutorialRequest request);
+    // API lấy list tutorial của chính provider hiện tại
+    List<CreateTutorialResponse> getMyTutorials();
     public Boolean updateTutorial(UpdateTutorialRequest request, Long tutorialId);
+
+    public DetailTutorialResponse getTutorialDetail(Long tutorialId);
+    
+    // Submit tutorial for admin review
+    public Boolean submitTutorialForReview(Long tutorialId);
 }
