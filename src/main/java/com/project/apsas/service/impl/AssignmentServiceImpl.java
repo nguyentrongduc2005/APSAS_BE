@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.apsas.dto.mapping.ConfigJson;
 import com.project.apsas.dto.mapping.TestCase;
+import com.project.apsas.dto.request.assignment.AssignmentListItemDTO;
 import com.project.apsas.dto.request.assignment.CreateAssigmentRequest;
 import com.project.apsas.dto.request.assignment.UpdateAssignmentRequest;
 import com.project.apsas.dto.response.assignment.CreateAssignmentResponse;
@@ -22,6 +23,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +36,7 @@ import java.util.stream.Collectors;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Transactional
+@Slf4j
 public class AssignmentServiceImpl implements AssignmentService {
 
 
@@ -245,5 +248,16 @@ public class AssignmentServiceImpl implements AssignmentService {
         courseAssignment.setDueAt(dueAt);
 
         courseAssignmentRepository.save(courseAssignment);
+    }
+
+    @Override
+    public List<AssignmentListItemDTO> getAssignmentsByCourseId(Long courseId) {
+        log.info("Getting assignments for course ID: {}", courseId);
+
+        List<AssignmentListItemDTO> assignments = courseAssignmentRepository
+                .findAssignmentsByCourseId(courseId);
+
+        log.info("Found {} assignments for course ID: {}", assignments.size(), courseId);
+        return assignments;
     }
 }

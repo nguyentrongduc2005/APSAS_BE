@@ -1,5 +1,6 @@
 package com.project.apsas.repository;
 
+import com.project.apsas.dto.request.assignment.AssignmentListItemDTO;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -22,4 +23,18 @@ public interface CourseAssignmentRepository extends JpaRepository<CourseAssignme
     
     @Query("SELECT ca FROM CourseAssignment ca WHERE ca.course.id = :courseId")
     List<CourseAssignment> findAllByCourseId(@Param("courseId") Long courseId);
+
+    @Query("""
+    SELECT new com.project.apsas.dto.request.assignment.AssignmentListItemDTO(
+        a.id,
+        a.title,
+        ca.dueAt
+    )
+    FROM CourseAssignment ca
+    JOIN ca.assignment a
+    WHERE ca.courseId = :courseId
+    ORDER BY ca.dueAt ASC
+    """)
+    List<AssignmentListItemDTO> findAssignmentsByCourseId(@Param("courseId") Long courseId);
+
 }
