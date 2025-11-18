@@ -14,4 +14,7 @@ public interface TutorialService {
     public Boolean updateTutorial(UpdateTutorialRequest request, Long tutorialId);
 
     public DetailTutorialResponse getTutorialDetail(Long tutorialId);
+    
+    // Submit tutorial for admin review
+    public Boolean submitTutorialForReview(Long tutorialId);
 }

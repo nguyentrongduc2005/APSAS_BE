@@ -63,7 +63,8 @@ public class User {
     @ToString.Exclude
     private Set<Notification> notifications = new HashSet<>();
     
-    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id", referencedColumnName = "user_id", insertable = false, updatable = false)
     @ToString.Exclude
     private Progress progress;
 
