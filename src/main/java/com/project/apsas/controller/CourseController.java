@@ -39,7 +39,7 @@ public class CourseController {
 //                .build();
 //    }
     @GetMapping("/student/my-courses")
-    @PreAuthorize("hasRole('ROLE_STUDENT')")
+    @PreAuthorize("hasAuthority('VIEW_COURSES')")
     public ApiResponse<Page<CourseItemStudentResponse>> getMyCoursesStudent(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -57,7 +57,7 @@ public class CourseController {
     }
 
     @GetMapping("/lecture/my-courses")
-    @PreAuthorize("hasRole('LECTURER')")
+    @PreAuthorize("hasAuthority('CREATE_COURSE')")
     public ApiResponse<Page<CourseItemTeacherResponse>> getMyCoursesLecture(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -121,7 +121,7 @@ public class CourseController {
     }
 
     @PostMapping("/from-tutorial")
-    @PreAuthorize("hasAnyRole('ROLE_LECTURER', 'ROLE_PROVIDER')")
+    @PreAuthorize("hasAuthority('CREATE_COURSE')")
     public ApiResponse<CreateCourseResponse> createCourseFromTutorial(
             @RequestBody @Valid CreateCourseFromTutorialRequest request) {
         
@@ -133,7 +133,7 @@ public class CourseController {
                 .data(data)
                 .build();
     }
-    @PreAuthorize("hasRole('STUDENT')")
+    @PreAuthorize("hasAuthority('ENROLL_COURSE')")
     @PostMapping("/join")
     public ApiResponse<JoinCourseResponse> joinCourse(@RequestBody JoinCourseRequest request) {
         return ApiResponse.<JoinCourseResponse>builder()

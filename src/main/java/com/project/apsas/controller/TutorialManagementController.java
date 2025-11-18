@@ -27,7 +27,7 @@ public class TutorialManagementController {
      * Lấy danh sách tutorials chờ duyệt (PENDING)
      * GET /api/admin/tutorials/pending
      */
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('MANAGE_TUTORIALS')")
     @GetMapping("/pending")
     public ApiResponse<Page<TutorialManagementResponse>> getPendingTutorials(
             @RequestParam(required = false) String keyword,
@@ -48,7 +48,7 @@ public class TutorialManagementController {
                 .build();
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('MANAGE_TUTORIALS')")
     @GetMapping("/{tutorialId}")
     public ApiResponse<TutorialManagementResponse> getTutorialDetail(@PathVariable Long tutorialId) {
         return ApiResponse.<TutorialManagementResponse>builder()
@@ -62,7 +62,7 @@ public class TutorialManagementController {
      * Duyệt tutorial - chuyển trạng thái thành PUBLISHED
      * PUT /api/admin/tutorials/{tutorialId}/publish
      */
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PUBLISH_TUTORIALS')")
     @PutMapping("/{tutorialId}/publish")
     public ApiResponse<TutorialManagementResponse> publishTutorial(@PathVariable Long tutorialId) {
         return ApiResponse.<TutorialManagementResponse>builder()

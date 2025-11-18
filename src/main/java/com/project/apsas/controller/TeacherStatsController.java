@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class TeacherStatsController {
     private final TeacherStatsService teacherStatsService;
-    @PreAuthorize("hasRole('LECTURER')")
+    @PreAuthorize("hasAuthority('VIEW_TEACHER_STATS')")
     @GetMapping("/stats/total-students")
     public ApiResponse<TeacherStatsDTO> getTotalStudents() {
         TeacherStatsDTO stats = teacherStatsService.getTeacherStats();

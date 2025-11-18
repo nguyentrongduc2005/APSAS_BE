@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/teacher/help-requests")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('LECTURER', 'ADMIN')")
+@PreAuthorize("hasAuthority('VIEW_HELP_REQUESTS')")
 public class HelpRequestController {
 
     private final HelpRequestService helpRequestService;
