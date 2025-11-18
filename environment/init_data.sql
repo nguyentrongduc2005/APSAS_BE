@@ -10,11 +10,125 @@ USE apsas_db;
 -- 1. TẠO ROLES VÀ USERS (LECTURER, PROVIDER, 30 STUDENTS)
 -- ========================================================
 
-INSERT IGNORE INTO `roles` (`name`, `description`) VALUES
-    ('LECTURER', 'Giảng viên, có thể tạo khóa học và quản lý nội dung'),
-    ('STUDENT', 'Học sinh, có thể tham gia khóa học và nộp bài'),
-    ('ADMIN', 'Quản trị viên hệ thống'),
-    ('PROVIDER', 'Người cung cấp hướng dẫn (tutorials)');
+INSERT IGNORE INTO `roles` (`id`, `name`, `description`) VALUES
+    (1, 'ADMIN', 'Quản trị viên hệ thống'),
+    (2, 'LECTURER', 'Giảng viên, có thể tạo khóa học và quản lý nội dung'),
+    (3, 'STUDENT', 'Học sinh, có thể tham gia khóa học và nộp bài'),
+    (4, 'PROVIDER', 'Người cung cấp hướng dẫn (tutorials)');
+
+-- ========================================================
+-- INSERT PERMISSIONS
+-- ========================================================
+
+INSERT INTO permissions (name, description) VALUES
+-- User Management
+('MANAGE_USERS', 'Full access to manage users'),
+('VIEW_USERS', 'View user list and details'),
+('CREATE_USERS', 'Create new users'),
+('UPDATE_USERS', 'Update user information and status'),
+('DELETE_USERS', 'Delete users'),
+
+-- Role Management
+('MANAGE_ROLES', 'Full access to manage roles'),
+('VIEW_ROLES', 'View role list and details'),
+('CREATE_ROLES', 'Create new roles'),
+('UPDATE_ROLES', 'Update role information'),
+('DELETE_ROLES', 'Delete roles'),
+
+-- Tutorial Management (Admin)
+('MANAGE_TUTORIALS', 'Full access to manage all tutorials'),
+('PUBLISH_TUTORIALS', 'Approve and publish tutorials'),
+
+-- PROVIDER PERMISSIONS
+('CREATE_TUTORIAL', 'Create new tutorials'),
+('UPDATE_TUTORIAL', 'Update own tutorials'),
+('DELETE_TUTORIAL', 'Delete own tutorials'),
+('VIEW_OWN_TUTORIALS', 'View own tutorial list'),
+
+('CREATE_CONTENT', 'Create content for tutorials'),
+('UPDATE_CONTENT', 'Update content'),
+('DELETE_CONTENT', 'Delete content'),
+
+('CREATE_ASSIGNMENT', 'Create assignments'),
+('UPDATE_ASSIGNMENT', 'Update assignments'),
+('DELETE_ASSIGNMENT', 'Delete assignments'),
+
+-- LECTURER PERMISSIONS
+('VIEW_SUBMISSIONS', 'View student submissions'),
+('EVALUATE_SUBMISSIONS', 'Evaluate and grade submissions'),
+
+('VIEW_FEEDBACK', 'View feedback from students'),
+('RESPOND_FEEDBACK', 'Respond to feedback'),
+
+('VIEW_HELP_REQUESTS', 'View help requests'),
+('RESPOND_HELP_REQUESTS', 'Respond to help requests'),
+
+('CREATE_COURSE', 'Create new courses'),
+('UPDATE_COURSE', 'Update courses'),
+('DELETE_COURSE', 'Delete courses'),
+('VIEW_TEACHER_STATS', 'View teacher statistics'),
+
+-- STUDENT PERMISSIONS
+('SUBMIT_ASSIGNMENT', 'Submit assignments'),
+('ENROLL_COURSE', 'Enroll in courses'),
+('VIEW_COURSES', 'View enrolled courses'),
+('VIEW_TUTORIALS', 'View public tutorials'),
+('SUBMIT_FEEDBACK', 'Submit feedback'),
+('REQUEST_HELP', 'Request help from teachers'),
+
+-- COMMON AUTHENTICATED USER PERMISSIONS
+('VIEW_PROFILE', 'View own profile'),
+('UPDATE_PROFILE', 'Update own profile'),
+('VIEW_PROGRESS', 'View own progress and scores');
+
+-- Assign permissions to roles
+-- ADMIN role (id = 1)
+INSERT INTO roles_permissions (roles_id, permissions_id)
+SELECT 1, id FROM permissions WHERE name IN (
+    'MANAGE_USERS', 'VIEW_USERS', 'CREATE_USERS', 'UPDATE_USERS', 'DELETE_USERS',
+    'MANAGE_ROLES', 'VIEW_ROLES', 'CREATE_ROLES', 'UPDATE_ROLES', 'DELETE_ROLES',
+    'MANAGE_TUTORIALS', 'PUBLISH_TUTORIALS',
+    'VIEW_SUBMISSIONS', 'EVALUATE_SUBMISSIONS',
+    'VIEW_FEEDBACK', 'RESPOND_FEEDBACK',
+    'VIEW_HELP_REQUESTS', 'RESPOND_HELP_REQUESTS',
+    'VIEW_TEACHER_STATS',
+    'VIEW_PROFILE', 'UPDATE_PROFILE', 'VIEW_PROGRESS'
+);
+
+-- LECTURER role (id = 2)
+INSERT INTO roles_permissions (roles_id, permissions_id)
+SELECT 2, id FROM permissions WHERE name IN (
+    'VIEW_SUBMISSIONS', 'EVALUATE_SUBMISSIONS',
+    'VIEW_FEEDBACK', 'RESPOND_FEEDBACK',
+    'VIEW_HELP_REQUESTS', 'RESPOND_HELP_REQUESTS',
+    'CREATE_COURSE', 'UPDATE_COURSE', 'DELETE_COURSE',
+    'VIEW_TEACHER_STATS',
+    'VIEW_TUTORIALS',
+    'VIEW_PROFILE', 'UPDATE_PROFILE', 'VIEW_PROGRESS'
+);
+
+-- STUDENT role (id = 3)
+INSERT INTO roles_permissions (roles_id, permissions_id)
+SELECT 3, id FROM permissions WHERE name IN (
+    'SUBMIT_ASSIGNMENT',
+    'ENROLL_COURSE',
+    'VIEW_COURSES',
+    'VIEW_TUTORIALS',
+    'SUBMIT_FEEDBACK',
+    'REQUEST_HELP',
+    'VIEW_PROFILE', 'UPDATE_PROFILE', 'VIEW_PROGRESS'
+);
+
+-- PROVIDER role (id = 4)
+INSERT INTO roles_permissions (roles_id, permissions_id)
+SELECT 4, id FROM permissions WHERE name IN (
+    'CREATE_TUTORIAL', 'UPDATE_TUTORIAL', 'DELETE_TUTORIAL', 'VIEW_OWN_TUTORIALS',
+    'CREATE_CONTENT', 'UPDATE_CONTENT', 'DELETE_CONTENT',
+    'CREATE_ASSIGNMENT', 'UPDATE_ASSIGNMENT', 'DELETE_ASSIGNMENT',
+    'VIEW_SUBMISSIONS',
+    'VIEW_TUTORIALS',
+    'VIEW_PROFILE', 'UPDATE_PROFILE', 'VIEW_PROGRESS'
+);
 
 -- Tạo User LECTURER (Giảng viên)
 INSERT INTO `users` (`name`, `email`, `password`, `status`) VALUES

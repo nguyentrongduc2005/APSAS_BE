@@ -6,6 +6,7 @@ import com.project.apsas.dto.response.ProfileResponse;
 import com.project.apsas.service.ProfileUpdateService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -16,6 +17,7 @@ public class ProfileEditController {
     private final ProfileUpdateService profileUpdateService;
 
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     public ApiResponse<ProfileResponse> updateMyProfile(
             @RequestBody UpdateProfileRequest request
     ) {

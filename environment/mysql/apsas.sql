@@ -558,7 +558,12 @@ INSERT INTO permissions (name, description) VALUES
 ('VIEW_COURSES', 'View enrolled courses'),
 ('VIEW_TUTORIALS', 'View public tutorials'),
 ('SUBMIT_FEEDBACK', 'Submit feedback'),
-('REQUEST_HELP', 'Request help from teachers');
+('REQUEST_HELP', 'Request help from teachers'),
+
+-- COMMON AUTHENTICATED USER PERMISSIONS
+('VIEW_PROFILE', 'View own profile'),
+('UPDATE_PROFILE', 'Update own profile'),
+('VIEW_PROGRESS', 'View own progress and scores');
 
 -- Assign permissions to roles
 -- ADMIN role (id = 1)
@@ -570,7 +575,8 @@ SELECT 1, id FROM permissions WHERE name IN (
     'VIEW_SUBMISSIONS', 'EVALUATE_SUBMISSIONS',
     'VIEW_FEEDBACK', 'RESPOND_FEEDBACK',
     'VIEW_HELP_REQUESTS', 'RESPOND_HELP_REQUESTS',
-    'VIEW_TEACHER_STATS'
+    'VIEW_TEACHER_STATS',
+    'VIEW_PROFILE', 'UPDATE_PROFILE', 'VIEW_PROGRESS'
 );
 
 -- LECTURER role (id = 2)
@@ -581,7 +587,8 @@ SELECT 2, id FROM permissions WHERE name IN (
     'VIEW_HELP_REQUESTS', 'RESPOND_HELP_REQUESTS',
     'CREATE_COURSE', 'UPDATE_COURSE', 'DELETE_COURSE',
     'VIEW_TEACHER_STATS',
-    'VIEW_TUTORIALS'
+    'VIEW_TUTORIALS',
+    'VIEW_PROFILE', 'UPDATE_PROFILE', 'VIEW_PROGRESS'
 );
 
 -- STUDENT role (id = 3)
@@ -592,7 +599,8 @@ SELECT 3, id FROM permissions WHERE name IN (
     'VIEW_COURSES',
     'VIEW_TUTORIALS',
     'SUBMIT_FEEDBACK',
-    'REQUEST_HELP'
+    'REQUEST_HELP',
+    'VIEW_PROFILE', 'UPDATE_PROFILE', 'VIEW_PROGRESS'
 );
 
 -- PROVIDER role (id = 4)
@@ -602,7 +610,8 @@ SELECT 4, id FROM permissions WHERE name IN (
     'CREATE_CONTENT', 'UPDATE_CONTENT', 'DELETE_CONTENT',
     'CREATE_ASSIGNMENT', 'UPDATE_ASSIGNMENT', 'DELETE_ASSIGNMENT',
     'VIEW_SUBMISSIONS',
-    'VIEW_TUTORIALS'
+    'VIEW_TUTORIALS',
+    'VIEW_PROFILE', 'UPDATE_PROFILE', 'VIEW_PROGRESS'
 );
 
 SET FOREIGN_KEY_CHECKS=1;
