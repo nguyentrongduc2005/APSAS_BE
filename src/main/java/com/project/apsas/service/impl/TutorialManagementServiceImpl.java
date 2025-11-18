@@ -1,9 +1,7 @@
 package com.project.apsas.service.impl;
 
-import com.project.apsas.dto.request.admin.ReviewTutorialRequest;
 import com.project.apsas.dto.response.admin.TutorialManagementResponse;
 import com.project.apsas.entity.Tutorial;
-import com.project.apsas.entity.User;
 import com.project.apsas.enums.ContentStatus;
 import com.project.apsas.enums.TutorialStatus;
 import com.project.apsas.exception.AppException;
@@ -20,7 +18,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import java.util.ArrayList;
 import java.util.List;
@@ -69,54 +66,27 @@ public class TutorialManagementServiceImpl implements TutorialManagementService 
 
     @Override
     @Transactional
-    public TutorialManagementResponse reviewTutorial(Long tutorialId, ReviewTutorialRequest request) {
+    public TutorialManagementResponse publishTutorial(Long tutorialId) {
         Tutorial tutorial = tutorialRepository.findById(tutorialId)
                 .orElseThrow(() -> new AppException(ErrorCode.TUTORIAL_NOT_EXISTED));
 
-        // Validate status - chỉ cho phép PUBLISHED hoặc REJECTED
-        if (request.getStatus() != TutorialStatus.PUBLISHED && 
-            request.getStatus() != TutorialStatus.REJECTED) {
-            throw new AppException(ErrorCode.BAD_REQUEST);
-        }
-
-        // Chỉ review tutorial đang PENDING
+        // Chỉ publish tutorial đang PENDING
         if (tutorial.getStatus() != TutorialStatus.PENDING) {
             throw new AppException(ErrorCode.BAD_REQUEST);
         }
 
-        // Update tutorial status
-        tutorial.setStatus(request.getStatus());
+        // Update tutorial status thành PUBLISHED
+        tutorial.setStatus(TutorialStatus.PUBLISHED);
 
-        // Update tất cả content status theo tutorial
-        ContentStatus contentStatus = request.getStatus() == TutorialStatus.PUBLISHED 
-                ? ContentStatus.PUBLISHED 
-                : ContentStatus.REJECTED;
-        
+        // Update tất cả content status thành PUBLISHED
         tutorial.getContents().forEach(content -> {
-            content.setStatus(contentStatus);
+            content.setStatus(ContentStatus.PUBLISHED);
         });
 
         Tutorial updatedTutorial = tutorialRepository.save(tutorial);
-        log.info("Admin reviewed tutorial {} with status: {}", tutorialId, request.getStatus());
+        log.info("Admin published tutorial {}", tutorialId);
 
         return mapToTutorialManagementResponse(updatedTutorial);
-    }
-
-    @Override
-    @Transactional
-    public Boolean deleteTutorial(Long tutorialId) {
-        Tutorial tutorial = tutorialRepository.findById(tutorialId)
-                .orElseThrow(() -> new AppException(ErrorCode.TUTORIAL_NOT_EXISTED));
-
-        // Chỉ xóa tutorial DRAFT hoặc REJECTED
-        if (tutorial.getStatus() != TutorialStatus.DRAFT && 
-            tutorial.getStatus() != TutorialStatus.REJECTED) {
-            throw new AppException(ErrorCode.BAD_REQUEST);
-        }
-
-        tutorialRepository.delete(tutorial);
-        log.info("Admin deleted tutorial {}", tutorialId);
-        return true;
     }
 
     private TutorialManagementResponse mapToTutorialManagementResponse(Tutorial tutorial) {

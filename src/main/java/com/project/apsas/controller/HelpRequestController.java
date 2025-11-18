@@ -9,7 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/teacher/help-requests")
+@RequestMapping("/teacher/help-requests")
 @RequiredArgsConstructor
 @PreAuthorize("hasAnyRole('LECTURER', 'ADMIN')")
 public class HelpRequestController {

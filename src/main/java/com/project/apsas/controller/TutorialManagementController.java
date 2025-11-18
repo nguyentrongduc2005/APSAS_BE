@@ -16,7 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/admin/tutorials")
+@RequestMapping("/admin/tutorials")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class TutorialManagementController {
@@ -55,26 +55,17 @@ public class TutorialManagementController {
                 .build();
     }
 
+    /**
+     * Duyệt tutorial - chuyển trạng thái thành PUBLISHED
+     * PUT /api/admin/tutorials/{tutorialId}/publish
+     */
     @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/{tutorialId}/review")
-    public ApiResponse<TutorialManagementResponse> reviewTutorial(
-            @PathVariable Long tutorialId,
-            @RequestBody ReviewTutorialRequest request
-    ) {
+    @PutMapping("/{tutorialId}/publish")
+    public ApiResponse<TutorialManagementResponse> publishTutorial(@PathVariable Long tutorialId) {
         return ApiResponse.<TutorialManagementResponse>builder()
                 .code("ok")
-                .message("Tutorial reviewed successfully")
-                .data(tutorialManagementService.reviewTutorial(tutorialId, request))
-                .build();
-    }
-
-    @PreAuthorize("hasRole('ADMIN')")
-    @DeleteMapping("/{tutorialId}")
-    public ApiResponse<Boolean> deleteTutorial(@PathVariable Long tutorialId) {
-        return ApiResponse.<Boolean>builder()
-                .code("ok")
-                .message("Tutorial deleted successfully")
-                .data(tutorialManagementService.deleteTutorial(tutorialId))
+                .message("Tutorial đã được phát hành thành công")
+                .data(tutorialManagementService.publishTutorial(tutorialId))
                 .build();
     }
 }
