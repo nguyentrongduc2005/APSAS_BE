@@ -1,6 +1,7 @@
 package com.project.apsas.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.project.apsas.dto.response.assignment.AssignmentDetailDTO;
 import com.project.apsas.dto.request.assignment.AssignmentListItemDTO;
 import com.project.apsas.dto.request.assignment.CreateAssigmentRequest;
 import com.project.apsas.dto.request.assignment.UpdateAssignmentRequest;
@@ -18,4 +19,5 @@ public interface AssignmentService {
 
     List<AssignmentListItemDTO> getAssignmentsByCourseId(Long courseId);
 
+    AssignmentDetailDTO getAssignmentDetail(Long courseId, Long assignmentId);
 }

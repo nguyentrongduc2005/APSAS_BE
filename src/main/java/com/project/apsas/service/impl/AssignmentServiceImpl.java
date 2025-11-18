@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.apsas.dto.mapping.ConfigJson;
 import com.project.apsas.dto.mapping.TestCase;
+import com.project.apsas.dto.response.assignment.AssignmentDetailDTO;
 import com.project.apsas.dto.request.assignment.AssignmentListItemDTO;
 import com.project.apsas.dto.request.assignment.CreateAssigmentRequest;
 import com.project.apsas.dto.request.assignment.UpdateAssignmentRequest;
@@ -260,4 +261,18 @@ public class AssignmentServiceImpl implements AssignmentService {
         log.info("Found {} assignments for course ID: {}", assignments.size(), courseId);
         return assignments;
     }
+
+
+    @Override
+    public AssignmentDetailDTO getAssignmentDetail(Long courseId, Long assignmentId) {
+        log.info("Getting assignment detail for courseId: {} and assignmentId: {}", courseId, assignmentId);
+
+        AssignmentDetailDTO assignmentDetail = courseAssignmentRepository
+                .findAssignmentDetailByCourseIdAndAssignmentId(courseId, assignmentId)
+                .orElseThrow(()  -> new AppException(ErrorCode.ASSIGNMENT_NOT_FOUND));
+
+        log.info("Found assignment detail: {}", assignmentDetail.getTitle());
+        return assignmentDetail;
+    }
+
 }
