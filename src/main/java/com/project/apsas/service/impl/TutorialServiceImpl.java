@@ -28,10 +28,16 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
 import java.util.Comparator;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import jakarta.persistence.criteria.Predicate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -73,20 +79,112 @@ public class TutorialServiceImpl implements TutorialService {
     }
 
     @Override
-    public List<CreateTutorialResponse> getMyTutorials() {
+    public List<CreateTutorialResponse> getMyTutorials(String keyword,
+                                                       String status,
+                                                       Boolean hasAssignment) {
         Long currentUserId = Long.parseLong(authService.currentId());
 
+        // lấy user để có name + avatar
+        User user = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        String avatar;
+        if (user.getProfile() != null) {
+            avatar = user.getProfile().getAvatarUrl();  // đổi cho đúng tên getter trong entity Profile
+        } else {
+            avatar = null;
+        }
+
+        // lấy tất cả tutorial do user này tạo
         List<Tutorial> tutorials = tutorialRepository.findByCreatedBy(currentUserId);
 
+        // chuẩn bị keyword (có thể null)
+        String kw = (keyword == null || keyword.isBlank())
+                ? null
+                : keyword.trim().toLowerCase();
+
+        // chuẩn bị filter status (có thể null)
+        TutorialStatus filterStatus = null;
+        if (status != null && !status.isBlank()) {
+            try {
+                filterStatus = TutorialStatus.valueOf(status.toUpperCase());
+            } catch (IllegalArgumentException ex) {
+                // nếu FE gửi status linh tinh thì bỏ qua filter status
+                filterStatus = null;
+            }
+        }
+
+        TutorialStatus finalFilterStatus = filterStatus;
         return tutorials.stream()
-                .map(t -> CreateTutorialResponse.builder()
-                        .id(t.getId())
-                        .title(t.getTitle())
-                        .summary(t.getSummary())
-                        .createdBy(t.getCreatedBy())
-                        .status(t.getStatus())
-                        .build())
+                // ---- search theo title + summary ----
+                .filter(t -> {
+                    if (kw == null) return true;
+                    String title = t.getTitle() == null ? "" : t.getTitle().toLowerCase();
+                    String summary = t.getSummary() == null ? "" : t.getSummary().toLowerCase();
+                    return title.contains(kw) || summary.contains(kw);
+                })
+                // ---- filter status ----
+                .filter(t -> finalFilterStatus == null || t.getStatus() == finalFilterStatus)
+                // ---- map sang DTO + TODO: count ----
+                .map(t -> {
+                    Long tutorialId = t.getId();
+
+                    // TODO: thay 3 dòng dưới bằng logic thực sự
+                    int lessonCount = 0;
+                    int assignmentCount = 0;
+                    int courseCount = 0;
+
+                    // Nếu muốn filter theo hasAssignment:
+                    if (hasAssignment != null) {
+                        boolean has = assignmentCount > 0;
+                        if (hasAssignment && !has) return null;
+                        if (!hasAssignment && has) return null;
+                    }
+
+                    return CreateTutorialResponse.builder()
+                            .id(tutorialId)
+                            .title(t.getTitle())
+                            .summary(t.getSummary())
+                            .status(t.getStatus())
+                            .lessonCount(lessonCount)
+                            .assignmentCount(assignmentCount)
+                            .courseCount(courseCount)
+                            .creatorName(user.getName())
+                            .creatorAvatar(avatar)
+                            .build();
+                })
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public Page<CreateTutorialResponse> searchTutorials(String keyword, Pageable pageable) {
+        Specification<Tutorial> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            // Chỉ lấy tutorial đã PUBLISHED
+            predicates.add(cb.equal(root.get("status"), TutorialStatus.PUBLISHED));
+
+            // Tìm theo keyword: title hoặc summary
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                String likePattern = "%" + keyword.trim().toLowerCase() + "%";
+                Predicate titleLike = cb.like(cb.lower(root.get("title")), likePattern);
+                Predicate summaryLike = cb.like(cb.lower(root.get("summary")), likePattern);
+                predicates.add(cb.or(titleLike, summaryLike));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        Page<Tutorial> pageResult = tutorialRepository.findAll(spec, pageable);
+
+        return pageResult.map(t -> CreateTutorialResponse.builder()
+                .id(t.getId())
+                .title(t.getTitle())
+                .summary(t.getSummary())
+                .createdBy(t.getCreatedBy())
+                .status(t.getStatus())
+                .build());
     }
     @Override
     public Boolean updateTutorial(UpdateTutorialRequest request, Long tutorialId) {
