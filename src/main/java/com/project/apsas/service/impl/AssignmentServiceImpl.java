@@ -10,6 +10,7 @@ import com.project.apsas.dto.request.assignment.CreateAssigmentRequest;
 import com.project.apsas.dto.request.assignment.UpdateAssignmentRequest;
 import com.project.apsas.dto.response.assignment.CreateAssignmentResponse;
 import com.project.apsas.dto.response.assignment.TestCaseConfig;
+import com.project.apsas.dto.response.tutorial.DetailAssignmentResponse;
 import com.project.apsas.entity.*;
 import com.project.apsas.exception.AppException;
 import com.project.apsas.exception.ErrorCode;
@@ -25,6 +26,9 @@ import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.commonmark.node.Node;
+import org.commonmark.parser.Parser;
+import org.commonmark.renderer.html.HtmlRenderer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,6 +53,8 @@ public class AssignmentServiceImpl implements AssignmentService {
     SkillRepository skillRepository;
     AuthService authService;
     CourseAssignmentRepository courseAssignmentRepository;
+    Parser markdownParser;
+    HtmlRenderer htmlRenderer;
 
 
     @Override
@@ -273,6 +279,35 @@ public class AssignmentServiceImpl implements AssignmentService {
 
         log.info("Found assignment detail: {}", assignmentDetail.getTitle());
         return assignmentDetail;
+    }
+
+    @Override
+    public DetailAssignmentResponse detailAssignmentTutorial(Long assignmentId) throws JsonProcessingException {
+
+        Assignment assignment = assignmentRepository.findById(assignmentId).orElseThrow(() ->
+                new AppException(ErrorCode.ASSIGNMENT_NOT_EXISTED));
+        String markdownInput = assignment.getStatementMd();
+        Node document = markdownParser.parse(markdownInput);
+        String htmlOutput = htmlRenderer.render(document);
+
+        AssignmentEvaluation assignmentEvaluation = assignment.getAssignmentEvaluations().stream().findFirst().get();
+
+
+        String configJsonString = assignmentEvaluation.getConfigJson();
+
+        ConfigJson configJson = objectMapper.readValue(configJsonString, ConfigJson.class);
+
+        return DetailAssignmentResponse.builder()
+                .id(assignment.getId())
+                .title(assignment.getTitle())
+                .attemptsLimit(assignment.getAttemptsLimit())
+                .createdDate(assignment.getCreatedAt())
+                .proficiency(assignment.getProficiency())
+                .statementHtml(htmlOutput)
+                .testCases(configJson.getTestCases())
+                .maxScore(assignment.getMaxScore())
+                .orderNo(assignment.getOrderNo())
+                .build();
     }
 
 }

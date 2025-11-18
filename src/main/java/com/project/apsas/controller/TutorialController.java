@@ -12,6 +12,7 @@ import com.project.apsas.dto.response.assignment.CreateAssignmentResponse;
 import com.project.apsas.dto.response.content.CreateContentResponse;
 import com.project.apsas.dto.response.content.UpdateContentResponse;
 import com.project.apsas.dto.response.tutorial.CreateTutorialResponse;
+import com.project.apsas.dto.response.tutorial.DetailAssignmentResponse;
 import com.project.apsas.dto.response.tutorial.DetailContentResponse;
 import com.project.apsas.dto.response.tutorial.DetailTutorialResponse;
 import com.project.apsas.service.AssignmentService;
@@ -151,7 +152,7 @@ public class TutorialController {
                 .data(tutorialService.getTutorialDetail(id))
                 .build();
     }
-
+    @PreAuthorize("hasRole('PROVIDER')")
     @GetMapping("/contents/{contentId}")
     public ApiResponse<DetailContentResponse> getContentDetail(@PathVariable Long contentId) {
         return ApiResponse.<DetailContentResponse>builder()
@@ -168,6 +169,15 @@ public class TutorialController {
                 .code("ok")
                 .message("Tutorial submitted for review successfully")
                 .data(tutorialService.submitTutorialForReview(tutorialId))
+                .build();
+    }
+    @PreAuthorize("hasRole('PROVIDER')")
+    @GetMapping("/assignments/{assignmentId}")
+    public ApiResponse<DetailAssignmentResponse> getAssignmentDetail(@PathVariable Long assignmentId) throws JsonProcessingException {
+        return ApiResponse.<DetailAssignmentResponse>builder()
+                .code("ok")
+                .message("successfully get tutorial")
+                .data(assignmentService.detailAssignmentTutorial(assignmentId))
                 .build();
     }
 }

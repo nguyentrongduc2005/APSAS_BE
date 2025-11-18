@@ -3,6 +3,7 @@ package com.project.apsas.dto.response.tutorial;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -13,6 +14,7 @@ public class DetailContentResponse {
     private String bodyHtml;
     private long totalMedia;
     private List<Media> mediaList;
+    private LocalDateTime createdDate;
     @Data
     @Builder
     public static class Media
