@@ -35,7 +35,10 @@ public enum ErrorCode {
     USER_NOT_EXISTED("E5017", HttpStatus.NOT_FOUND, "không tìm thấy người dùng"),
     ROLE_NOT_FOUND("E5018", HttpStatus.NOT_FOUND, "không tìm thấy role"),
     CANNOT_DELETE_LAST_ADMIN("E5019", HttpStatus.BAD_REQUEST, "không thể xóa admin cuối cùng"),
-    TIME_INVALID("E5020", HttpStatus.BAD_REQUEST, "thời gian không hợp lệ")
+    TIME_INVALID("E5020", HttpStatus.BAD_REQUEST, "thời gian không hợp lệ"),
+    ROLE_EXISTED("E5021", HttpStatus.CONFLICT, "vai trò đã tồn tại"),
+    PERMISSION_NOT_FOUND("E5022", HttpStatus.NOT_FOUND, "không tìm thấy permission"),
+    ROLE_IN_USE("E5023", HttpStatus.BAD_REQUEST, "vai trò đang được sử dụng, không thể xóa")
 
     ;
 

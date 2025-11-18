@@ -87,13 +87,20 @@ public class TutorialController {
                 .data(assignmentService.createAssignment(tutorialId,request))
                 .build();
     }
-    @PreAuthorize("hasRole('PROVIDER')")
-    @GetMapping("/my")
-    public ApiResponse<List<CreateTutorialResponse>> getMyTutorials() {
+    @PreAuthorize("hasRole('PROVIDER')") // hoặc PROVIDER
+    @PostMapping("/my")
+    public ApiResponse<List<CreateTutorialResponse>> getMyTutorials(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Boolean hasAssignment
+    ) {
+        List<CreateTutorialResponse> data = tutorialService.getMyTutorials(keyword, status, hasAssignment);
+
         return ApiResponse.<List<CreateTutorialResponse>>builder()
                 .code("ok")
                 .message("success")
-                .data(tutorialService.getMyTutorials()).build();
+                .data(data)
+                .build();
     }
     @PreAuthorize("hasRole('PROVIDER')")
     @PatchMapping("/{tutorialId}")
