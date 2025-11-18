@@ -1,5 +1,6 @@
 package com.project.apsas.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.project.apsas.enums.MediaType;
 import jakarta.persistence.*;
 import lombok.*;
@@ -39,6 +40,7 @@ public class Media {
     private LocalDateTime createdAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
     @JoinColumn(name = "content_id", insertable = false, updatable = false)
     private Content content;
 }

@@ -12,6 +12,7 @@ import com.project.apsas.dto.response.assignment.CreateAssignmentResponse;
 import com.project.apsas.dto.response.content.CreateContentResponse;
 import com.project.apsas.dto.response.content.UpdateContentResponse;
 import com.project.apsas.dto.response.tutorial.CreateTutorialResponse;
+import com.project.apsas.dto.response.tutorial.DetailContentResponse;
 import com.project.apsas.dto.response.tutorial.DetailTutorialResponse;
 import com.project.apsas.service.AssignmentService;
 import com.project.apsas.service.ContentService;
@@ -148,6 +149,15 @@ public class TutorialController {
                 .code("ok")
                 .message("successfully get tutorial")
                 .data(tutorialService.getTutorialDetail(id))
+                .build();
+    }
+
+    @GetMapping("/contents/{contentId}")
+    public ApiResponse<DetailContentResponse> getContentDetail(@PathVariable Long contentId) {
+        return ApiResponse.<DetailContentResponse>builder()
+                .code("ok")
+                .message("successfully get tutorial")
+                .data(contentService.detailContentTutorial(contentId))
                 .build();
     }
 }
