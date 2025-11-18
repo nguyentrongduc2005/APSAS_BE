@@ -56,6 +56,8 @@ public class SecurityConfig {
             "/courses/{courseId}/register-details",
             "/progress/{studentId}",
             "/submissions/**",
+            "/tutorials",
+            "/tutorials/**",
     };
 
     @Bean
