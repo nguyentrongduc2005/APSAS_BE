@@ -33,16 +33,4 @@ public class ProfileAvatarQueryController {
                 .build();
     }
 
-    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("isAuthenticated()")
-    public ApiResponse<SmallAvatarResponse> uploadMyAvatar(
-            @RequestPart("file") MultipartFile file) throws IOException {
-
-        SmallAvatarResponse data = userAvatarQueryService.uploadMyAvatar(file);
-        return ApiResponse.<SmallAvatarResponse>builder()
-                .code("ok")
-                .message("SUCCESS")
-                .data(data)
-                .build();
-    }
 }

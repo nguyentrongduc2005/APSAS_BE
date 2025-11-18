@@ -2,15 +2,20 @@ package com.project.apsas.repository;
 
 import com.project.apsas.dto.response.content.TutorialContentItemDto;
 import com.project.apsas.entity.Content;
+import com.project.apsas.enums.ContentStatus;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
 @Repository
-public interface ContentRepository extends JpaRepository<Content, Long> {
+public interface ContentRepository extends JpaRepository<Content, Long>, JpaSpecificationExecutor<Content> {
+    
+    // Count methods for statistics
+    long countByStatus(ContentStatus status);
 
     @Query("SELECT NEW com.project.apsas.dto.response.content.TutorialContentItemDto(" +
             "    c.id, " +
