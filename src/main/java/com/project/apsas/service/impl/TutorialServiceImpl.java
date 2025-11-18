@@ -30,6 +30,14 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Comparator;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import jakarta.persistence.criteria.Predicate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -149,6 +157,35 @@ public class TutorialServiceImpl implements TutorialService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public Page<CreateTutorialResponse> searchTutorials(String keyword, Pageable pageable) {
+        Specification<Tutorial> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            // Chỉ lấy tutorial đã PUBLISHED
+            predicates.add(cb.equal(root.get("status"), TutorialStatus.PUBLISHED));
+
+            // Tìm theo keyword: title hoặc summary
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                String likePattern = "%" + keyword.trim().toLowerCase() + "%";
+                Predicate titleLike = cb.like(cb.lower(root.get("title")), likePattern);
+                Predicate summaryLike = cb.like(cb.lower(root.get("summary")), likePattern);
+                predicates.add(cb.or(titleLike, summaryLike));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        Page<Tutorial> pageResult = tutorialRepository.findAll(spec, pageable);
+
+        return pageResult.map(t -> CreateTutorialResponse.builder()
+                .id(t.getId())
+                .title(t.getTitle())
+                .summary(t.getSummary())
+                .createdBy(t.getCreatedBy())
+                .status(t.getStatus())
+                .build());
+    }
     @Override
     public Boolean updateTutorial(UpdateTutorialRequest request, Long tutorialId) {
         Long userId =  Long.parseLong(authService.currentId());
