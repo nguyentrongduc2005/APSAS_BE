@@ -23,10 +23,13 @@ public class TutorialManagementController {
 
     TutorialManagementService tutorialManagementService;
 
+    /**
+     * Lấy danh sách tutorials chờ duyệt (PENDING)
+     * GET /api/admin/tutorials/pending
+     */
     @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping
-    public ApiResponse<Page<TutorialManagementResponse>> getAllTutorials(
-            @RequestParam(required = false) TutorialStatus status,
+    @GetMapping("/pending")
+    public ApiResponse<Page<TutorialManagementResponse>> getPendingTutorials(
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -40,8 +43,8 @@ public class TutorialManagementController {
 
         return ApiResponse.<Page<TutorialManagementResponse>>builder()
                 .code("ok")
-                .message("Get all tutorials successfully")
-                .data(tutorialManagementService.getAllTutorials(status, keyword, pageable))
+                .message("Lấy danh sách tutorials chờ duyệt thành công")
+                .data(tutorialManagementService.getAllTutorials(TutorialStatus.PENDING, keyword, pageable))
                 .build();
     }
 

@@ -79,12 +79,26 @@ public class TutorialManagementServiceImpl implements TutorialManagementService 
         tutorial.setStatus(TutorialStatus.PUBLISHED);
 
         // Update tất cả content status thành PUBLISHED
-        tutorial.getContents().forEach(content -> {
-            content.setStatus(ContentStatus.PUBLISHED);
-        });
+        if (tutorial.getContents() != null) {
+            tutorial.getContents().forEach(content -> {
+                content.setStatus(ContentStatus.PUBLISHED);
+            });
+        }
+
+        // Update tất cả assignment status thành PUBLISHED (nếu có)
+        if (tutorial.getAssignments() != null) {
+            tutorial.getAssignments().forEach(assignment -> {
+                // Assignment không có status field, có thể thêm logic khác nếu cần
+                log.debug("Assignment {} is now available for published tutorial {}", 
+                    assignment.getId(), tutorialId);
+            });
+        }
 
         Tutorial updatedTutorial = tutorialRepository.save(tutorial);
-        log.info("Admin published tutorial {}", tutorialId);
+        log.info("Admin published tutorial {} with {} contents and {} assignments", 
+            tutorialId, 
+            tutorial.getContents() != null ? tutorial.getContents().size() : 0,
+            tutorial.getAssignments() != null ? tutorial.getAssignments().size() : 0);
 
         return mapToTutorialManagementResponse(updatedTutorial);
     }
