@@ -47,7 +47,8 @@ public class SecurityConfig {
             "/submission",
             "/ai",
             "/test",
-            "login/oauth2/**"
+            "login/oauth2/**",
+            "teacher/stats/total-students"
     };
 
     private final String[] PUBLIC_ENDPOINTS_GET = {

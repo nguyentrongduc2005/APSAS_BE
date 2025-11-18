@@ -21,4 +21,8 @@ public interface CourseContentRepository extends JpaRepository<CourseContent, Co
 
     @Query("SELECT COUNT(cc) FROM CourseContent cc WHERE cc.course.id = :courseId")
     int countByCourseId(@Param("courseId") Long courseId);
+
+
+    @Query("SELECT COUNT(DISTINCT cc.contentId) FROM CourseContent cc WHERE cc.courseId IN :courseIds")
+    int countContentsByCourseIds(@Param("courseIds") List<Long> courseIds);
 }
