@@ -19,7 +19,6 @@ import java.util.List;
 @RequestMapping("/admin/roles")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-@PreAuthorize("hasRole('ADMIN')")
 public class RoleManagementController {
     
     RoleManagementService roleManagementService;
@@ -29,6 +28,7 @@ public class RoleManagementController {
      * GET /api/admin/roles
      */
     @GetMapping
+    @PreAuthorize("hasAuthority('VIEW_ROLES')")
     public ApiResponse<List<RoleManagementResponse>> getAllRoles() {
         List<RoleManagementResponse> roles = roleManagementService.getAllRoles();
         
@@ -44,6 +44,7 @@ public class RoleManagementController {
      * GET /api/admin/roles/{roleId}
      */
     @GetMapping("/{roleId}")
+    @PreAuthorize("hasAuthority('VIEW_ROLES')")
     public ApiResponse<RoleManagementResponse> getRoleById(@PathVariable Long roleId) {
         RoleManagementResponse role = roleManagementService.getRoleById(roleId);
         
@@ -59,6 +60,7 @@ public class RoleManagementController {
      * POST /api/admin/roles
      */
     @PostMapping
+    @PreAuthorize("hasAuthority('CREATE_ROLES')")
     public ApiResponse<RoleManagementResponse> createRole(
             @Valid @RequestBody CreateRoleRequest request
     ) {
@@ -76,6 +78,7 @@ public class RoleManagementController {
      * PUT /api/admin/roles/{roleId}
      */
     @PutMapping("/{roleId}")
+    @PreAuthorize("hasAuthority('UPDATE_ROLES')")
     public ApiResponse<RoleManagementResponse> updateRole(
             @PathVariable Long roleId,
             @Valid @RequestBody UpdateRoleRequest request
@@ -94,6 +97,7 @@ public class RoleManagementController {
      * DELETE /api/admin/roles/{roleId}
      */
     @DeleteMapping("/{roleId}")
+    @PreAuthorize("hasAuthority('DELETE_ROLES')")
     public ApiResponse<Void> deleteRole(@PathVariable Long roleId) {
         roleManagementService.deleteRole(roleId);
         
@@ -108,6 +112,7 @@ public class RoleManagementController {
      * GET /api/admin/permissions
      */
     @GetMapping("/permissions")
+    @PreAuthorize("hasAuthority('VIEW_ROLES')")
     public ApiResponse<List<PermissionResponse>> getAllPermissions() {
         List<PermissionResponse> permissions = roleManagementService.getAllPermissions();
         

@@ -1,9 +1,7 @@
 package com.project.apsas.service.impl;
 
-import com.project.apsas.dto.request.admin.ReviewTutorialRequest;
 import com.project.apsas.dto.response.admin.TutorialManagementResponse;
 import com.project.apsas.entity.Tutorial;
-import com.project.apsas.entity.User;
 import com.project.apsas.enums.ContentStatus;
 import com.project.apsas.enums.TutorialStatus;
 import com.project.apsas.exception.AppException;
@@ -20,7 +18,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import java.util.ArrayList;
 import java.util.List;
@@ -69,54 +66,41 @@ public class TutorialManagementServiceImpl implements TutorialManagementService 
 
     @Override
     @Transactional
-    public TutorialManagementResponse reviewTutorial(Long tutorialId, ReviewTutorialRequest request) {
+    public TutorialManagementResponse publishTutorial(Long tutorialId) {
         Tutorial tutorial = tutorialRepository.findById(tutorialId)
                 .orElseThrow(() -> new AppException(ErrorCode.TUTORIAL_NOT_EXISTED));
 
-        // Validate status - chỉ cho phép PUBLISHED hoặc REJECTED
-        if (request.getStatus() != TutorialStatus.PUBLISHED && 
-            request.getStatus() != TutorialStatus.REJECTED) {
-            throw new AppException(ErrorCode.BAD_REQUEST);
-        }
-
-        // Chỉ review tutorial đang PENDING
+        // Chỉ publish tutorial đang PENDING
         if (tutorial.getStatus() != TutorialStatus.PENDING) {
             throw new AppException(ErrorCode.BAD_REQUEST);
         }
 
-        // Update tutorial status
-        tutorial.setStatus(request.getStatus());
+        // Update tutorial status thành PUBLISHED
+        tutorial.setStatus(TutorialStatus.PUBLISHED);
 
-        // Update tất cả content status theo tutorial
-        ContentStatus contentStatus = request.getStatus() == TutorialStatus.PUBLISHED 
-                ? ContentStatus.PUBLISHED 
-                : ContentStatus.REJECTED;
-        
-        tutorial.getContents().forEach(content -> {
-            content.setStatus(contentStatus);
-        });
-
-        Tutorial updatedTutorial = tutorialRepository.save(tutorial);
-        log.info("Admin reviewed tutorial {} with status: {}", tutorialId, request.getStatus());
-
-        return mapToTutorialManagementResponse(updatedTutorial);
-    }
-
-    @Override
-    @Transactional
-    public Boolean deleteTutorial(Long tutorialId) {
-        Tutorial tutorial = tutorialRepository.findById(tutorialId)
-                .orElseThrow(() -> new AppException(ErrorCode.TUTORIAL_NOT_EXISTED));
-
-        // Chỉ xóa tutorial DRAFT hoặc REJECTED
-        if (tutorial.getStatus() != TutorialStatus.DRAFT && 
-            tutorial.getStatus() != TutorialStatus.REJECTED) {
-            throw new AppException(ErrorCode.BAD_REQUEST);
+        // Update tất cả content status thành PUBLISHED
+        if (tutorial.getContents() != null) {
+            tutorial.getContents().forEach(content -> {
+                content.setStatus(ContentStatus.PUBLISHED);
+            });
         }
 
-        tutorialRepository.delete(tutorial);
-        log.info("Admin deleted tutorial {}", tutorialId);
-        return true;
+        // Update tất cả assignment status thành PUBLISHED (nếu có)
+        if (tutorial.getAssignments() != null) {
+            tutorial.getAssignments().forEach(assignment -> {
+                // Assignment không có status field, có thể thêm logic khác nếu cần
+                log.debug("Assignment {} is now available for published tutorial {}", 
+                    assignment.getId(), tutorialId);
+            });
+        }
+
+        Tutorial updatedTutorial = tutorialRepository.save(tutorial);
+        log.info("Admin published tutorial {} with {} contents and {} assignments", 
+            tutorialId, 
+            tutorial.getContents() != null ? tutorial.getContents().size() : 0,
+            tutorial.getAssignments() != null ? tutorial.getAssignments().size() : 0);
+
+        return mapToTutorialManagementResponse(updatedTutorial);
     }
 
     private TutorialManagementResponse mapToTutorialManagementResponse(Tutorial tutorial) {

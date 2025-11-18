@@ -34,7 +34,7 @@ public class SubmissionController {
      * @param limit Items per page (default: 10, max: 100)
      * @return Paginated list of submissions
      */
-    @PreAuthorize("hasAnyRole('LECTURER', 'ADMIN')")
+    @PreAuthorize("hasAuthority('VIEW_SUBMISSIONS')")
     @GetMapping("/course/{courseId}")
     public ResponseEntity<PagedResponse<SubmissionResponse>> getSubmissionsByCourse(
             @PathVariable Long courseId,
@@ -56,7 +56,7 @@ public class SubmissionController {
      * @param limit Items per page (default: 10, max: 100)
      * @return Paginated list of submissions
      */
-    @PreAuthorize("hasAnyRole('LECTURER', 'ADMIN')")
+    @PreAuthorize("hasAuthority('VIEW_SUBMISSIONS')")
     @GetMapping("/course/{courseId}/assignment/{assignmentId}")
     public ResponseEntity<PagedResponse<SubmissionResponse>> getSubmissionsByAssignment(
             @PathVariable Long courseId,
@@ -77,7 +77,7 @@ public class SubmissionController {
      * @param studentId Student ID
      * @return Submission details
      */
-    @PreAuthorize("hasAnyRole('LECTURER', 'ADMIN')")
+    @PreAuthorize("hasAuthority('VIEW_SUBMISSIONS')")
     @GetMapping("/assignment/{assignmentId}/student/{studentId}")
     public ResponseEntity<SubmissionResponse> getSubmissionDetail(
             @PathVariable Long assignmentId,
@@ -97,7 +97,7 @@ public class SubmissionController {
      * @param pageable Pageable object (page, size, sort)
      * @return Paginated list of student submissions
      */
-    @PreAuthorize("hasAnyRole('LECTURER', 'ADMIN')")
+    @PreAuthorize("hasAuthority('VIEW_SUBMISSIONS')")
     @GetMapping("/course/{courseId}/assignment/{assignmentId}/students")
     public ResponseEntity<Page<StudentSubmissionDTO>> getStudentsByAssignment(
             @PathVariable Long courseId,
@@ -119,7 +119,7 @@ public class SubmissionController {
      * @param pageable Pageable object (page, size, sort)
      * @return Paginated list of all assignments with submission status
      */
-    @PreAuthorize("hasAnyRole('LECTURER', 'ADMIN', 'PROVIDER')")
+    @PreAuthorize("hasAuthority('VIEW_SUBMISSIONS')")
     @GetMapping("/course/{courseId}/student/{studentId}")
     public ResponseEntity<Page<com.project.apsas.dto.StudentAllSubmissionsDTO>> getAllSubmissionsOfStudent(
             @PathVariable Long courseId,
@@ -139,7 +139,7 @@ public class SubmissionController {
      * @param pageable Pageable object (page, size, sort)
      * @return Paginated list of submitted assignments
      */
-    @PreAuthorize("hasRole('STUDENT')")
+    @PreAuthorize("hasAuthority('SUBMIT_ASSIGNMENT')")
     @GetMapping("/my-submissions")
     public ResponseEntity<Page<com.project.apsas.dto.StudentSubmittedAssignmentDTO>> getMySubmittedAssignments(
             Pageable pageable
@@ -149,7 +149,7 @@ public class SubmissionController {
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasRole('STUDENT')")
+    @PreAuthorize("hasAuthority('SUBMIT_ASSIGNMENT')")
     @PostMapping("/create")
     public ApiResponse<CreateSubmissionResponse> createSubmission(
             @RequestBody CreateSubmissionRequest createSubmissionRequest) {

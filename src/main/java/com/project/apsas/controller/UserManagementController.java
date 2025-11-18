@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/admin/users")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-@PreAuthorize("hasRole('ADMIN')")
 public class UserManagementController {
 
     UserManagementService userManagementService;
@@ -33,6 +32,7 @@ public class UserManagementController {
      * GET /api/admin/users?page=0&size=10&sort=createdAt,desc&search=nguyen&status=ACTIVE&role=STUDENT
      */
     @GetMapping
+    @PreAuthorize("hasAuthority('VIEW_USERS')")
     public ApiResponse<Page<UserManagementResponse>> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -70,6 +70,7 @@ public class UserManagementController {
      * GET /api/admin/users/{userId}
      */
     @GetMapping("/{userId}")
+    @PreAuthorize("hasAuthority('VIEW_USERS')")
     public ApiResponse<UserManagementResponse> getUserById(@PathVariable Long userId) {
         UserManagementResponse user = userManagementService.getUserById(userId);
         
@@ -85,6 +86,7 @@ public class UserManagementController {
      * POST /api/admin/users
      */
     @PostMapping
+    @PreAuthorize("hasAuthority('CREATE_USERS')")
     public ApiResponse<UserManagementResponse> createUser(
             @Valid @RequestBody CreateUserRequest request
     ) {
@@ -116,10 +118,11 @@ public class UserManagementController {
     }
 
     /**
-     * Cập nhật roles của người dùng
+     * Cập nhật vai trò của người dùng
      * PUT /api/admin/users/{userId}/roles
      */
     @PutMapping("/{userId}/roles")
+    @PreAuthorize("hasAuthority('UPDATE_USERS')")
     public ApiResponse<UserManagementResponse> updateUserRoles(
             @PathVariable Long userId,
             @Valid @RequestBody UpdateUserRoleRequest request
@@ -138,6 +141,7 @@ public class UserManagementController {
      * DELETE /api/admin/users/{userId}
      */
     @DeleteMapping("/{userId}")
+    @PreAuthorize("hasAuthority('DELETE_USERS')")
     public ApiResponse<Void> deleteUser(@PathVariable Long userId) {
         userManagementService.deleteUser(userId);
         
@@ -152,6 +156,7 @@ public class UserManagementController {
      * GET /api/admin/users/statistics
      */
     @GetMapping("/statistics")
+    @PreAuthorize("hasAuthority('VIEW_USERS')")
     public ApiResponse<UserStatisticsResponse> getUserStatistics() {
         UserStatisticsResponse statistics = userManagementService.getUserStatistics();
         

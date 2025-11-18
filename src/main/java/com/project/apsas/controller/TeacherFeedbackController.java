@@ -26,7 +26,7 @@ public class TeacherFeedbackController {
     /**
      * Giảng viên tạo feedback cho submission
      */
-    @PreAuthorize("hasAnyRole('LECTURER', 'ADMIN')")
+    @PreAuthorize("hasAuthority('EVALUATE_SUBMISSIONS')")
     @PostMapping("/{submissionId}/feedbacks")
     public ApiResponse<TeacherFeedbackDTO> createTeacherFeedback(
             @PathVariable Long submissionId,

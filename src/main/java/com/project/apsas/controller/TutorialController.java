@@ -43,7 +43,7 @@ public class TutorialController {
     TutorialService tutorialService;
     ContentService contentService;
     AssignmentService assignmentService;
-    @PreAuthorize("hasRole('PROVIDER')")
+    @PreAuthorize("hasAuthority('CREATE_TUTORIAL')")
     @PostMapping("/create")
     public ApiResponse<CreateTutorialResponse>  createTutorial(@RequestBody CreateTutorialRequest request){
 
@@ -53,7 +53,7 @@ public class TutorialController {
                 .data(tutorialService.createTutorial(request))
                 .build();
     }
-    @PreAuthorize("hasRole('PROVIDER')")
+    @PreAuthorize("hasAuthority('CREATE_CONTENT')")
     @PostMapping(value = "/{tutorialId}/contents",
             consumes = { MediaType.MULTIPART_FORM_DATA_VALUE }
     )
@@ -76,7 +76,7 @@ public class TutorialController {
                 .data(contentService.createContent(tutorialId,request,files))
                 .build();
     }
-    @PreAuthorize("hasRole('PROVIDER')")
+    @PreAuthorize("hasAuthority('CREATE_ASSIGNMENT')")
     @PostMapping(value = "/{tutorialId}/assignments")
     public ApiResponse<CreateAssignmentResponse> createAssignmentForTutorial(
             @PathVariable Long tutorialId,
@@ -89,7 +89,7 @@ public class TutorialController {
                 .data(assignmentService.createAssignment(tutorialId,request))
                 .build();
     }
-    @PreAuthorize("hasRole('PROVIDER')") // hoặc PROVIDER
+    @PreAuthorize("hasAuthority('VIEW_OWN_TUTORIALS')")
     @PostMapping("/my")
     public ApiResponse<List<CreateTutorialResponse>> getMyTutorials(
             @RequestParam(required = false) String keyword,
@@ -104,7 +104,7 @@ public class TutorialController {
                 .data(data)
                 .build();
     }
-    @PreAuthorize("hasRole('PROVIDER')")
+    @PreAuthorize("hasAuthority('UPDATE_TUTORIAL')")
     @PatchMapping("/{tutorialId}")
     public ApiResponse<Boolean> updateTutorial(@RequestBody UpdateTutorialRequest request,
                                                @PathVariable Long tutorialId){
@@ -115,7 +115,7 @@ public class TutorialController {
                 .build();
     }
 
-    @PreAuthorize("hasRole('PROVIDER')")
+    @PreAuthorize("hasAuthority('UPDATE_CONTENT')")
     @PutMapping(value = "/contents/{contentId}",
             consumes = { MediaType.MULTIPART_FORM_DATA_VALUE }
     )
@@ -140,7 +140,7 @@ public class TutorialController {
                 .build();
     }
 
-    @PreAuthorize("hasRole('PROVIDER')")
+    @PreAuthorize("hasAuthority('UPDATE_ASSIGNMENT')")
     @PutMapping("/assignments/{assignmentId}")
     public ApiResponse<CreateAssignmentResponse> updateAssignment(
             @PathVariable Long assignmentId,
@@ -173,7 +173,7 @@ public class TutorialController {
                 .build();
     }
 
-    @PreAuthorize("hasRole('PROVIDER')")
+    @PreAuthorize("hasAuthority('UPDATE_TUTORIAL')")
     @PostMapping("/{tutorialId}/submit")
     public ApiResponse<Boolean> submitTutorialForReview(@PathVariable Long tutorialId) {
         return ApiResponse.<Boolean>builder()

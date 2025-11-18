@@ -16,17 +16,20 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/admin/tutorials")
+@RequestMapping("/admin/tutorials")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class TutorialManagementController {
 
     TutorialManagementService tutorialManagementService;
 
-    @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping
-    public ApiResponse<Page<TutorialManagementResponse>> getAllTutorials(
-            @RequestParam(required = false) TutorialStatus status,
+    /**
+     * Lấy danh sách tutorials chờ duyệt (PENDING)
+     * GET /api/admin/tutorials/pending
+     */
+    @PreAuthorize("hasAuthority('MANAGE_TUTORIALS')")
+    @GetMapping("/pending")
+    public ApiResponse<Page<TutorialManagementResponse>> getPendingTutorials(
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -40,12 +43,12 @@ public class TutorialManagementController {
 
         return ApiResponse.<Page<TutorialManagementResponse>>builder()
                 .code("ok")
-                .message("Get all tutorials successfully")
-                .data(tutorialManagementService.getAllTutorials(status, keyword, pageable))
+                .message("Lấy danh sách tutorials chờ duyệt thành công")
+                .data(tutorialManagementService.getAllTutorials(TutorialStatus.PENDING, keyword, pageable))
                 .build();
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('MANAGE_TUTORIALS')")
     @GetMapping("/{tutorialId}")
     public ApiResponse<TutorialManagementResponse> getTutorialDetail(@PathVariable Long tutorialId) {
         return ApiResponse.<TutorialManagementResponse>builder()
@@ -55,26 +58,17 @@ public class TutorialManagementController {
                 .build();
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/{tutorialId}/review")
-    public ApiResponse<TutorialManagementResponse> reviewTutorial(
-            @PathVariable Long tutorialId,
-            @RequestBody ReviewTutorialRequest request
-    ) {
+    /**
+     * Duyệt tutorial - chuyển trạng thái thành PUBLISHED
+     * PUT /api/admin/tutorials/{tutorialId}/publish
+     */
+    @PreAuthorize("hasAuthority('PUBLISH_TUTORIALS')")
+    @PutMapping("/{tutorialId}/publish")
+    public ApiResponse<TutorialManagementResponse> publishTutorial(@PathVariable Long tutorialId) {
         return ApiResponse.<TutorialManagementResponse>builder()
                 .code("ok")
-                .message("Tutorial reviewed successfully")
-                .data(tutorialManagementService.reviewTutorial(tutorialId, request))
-                .build();
-    }
-
-    @PreAuthorize("hasRole('ADMIN')")
-    @DeleteMapping("/{tutorialId}")
-    public ApiResponse<Boolean> deleteTutorial(@PathVariable Long tutorialId) {
-        return ApiResponse.<Boolean>builder()
-                .code("ok")
-                .message("Tutorial deleted successfully")
-                .data(tutorialManagementService.deleteTutorial(tutorialId))
+                .message("Tutorial đã được phát hành thành công")
+                .data(tutorialManagementService.publishTutorial(tutorialId))
                 .build();
     }
 }

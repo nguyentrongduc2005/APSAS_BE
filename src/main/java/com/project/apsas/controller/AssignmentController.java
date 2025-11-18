@@ -20,7 +20,7 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AssignmentController {
     AssignmentService assignmentService;
-    @PreAuthorize("hasRole('LECTURER')")
+    @PreAuthorize("hasAuthority('CREATE_COURSE')")
     @PostMapping("/{assignmentId}/course/{courseId}/set-time")
     public ApiResponse<String> setTime(
             @PathVariable Long assignmentId,
