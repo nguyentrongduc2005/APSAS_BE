@@ -31,6 +31,7 @@ public class ProgressController {
      * Lấy progress hiện tại (7 ngày gần nhất)
      */
     @GetMapping("/{studentId}/current")
+    @PreAuthorize("isAuthenticated()")
     public ApiResponse<ProgressDTO> getCurrentProgress(@PathVariable Long studentId) {
         ProgressDTO progressDTO =  userService.getStudentCurrentProgress(studentId);
 
@@ -58,6 +59,7 @@ public class ProgressController {
      * /progress/3/scores?from=2025-01-01&to=2025-01-10
      */
     @GetMapping("/{studentId}/scores")
+    @PreAuthorize("isAuthenticated()")
     public ApiResponse<List<DailyScoreDTO>> getDailyScores(
             @PathVariable Long studentId,
             @RequestParam LocalDate from,
