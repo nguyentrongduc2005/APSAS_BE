@@ -1,6 +1,7 @@
 package com.project.apsas.repository;
 
 import com.project.apsas.dto.response.assignment.TutorialAssignmentItemDto;
+import com.project.apsas.dto.response.course.AssignmentResourceDTO;
 import com.project.apsas.entity.Assignment;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -44,4 +45,16 @@ public interface AssignmentRepository extends JpaRepository<Assignment, Long> {
             "LEFT JOIN a.skill s " + // LEFT JOIN phòng trường hợp skill là null
             "WHERE a.tutorial.id = :tutorialId")
     List<TutorialAssignmentItemDto> findAssignmentDTOsByTutorialId(@Param("tutorialId") Long tutorialId);
+
+
+    @Query("""
+    SELECT NEW com.project.apsas.dto.response.course.AssignmentResourceDTO(
+        a.id, a.title, t.title, s.name, a.maxScore, a.attemptsLimit
+    )
+    FROM Assignment a
+    LEFT JOIN a.tutorial t
+    LEFT JOIN a.skill s
+    ORDER BY t.title, a.orderNo
+    """)
+    List<AssignmentResourceDTO> findAvailableAssignmentsForCourse();
 }

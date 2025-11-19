@@ -1,6 +1,8 @@
 package com.project.apsas.repository;
 
 import com.project.apsas.dto.response.content.TutorialContentItemDto;
+import com.project.apsas.dto.response.course.ContentResourceDTO;
+import com.project.apsas.dto.response.course.CourseResourceListDTO;
 import com.project.apsas.entity.Content;
 import com.project.apsas.enums.ContentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -29,4 +31,19 @@ public interface ContentRepository extends JpaRepository<Content, Long>, JpaSpec
             "WHERE c.tutorial.id = :tutorialId " +
             "GROUP BY c.id, c.title, c.orderNo") // Phải GROUP BY tất cả các trường không tổng hợp
     List<TutorialContentItemDto> findContentDTOsByTutorialId(@Param("tutorialId") Long tutorialId);
+
+    @Query("""
+    SELECT NEW com.project.apsas.dto.response.course.ContentResourceDTO(
+        c.id, 
+        c.title, 
+        t.title, 
+        c.status,  
+        c.orderNo
+    )
+    FROM Content c
+    JOIN c.tutorial t
+    WHERE c.status = 'PUBLISHED'
+    ORDER BY t.title, c.orderNo
+""")
+    List<ContentResourceDTO> findAvailableContents();
 }
