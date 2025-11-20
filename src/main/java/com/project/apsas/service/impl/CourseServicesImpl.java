@@ -3,7 +3,12 @@ package com.project.apsas.service.impl;
 import com.project.apsas.dto.request.CreateCourseFromTutorialRequest;
 import com.project.apsas.dto.request.course.JoinCourseRequest;
 import com.project.apsas.dto.response.*;
+import com.project.apsas.dto.response.course.AssignmentResourceDTO;
+import com.project.apsas.dto.response.course.ContentResourceDTO;
+import com.project.apsas.dto.response.course.CourseResourceListDTO;
 import com.project.apsas.dto.response.course.JoinCourseResponse;
+import com.project.apsas.dto.teacher.CreateCourseRequestDTO;
+import com.project.apsas.dto.teacher.CreateCourseResponseDTO;
 import com.project.apsas.entity.*;
 import com.project.apsas.enums.CourseVisibility;
 import com.project.apsas.enums.EnrollmentRole;
@@ -38,7 +43,7 @@ public class CourseServicesImpl implements CourseServices {
     private final UserRepository userRepository;
     private final AssignmentRepository assignmentRepository;
     private final TutorialRepository tutorialRepository;
-
+    private final ContentRepository contentRepository;
     @Override
     public Page<PublicCourseItem> getPublicCourses(Pageable pageable, String search) {
 
@@ -146,8 +151,98 @@ public class CourseServicesImpl implements CourseServices {
 //                .createdAt(saved.getCreatedAt())
 //                .build();
 //    }
+//            throw new AppException(ErrorCode.BAD_REQUEST);
+    @Override
+    @Transactional(readOnly = true)
+    public CourseResourceListDTO getAvailableResources() {
+        // Lấy tất cả content có thể sử dụng
+        List<ContentResourceDTO> contents = contentRepository
+                .findAvailableContents();
+        // Lấy tất cả assignment có thể sử dụng
+        List<AssignmentResourceDTO> assignments = assignmentRepository
+                .findAvailableAssignmentsForCourse();
+        return CourseResourceListDTO.builder()
+                .availableContents(contents)
+                .availableAssignments(assignments)
+                .build();
+    }
 
+    @Override
+    public CreateCourseResponseDTO createCourse(CreateCourseRequestDTO request) {
+        // Get current user
+        String currentIdStr = authService.currentId();
+        Long creatorId = Long.parseLong(currentIdStr);
 
+        User creator = userRepository.findById(creatorId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        // Create course
+        Course course = Course.builder()
+                .name(request.getName())
+                .description(request.getDescription())
+                .code(request.getCode())
+                .visibility(CourseVisibility.valueOf(request.getVisibility().toUpperCase()))
+                .type(request.getType())
+                .avatarUrl(request.getAvatarUrl())
+                .limit(request.getLimit())
+                .creator(creator)
+                .build();
+
+        Course savedCourse = courseRepository.save(course);
+
+        // Enroll creator as LECTURER
+        Enrollment creatorEnrollment = Enrollment.builder()
+                .userId(creatorId)
+                .courseId(savedCourse.getId())
+                .role(EnrollmentRole.TEACHER)
+                .build();
+        enrollmentRepository.save(creatorEnrollment);
+
+        // Add contents to course
+        if (request.getContentIds() != null && !request.getContentIds().isEmpty()) {
+            List<CourseContent> courseContents = request.getContentIds().stream()
+                    .map(contentId -> CourseContent.builder()
+                            .courseId(savedCourse.getId())
+                            .contentId(contentId)
+                            .build())
+                    .collect(Collectors.toList());
+            courseContentRepository.saveAll(courseContents);
+        }
+
+        // Add assignments to course with schedule
+        if (request.getAssignments() != null && !request.getAssignments().isEmpty()) {
+            List<CourseAssignment> courseAssignments = request.getAssignments().stream()
+                    .map(assignmentSchedule -> {
+                        LocalDateTime openAt = null;
+                        LocalDateTime dueAt = null;
+
+                        if (assignmentSchedule.getOpenAt() != null) {
+                            openAt = LocalDateTime.parse(assignmentSchedule.getOpenAt());
+                        }
+                        if (assignmentSchedule.getDueAt() != null) {
+                            dueAt = LocalDateTime.parse(assignmentSchedule.getDueAt());
+                        }
+
+                        return CourseAssignment.builder()
+                                .courseId(savedCourse.getId())
+                                .assignmentId(assignmentSchedule.getAssignmentId())
+                                .openAt(openAt)
+                                .dueAt(dueAt)
+                                .build();
+                    })
+                    .collect(Collectors.toList());
+            courseAssignmentRepository.saveAll(courseAssignments);
+        }
+
+        return CreateCourseResponseDTO.builder()
+                .courseId(savedCourse.getId())
+                .name(savedCourse.getName())
+                .code(savedCourse.getCode())
+                .message("Course created successfully")
+                .totalContents(request.getContentIds() != null ? request.getContentIds().size() : 0)
+                .totalAssignments(request.getAssignments() != null ? request.getAssignments().size() : 0)
+                .build();
+    }
     @Override
     public CourseRegisResponse getCourseRegistrationDetails(Long courseId) {
         Course course = courseRepository.findById(courseId)
