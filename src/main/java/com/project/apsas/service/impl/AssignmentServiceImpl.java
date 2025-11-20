@@ -20,8 +20,8 @@ import com.project.apsas.repository.SkillRepository;
 import com.project.apsas.repository.TutorialRepository;
 import com.project.apsas.service.AssignmentService;
 import com.project.apsas.service.AuthService;
+import com.project.apsas.service.NotificationService;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
@@ -33,15 +33,12 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
-@Builder
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Transactional
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Slf4j
 public class AssignmentServiceImpl implements AssignmentService {
 
-
-    // Inject 2 repository cần thiết
     AssignmentRepository assignmentRepository;
     TutorialRepository tutorialRepository;
     AssignmentMapper assignmentMapper;
@@ -49,6 +46,7 @@ public class AssignmentServiceImpl implements AssignmentService {
     SkillRepository skillRepository;
     AuthService authService;
     CourseAssignmentRepository courseAssignmentRepository;
+    NotificationService notificationService;
 
 
     @Override
@@ -249,6 +247,19 @@ public class AssignmentServiceImpl implements AssignmentService {
         courseAssignment.setDueAt(dueAt);
 
         courseAssignmentRepository.save(courseAssignment);
+        
+        // Create notification for students
+        Assignment assignment = courseAssignment.getAssignment();
+        String message = String.format("Bài tập '%s' đã được mở. Hạn nộp: %s", 
+                assignment.getTitle(), 
+                dueAt.toString());
+        
+        try {
+            notificationService.createAssignmentNotification(courseId, assignment.getTitle(), message);
+            log.info("Created assignment notifications for course {} and assignment {}", courseId, assignmentId);
+        } catch (Exception e) {
+            log.error("Failed to create assignment notifications", e);
+        }
     }
 
     @Override
