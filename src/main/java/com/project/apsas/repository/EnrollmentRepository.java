@@ -53,6 +53,9 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Enrollme
 
     // Tìm tất cả enrollment của user với vai trò cụ thể
     List<Enrollment> findByUserIdAndRole(Long userId, EnrollmentRole role);
+    
+    // Tìm tất cả enrollment theo courseId và role
+    List<Enrollment> findByCourseIdAndRole(Long courseId, EnrollmentRole role);
 
     @Query("SELECT COUNT(DISTINCT e.userId) FROM Enrollment e WHERE e.courseId IN :courseIds AND e.role = 'STUDENT'")
     int countStudentsByCourseIds(@Param("courseIds") List<Long> courseIds);
