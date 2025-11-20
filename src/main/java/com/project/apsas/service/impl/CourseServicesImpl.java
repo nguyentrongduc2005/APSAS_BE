@@ -14,13 +14,18 @@ import com.project.apsas.exception.AppException;
 import com.project.apsas.exception.ErrorCode;
 import com.project.apsas.repository.*;
 import com.project.apsas.service.AuthService;
+import com.project.apsas.service.CloudinaryService;
 import com.project.apsas.service.CourseServices;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.NonFinal;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.*;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
@@ -39,6 +44,13 @@ public class CourseServicesImpl implements CourseServices {
     private final AssignmentRepository assignmentRepository;
     private final TutorialRepository tutorialRepository;
     private final ContentRepository contentRepository;
+    private final CloudinaryService cloudinaryService;
+
+    @NonFinal
+    @Value("${cloudinary.option.folder-name}")
+    String folder;
+
+
     @Override
     public Page<PublicCourseItem> getPublicCourses(Pageable pageable, String search) {
 
@@ -671,4 +683,54 @@ public class CourseServicesImpl implements CourseServices {
                 .build();
 
     }
+    @Override
+    @Transactional
+    public CourseAvatarResponseDTO updateCourseAvatar(Long courseId, MultipartFile file) throws IOException {
+        // 1. Validate file
+        if (file == null || file.isEmpty()) {
+            throw new AppException(ErrorCode.VALIDATION_FAILED, "File avatar không được để trống");
+        }
+
+        // 2. Get current user
+        Long userId;
+        try {
+            userId = Long.parseLong(authService.currentId());
+        } catch (NumberFormatException e) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+
+        User currentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        // 3. Validate course exists
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Course không tồn tại"));
+
+        // 4. Upload to Cloudinary
+        String publicId = "course_" + courseId + "_" + UUID.randomUUID().toString();
+        boolean success = false;
+        String avatarUrl = null;
+
+        try {
+            UploadResult uploadResult = cloudinaryService.upload(file, folder + "/courses", publicId);
+            avatarUrl = uploadResult.getUrl();
+            success = true;
+
+            // 6. Update course avatar URL
+            course.setAvatarUrl(avatarUrl);
+            courseRepository.save(course);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // 7. Build response
+        return CourseAvatarResponseDTO.builder()
+                .courseId(courseId)
+                .avatarUrl(avatarUrl)
+                .success(success)
+                .message("Upload avatar thành công")
+                .build();
+    }
+
 }
