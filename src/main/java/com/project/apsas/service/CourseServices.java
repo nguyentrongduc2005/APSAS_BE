@@ -7,7 +7,6 @@ import com.project.apsas.dto.response.CourseItemTeacherResponse;
 import com.project.apsas.dto.response.CourseRegisResponse;
 import com.project.apsas.dto.response.CreateCourseResponse;
 import com.project.apsas.dto.response.PublicCourseItem;
-import com.project.apsas.dto.response.course.CourseResourceListDTO;
 import com.project.apsas.dto.response.course.JoinCourseResponse;
 import com.project.apsas.dto.teacher.CreateCourseRequestDTO;
 import com.project.apsas.dto.teacher.CreateCourseResponseDTO;
@@ -21,6 +20,5 @@ public interface CourseServices {
     Page<CourseItemStudentResponse> getMyCoursesStudent(Pageable pageable, String search);
     CreateCourseResponse createCourseFromTutorial(CreateCourseFromTutorialRequest request);
     JoinCourseResponse joinCourse(JoinCourseRequest request);
-    CourseResourceListDTO getAvailableResources();
     CreateCourseResponseDTO createCourse(CreateCourseRequestDTO request);
 }

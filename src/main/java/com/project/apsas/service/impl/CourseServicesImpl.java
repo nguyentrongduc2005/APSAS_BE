@@ -3,9 +3,6 @@ package com.project.apsas.service.impl;
 import com.project.apsas.dto.request.CreateCourseFromTutorialRequest;
 import com.project.apsas.dto.request.course.JoinCourseRequest;
 import com.project.apsas.dto.response.*;
-import com.project.apsas.dto.response.course.AssignmentResourceDTO;
-import com.project.apsas.dto.response.course.ContentResourceDTO;
-import com.project.apsas.dto.response.course.CourseResourceListDTO;
 import com.project.apsas.dto.response.course.JoinCourseResponse;
 import com.project.apsas.dto.teacher.CreateCourseRequestDTO;
 import com.project.apsas.dto.teacher.CreateCourseResponseDTO;
@@ -24,10 +21,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.*;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -152,22 +147,9 @@ public class CourseServicesImpl implements CourseServices {
 //                .build();
 //    }
 //            throw new AppException(ErrorCode.BAD_REQUEST);
-    @Override
-    @Transactional(readOnly = true)
-    public CourseResourceListDTO getAvailableResources() {
-        // Lấy tất cả content có thể sử dụng
-        List<ContentResourceDTO> contents = contentRepository
-                .findAvailableContents();
-        // Lấy tất cả assignment có thể sử dụng
-        List<AssignmentResourceDTO> assignments = assignmentRepository
-                .findAvailableAssignmentsForCourse();
-        return CourseResourceListDTO.builder()
-                .availableContents(contents)
-                .availableAssignments(assignments)
-                .build();
-    }
 
     @Override
+    @Transactional
     public CreateCourseResponseDTO createCourse(CreateCourseRequestDTO request) {
         // Get current user
         String currentIdStr = authService.currentId();
@@ -175,6 +157,10 @@ public class CourseServicesImpl implements CourseServices {
 
         User creator = userRepository.findById(creatorId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        // Validate tutorial exists
+        Tutorial tutorial = tutorialRepository.findById(request.getTutorialId())
+                .orElseThrow(() -> new AppException(ErrorCode.TUTORIAL_NOT_EXISTED));
 
         // Create course
         Course course = Course.builder()
@@ -190,7 +176,7 @@ public class CourseServicesImpl implements CourseServices {
 
         Course savedCourse = courseRepository.save(course);
 
-        // Enroll creator as LECTURER
+        // Enroll creator as TEACHER
         Enrollment creatorEnrollment = Enrollment.builder()
                 .userId(creatorId)
                 .courseId(savedCourse.getId())
@@ -198,40 +184,64 @@ public class CourseServicesImpl implements CourseServices {
                 .build();
         enrollmentRepository.save(creatorEnrollment);
 
-        // Add contents to course
-        if (request.getContentIds() != null && !request.getContentIds().isEmpty()) {
-            List<CourseContent> courseContents = request.getContentIds().stream()
-                    .map(contentId -> CourseContent.builder()
+        // XỬ LÝ CONTENTS (CHỈ ADD NHỮNG CÁI ĐƯỢC CHỌN)
+        int contentsAdded = 0;
+        if (tutorial.getContents() != null && !tutorial.getContents().isEmpty()
+                && request.getSelectedContentIds() != null && !request.getSelectedContentIds().isEmpty()) {
+
+            Set<Long> selectedContentIds = new HashSet<>(request.getSelectedContentIds());
+
+            List<CourseContent> courseContents = tutorial.getContents().stream()
+                    .filter(content -> selectedContentIds.contains(content.getId()))
+                    .map(content -> CourseContent.builder()
                             .courseId(savedCourse.getId())
-                            .contentId(contentId)
+                            .contentId(content.getId())
                             .build())
                     .collect(Collectors.toList());
-            courseContentRepository.saveAll(courseContents);
+
+            if (!courseContents.isEmpty()) {
+                courseContentRepository.saveAll(courseContents);
+                contentsAdded = courseContents.size();
+            }
         }
 
-        // Add assignments to course with schedule
-        if (request.getAssignments() != null && !request.getAssignments().isEmpty()) {
-            List<CourseAssignment> courseAssignments = request.getAssignments().stream()
-                    .map(assignmentSchedule -> {
+        // XỬ LÝ ASSIGNMENTS (CHỈ ADD NHỮNG CÁI CÓ TRONG SCHEDULE LIST)
+        int assignmentsAdded = 0;
+        if (tutorial.getAssignments() != null && !tutorial.getAssignments().isEmpty()
+                && request.getAssignmentSchedules() != null && !request.getAssignmentSchedules().isEmpty()) {
+
+            final Map<Long, CreateCourseRequestDTO.AssignmentScheduleDTO> selectedScheduleMap =
+                    request.getAssignmentSchedules().stream()
+                            .collect(Collectors.toMap(
+                                    CreateCourseRequestDTO.AssignmentScheduleDTO::getAssignmentId,
+                                    dto -> dto,
+                                    (existing, replacement) -> existing
+                            ));
+
+            List<CourseAssignment> courseAssignments = tutorial.getAssignments().stream()
+                    .filter(assignment -> selectedScheduleMap.containsKey(assignment.getId()))
+                    .map(assignment -> {
+                        CreateCourseRequestDTO.AssignmentScheduleDTO schedule = selectedScheduleMap.get(assignment.getId());
+
                         LocalDateTime openAt = null;
                         LocalDateTime dueAt = null;
 
-                        if (assignmentSchedule.getOpenAt() != null) {
-                            openAt = LocalDateTime.parse(assignmentSchedule.getOpenAt());
-                        }
-                        if (assignmentSchedule.getDueAt() != null) {
-                            dueAt = LocalDateTime.parse(assignmentSchedule.getDueAt());
-                        }
+                        if (schedule.getOpenAt() != null) openAt = LocalDateTime.parse(schedule.getOpenAt());
+                        if (schedule.getDueAt() != null) dueAt = LocalDateTime.parse(schedule.getDueAt());
 
                         return CourseAssignment.builder()
                                 .courseId(savedCourse.getId())
-                                .assignmentId(assignmentSchedule.getAssignmentId())
+                                .assignmentId(assignment.getId())
                                 .openAt(openAt)
                                 .dueAt(dueAt)
                                 .build();
                     })
                     .collect(Collectors.toList());
-            courseAssignmentRepository.saveAll(courseAssignments);
+
+            if (!courseAssignments.isEmpty()) {
+                courseAssignmentRepository.saveAll(courseAssignments);
+                assignmentsAdded = courseAssignments.size();
+            }
         }
 
         return CreateCourseResponseDTO.builder()
@@ -239,8 +249,8 @@ public class CourseServicesImpl implements CourseServices {
                 .name(savedCourse.getName())
                 .code(savedCourse.getCode())
                 .message("Course created successfully")
-                .totalContents(request.getContentIds() != null ? request.getContentIds().size() : 0)
-                .totalAssignments(request.getAssignments() != null ? request.getAssignments().size() : 0)
+                .totalContents(contentsAdded)
+                .totalAssignments(assignmentsAdded)
                 .build();
     }
     @Override

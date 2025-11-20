@@ -8,7 +8,6 @@ import com.project.apsas.dto.response.CourseItemTeacherResponse;
 import com.project.apsas.dto.response.CourseRegisResponse;
 import com.project.apsas.dto.response.CreateCourseResponse;
 import com.project.apsas.dto.response.PublicCourseItem;
-import com.project.apsas.dto.response.course.CourseResourceListDTO;
 import com.project.apsas.dto.response.course.JoinCourseResponse;
 import com.project.apsas.dto.teacher.CreateCourseRequestDTO;
 import com.project.apsas.dto.teacher.CreateCourseResponseDTO;
@@ -20,7 +19,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -143,17 +141,6 @@ public class CourseController {
                 .code("ok")
                 .message("SUCCESS")
                 .data(service.joinCourse(request))
-                .build();
-    }
-    @PreAuthorize("hasAuthority('CREATE_COURSE')")
-    @GetMapping("/resources")
-    public ApiResponse<CourseResourceListDTO> getAvailableResources() {
-        CourseResourceListDTO resources = service.getAvailableResources();
-
-        return ApiResponse.<CourseResourceListDTO>builder()
-                .code("ok")
-                .message("RESOURCES_RETRIEVED")
-                .data(resources)
                 .build();
     }
 
