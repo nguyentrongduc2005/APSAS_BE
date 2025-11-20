@@ -20,11 +20,13 @@ import com.project.apsas.integration.kafka.jubge.KafkaRCEProducer;
 import com.project.apsas.mapper.SubmissionMapper;
 import com.project.apsas.repository.*;
 import com.project.apsas.service.AuthService;
+import com.project.apsas.service.NotificationService;
 import com.project.apsas.service.SubmissionService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -43,6 +45,7 @@ import java.util.Optional;
 @Transactional
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Slf4j
 public class SubmissionServiceImpl implements SubmissionService {
     SubmissionRepository submissionRepository;
     SubmissionMapper submissionMapper;
@@ -57,6 +60,8 @@ public class SubmissionServiceImpl implements SubmissionService {
     KafkaRCEProducer kafkaRCEProducer;
 
     KafkaFeedbackProvider kafkaFeedbackProvider;
+    
+    NotificationService notificationService;
 
     @NonFinal
     @Value("${message-queue.topic.feedback.name}")
@@ -378,6 +383,21 @@ public class SubmissionServiceImpl implements SubmissionService {
         kafkaRCEProducer.push(executeTopic,submitCodeEvent.getSubmissionId().toString(),submitCodeEvent);
 
         kafkaFeedbackProvider.push(feedbackTopic,submitCodeEvent.getSubmissionId().toString(),feedbackEvent);
+
+        // Create notification for teacher
+        try {
+            notificationService.createSubmissionNotification(
+                    courseId,
+                    assignmentId,
+                    userId,
+                    user.getName(),
+                    assignment.getTitle()
+            );
+            log.info("Created submission notification for user {} on assignment {}", userId, assignmentId);
+        } catch (Exception e) {
+            log.error("Failed to create submission notification for user {} on assignment {}", 
+                    userId, assignmentId, e);
+        }
 
         return CreateSubmissionResponse.builder()
                 .submissionId(submission.getId())
