@@ -1,0 +1,20 @@
+package com.project.apsas.dto.teacher;
+
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class CreateCourseResponseDTO {
+    private Long courseId;
+    private String name;
+    private String code;
+    private String message;
+    private int totalContents;
+    private int totalAssignments;
+}

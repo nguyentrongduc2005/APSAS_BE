@@ -26,8 +26,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -38,7 +41,7 @@ public class TutorialController {
     TutorialService tutorialService;
     ContentService contentService;
     AssignmentService assignmentService;
-    @PreAuthorize("hasRole('PROVIDER')")
+    @PreAuthorize("hasAuthority('CREATE_TUTORIAL')")
     @PostMapping("/create")
     public ApiResponse<CreateTutorialResponse>  createTutorial(@RequestBody CreateTutorialRequest request){
 
@@ -48,7 +51,7 @@ public class TutorialController {
                 .data(tutorialService.createTutorial(request))
                 .build();
     }
-    @PreAuthorize("hasRole('PROVIDER')")
+    @PreAuthorize("hasAuthority('CREATE_CONTENT')")
     @PostMapping(value = "/{tutorialId}/contents",
             consumes = { MediaType.MULTIPART_FORM_DATA_VALUE }
     )
@@ -71,7 +74,7 @@ public class TutorialController {
                 .data(contentService.createContent(tutorialId,request,files))
                 .build();
     }
-    @PreAuthorize("hasRole('PROVIDER')")
+    @PreAuthorize("hasAuthority('CREATE_ASSIGNMENT')")
     @PostMapping(value = "/{tutorialId}/assignments")
     public ApiResponse<CreateAssignmentResponse> createAssignmentForTutorial(
             @PathVariable Long tutorialId,
@@ -84,15 +87,22 @@ public class TutorialController {
                 .data(assignmentService.createAssignment(tutorialId,request))
                 .build();
     }
-    @PreAuthorize("hasRole('PROVIDER')")
-    @GetMapping("/my")
-    public ApiResponse<List<CreateTutorialResponse>> getMyTutorials() {
+    @PreAuthorize("hasAuthority('VIEW_OWN_TUTORIALS')")
+    @PostMapping("/my")
+    public ApiResponse<List<CreateTutorialResponse>> getMyTutorials(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Boolean hasAssignment
+    ) {
+        List<CreateTutorialResponse> data = tutorialService.getMyTutorials(keyword, status, hasAssignment);
+
         return ApiResponse.<List<CreateTutorialResponse>>builder()
                 .code("ok")
                 .message("success")
-                .data(tutorialService.getMyTutorials()).build();
+                .data(data)
+                .build();
     }
-    @PreAuthorize("hasRole('PROVIDER')")
+    @PreAuthorize("hasAuthority('UPDATE_TUTORIAL')")
     @PatchMapping("/{tutorialId}")
     public ApiResponse<Boolean> updateTutorial(@RequestBody UpdateTutorialRequest request,
                                                @PathVariable Long tutorialId){
@@ -103,7 +113,7 @@ public class TutorialController {
                 .build();
     }
 
-    @PreAuthorize("hasRole('PROVIDER')")
+    @PreAuthorize("hasAuthority('UPDATE_CONTENT')")
     @PutMapping(value = "/contents/{contentId}",
             consumes = { MediaType.MULTIPART_FORM_DATA_VALUE }
     )
@@ -128,7 +138,7 @@ public class TutorialController {
                 .build();
     }
 
-    @PreAuthorize("hasRole('PROVIDER')")
+    @PreAuthorize("hasAuthority('UPDATE_ASSIGNMENT')")
     @PutMapping("/assignments/{assignmentId}")
     public ApiResponse<CreateAssignmentResponse> updateAssignment(
             @PathVariable Long assignmentId,
@@ -161,7 +171,7 @@ public class TutorialController {
                 .build();
     }
 
-    @PreAuthorize("hasRole('PROVIDER')")
+    @PreAuthorize("hasAuthority('UPDATE_TUTORIAL')")
     @PostMapping("/{tutorialId}/submit")
     public ApiResponse<Boolean> submitTutorialForReview(@PathVariable Long tutorialId) {
         return ApiResponse.<Boolean>builder()
@@ -169,5 +179,36 @@ public class TutorialController {
                 .message("Tutorial submitted for review successfully")
                 .data(tutorialService.submitTutorialForReview(tutorialId))
                 .build();
+    }
+    @GetMapping
+    public ApiResponse<Page<CreateTutorialResponse>> getAllTutorials(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt,desc", required = false) String[] sort,
+            @RequestParam(required = false) String search
+    ) {
+        Sort sortObj = createSortObject(sort);
+        Pageable pageable = PageRequest.of(page, size, sortObj);
+        Page<CreateTutorialResponse> data = tutorialService.searchTutorials(search, pageable);
+
+        return ApiResponse.<Page<CreateTutorialResponse>>builder()
+                .code("ok")
+                .message("SUCCESS")
+                .data(data)
+                .build();
+    }
+    private Sort createSortObject(String[] sort) {
+        Sort sortList = Sort.unsorted();
+        for (String s : sort) {
+            String[] parts = s.split(",");
+            if (parts.length == 2) {
+                String property = parts[0].trim();
+                Sort.Direction direction = "desc".equalsIgnoreCase(parts[1].trim())
+                        ? Sort.Direction.DESC
+                        : Sort.Direction.ASC;
+                sortList = sortList.and(Sort.by(direction, property));
+            }
+        }
+        return sortList;
     }
 }

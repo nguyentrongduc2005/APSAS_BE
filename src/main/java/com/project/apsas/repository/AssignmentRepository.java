@@ -44,4 +44,5 @@ public interface AssignmentRepository extends JpaRepository<Assignment, Long> {
             "LEFT JOIN a.skill s " + // LEFT JOIN phòng trường hợp skill là null
             "WHERE a.tutorial.id = :tutorialId")
     List<TutorialAssignmentItemDto> findAssignmentDTOsByTutorialId(@Param("tutorialId") Long tutorialId);
+
 }

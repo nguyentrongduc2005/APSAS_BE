@@ -4,6 +4,8 @@ import com.project.apsas.dto.request.CreateCourseFromTutorialRequest;
 import com.project.apsas.dto.request.course.JoinCourseRequest;
 import com.project.apsas.dto.response.*;
 import com.project.apsas.dto.response.course.JoinCourseResponse;
+import com.project.apsas.dto.teacher.CreateCourseRequestDTO;
+import com.project.apsas.dto.teacher.CreateCourseResponseDTO;
 import com.project.apsas.entity.*;
 import com.project.apsas.enums.CourseVisibility;
 import com.project.apsas.enums.EnrollmentRole;
@@ -12,17 +14,20 @@ import com.project.apsas.exception.AppException;
 import com.project.apsas.exception.ErrorCode;
 import com.project.apsas.repository.*;
 import com.project.apsas.service.AuthService;
+import com.project.apsas.service.CloudinaryService;
 import com.project.apsas.service.CourseServices;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.NonFinal;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.util.*;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,6 +43,13 @@ public class CourseServicesImpl implements CourseServices {
     private final UserRepository userRepository;
     private final AssignmentRepository assignmentRepository;
     private final TutorialRepository tutorialRepository;
+    private final ContentRepository contentRepository;
+    private final CloudinaryService cloudinaryService;
+
+    @NonFinal
+    @Value("${cloudinary.option.folder-name}")
+    String folder;
+
 
     @Override
     public Page<PublicCourseItem> getPublicCourses(Pageable pageable, String search) {
@@ -146,8 +158,113 @@ public class CourseServicesImpl implements CourseServices {
 //                .createdAt(saved.getCreatedAt())
 //                .build();
 //    }
+//            throw new AppException(ErrorCode.BAD_REQUEST);
 
+    @Override
+    @Transactional
+    public CreateCourseResponseDTO createCourse(CreateCourseRequestDTO request) {
+        // Get current user
+        String currentIdStr = authService.currentId();
+        Long creatorId = Long.parseLong(currentIdStr);
 
+        User creator = userRepository.findById(creatorId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        // Validate tutorial exists
+        Tutorial tutorial = tutorialRepository.findById(request.getTutorialId())
+                .orElseThrow(() -> new AppException(ErrorCode.TUTORIAL_NOT_EXISTED));
+
+        // Create course
+        Course course = Course.builder()
+                .name(request.getName())
+                .description(request.getDescription())
+                .code(request.getCode())
+                .visibility(CourseVisibility.valueOf(request.getVisibility().toUpperCase()))
+                .type(request.getType())
+                .avatarUrl(request.getAvatarUrl())
+                .limit(request.getLimit())
+                .creator(creator)
+                .build();
+
+        Course savedCourse = courseRepository.save(course);
+
+        // Enroll creator as TEACHER
+        Enrollment creatorEnrollment = Enrollment.builder()
+                .userId(creatorId)
+                .courseId(savedCourse.getId())
+                .role(EnrollmentRole.TEACHER)
+                .build();
+        enrollmentRepository.save(creatorEnrollment);
+
+        // XỬ LÝ CONTENTS (CHỈ ADD NHỮNG CÁI ĐƯỢC CHỌN)
+        int contentsAdded = 0;
+        if (tutorial.getContents() != null && !tutorial.getContents().isEmpty()
+                && request.getSelectedContentIds() != null && !request.getSelectedContentIds().isEmpty()) {
+
+            Set<Long> selectedContentIds = new HashSet<>(request.getSelectedContentIds());
+
+            List<CourseContent> courseContents = tutorial.getContents().stream()
+                    .filter(content -> selectedContentIds.contains(content.getId()))
+                    .map(content -> CourseContent.builder()
+                            .courseId(savedCourse.getId())
+                            .contentId(content.getId())
+                            .build())
+                    .collect(Collectors.toList());
+
+            if (!courseContents.isEmpty()) {
+                courseContentRepository.saveAll(courseContents);
+                contentsAdded = courseContents.size();
+            }
+        }
+
+        // XỬ LÝ ASSIGNMENTS (CHỈ ADD NHỮNG CÁI CÓ TRONG SCHEDULE LIST)
+        int assignmentsAdded = 0;
+        if (tutorial.getAssignments() != null && !tutorial.getAssignments().isEmpty()
+                && request.getAssignmentSchedules() != null && !request.getAssignmentSchedules().isEmpty()) {
+
+            final Map<Long, CreateCourseRequestDTO.AssignmentScheduleDTO> selectedScheduleMap =
+                    request.getAssignmentSchedules().stream()
+                            .collect(Collectors.toMap(
+                                    CreateCourseRequestDTO.AssignmentScheduleDTO::getAssignmentId,
+                                    dto -> dto,
+                                    (existing, replacement) -> existing
+                            ));
+
+            List<CourseAssignment> courseAssignments = tutorial.getAssignments().stream()
+                    .filter(assignment -> selectedScheduleMap.containsKey(assignment.getId()))
+                    .map(assignment -> {
+                        CreateCourseRequestDTO.AssignmentScheduleDTO schedule = selectedScheduleMap.get(assignment.getId());
+
+                        LocalDateTime openAt = null;
+                        LocalDateTime dueAt = null;
+
+                        if (schedule.getOpenAt() != null) openAt = LocalDateTime.parse(schedule.getOpenAt());
+                        if (schedule.getDueAt() != null) dueAt = LocalDateTime.parse(schedule.getDueAt());
+
+                        return CourseAssignment.builder()
+                                .courseId(savedCourse.getId())
+                                .assignmentId(assignment.getId())
+                                .openAt(openAt)
+                                .dueAt(dueAt)
+                                .build();
+                    })
+                    .collect(Collectors.toList());
+
+            if (!courseAssignments.isEmpty()) {
+                courseAssignmentRepository.saveAll(courseAssignments);
+                assignmentsAdded = courseAssignments.size();
+            }
+        }
+
+        return CreateCourseResponseDTO.builder()
+                .courseId(savedCourse.getId())
+                .name(savedCourse.getName())
+                .code(savedCourse.getCode())
+                .message("Course created successfully")
+                .totalContents(contentsAdded)
+                .totalAssignments(assignmentsAdded)
+                .build();
+    }
     @Override
     public CourseRegisResponse getCourseRegistrationDetails(Long courseId) {
         Course course = courseRepository.findById(courseId)
@@ -566,4 +683,54 @@ public class CourseServicesImpl implements CourseServices {
                 .build();
 
     }
+    @Override
+    @Transactional
+    public CourseAvatarResponseDTO updateCourseAvatar(Long courseId, MultipartFile file) throws IOException {
+        // 1. Validate file
+        if (file == null || file.isEmpty()) {
+            throw new AppException(ErrorCode.VALIDATION_FAILED, "File avatar không được để trống");
+        }
+
+        // 2. Get current user
+        Long userId;
+        try {
+            userId = Long.parseLong(authService.currentId());
+        } catch (NumberFormatException e) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+
+        User currentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        // 3. Validate course exists
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Course không tồn tại"));
+
+        // 4. Upload to Cloudinary
+        String publicId = "course_" + courseId + "_" + UUID.randomUUID().toString();
+        boolean success = false;
+        String avatarUrl = null;
+
+        try {
+            UploadResult uploadResult = cloudinaryService.upload(file, folder + "/courses", publicId);
+            avatarUrl = uploadResult.getUrl();
+            success = true;
+
+            // 6. Update course avatar URL
+            course.setAvatarUrl(avatarUrl);
+            courseRepository.save(course);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // 7. Build response
+        return CourseAvatarResponseDTO.builder()
+                .courseId(courseId)
+                .avatarUrl(avatarUrl)
+                .success(success)
+                .message("Upload avatar thành công")
+                .build();
+    }
+
 }
