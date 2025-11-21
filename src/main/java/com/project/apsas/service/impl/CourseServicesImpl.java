@@ -277,7 +277,7 @@ public class CourseServicesImpl implements CourseServices {
         Long totalStudents = studentsCountMap.getOrDefault(courseId, 0L);
 
         // Get contents list
-        List<CourseContent> courseContents = course.getCourseContents().stream().toList();
+        List<CourseContent> courseContents = course.getContentLinks().stream().toList();
         List<CourseRegisResponse.ContentItem> contentItems = courseContents.stream()
                 .map(cc -> CourseRegisResponse.ContentItem.builder()
                         .id(cc.getContent().getId())
@@ -289,7 +289,7 @@ public class CourseServicesImpl implements CourseServices {
                 .collect(Collectors.toList());
 
         // Get assignments list
-        List<CourseAssignment> courseAssignments = course.getCourseAssignments().stream().toList();
+        List<CourseAssignment> courseAssignments = course.getAssignmentLinks().stream().toList();
         List<CourseRegisResponse.AssignmentItem> assignmentItems = courseAssignments.stream()
                 .map(ca -> CourseRegisResponse.AssignmentItem.builder()
                         .id(ca.getAssignment().getId())
