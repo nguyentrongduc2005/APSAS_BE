@@ -109,13 +109,10 @@ public class CourseController {
         return sortList;
     }
 
-    @GetMapping("/{courseId}/register-details")
-    public ApiResponse<CourseRegisResponse> getRegistrationDetails(@PathVariable Long courseId) {
-
-        // Gọi Service để lấy dữ liệu chi tiết
+    @GetMapping("/{courseId}/teacher-overview")
+    @PreAuthorize("hasAuthority('VIEW_COURSES')")
+    public ApiResponse<CourseRegisResponse> getCourseDetailForTeacher(@PathVariable Long courseId) {
         var data = service.getCourseRegistrationDetails(courseId);
-
-        // Trả về phản hồi chuẩn
         return ApiResponse.<CourseRegisResponse>builder()
                 .code("0")
                 .message("SUCCESS")

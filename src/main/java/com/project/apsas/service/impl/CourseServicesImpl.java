@@ -248,39 +248,42 @@ public class CourseServicesImpl implements CourseServices {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
 
-        // 2. Chuẩn bị List ID cho truy vấn BATCH (Chỉ cần 1 phần tử)
+        // Count total students
         List<Long> singleCourseIdList = List.of(courseId);
-
-        // 3. Thực hiện BATCH COUNTING - Lấy các List<Object[]>
-
-        // Học viên
         List<Object[]> studentCountsList = enrollmentRepository.findStudentCountsByCourseIds(singleCourseIdList);
-
-        // Tổng số nội dung (Bài học)
-        List<Object[]> totalLessonsList = courseContentRepository.findTotalLessonsByCourseIds(singleCourseIdList);
-
-        // Tổng số Assignment
-        List<Object[]> assignmentCountsList = courseAssignmentRepository.findAssignmentLessonsByCourseIds(singleCourseIdList);
-
-        // --- SỬA LỖI LỚN: CHUYỂN ĐỔI LIST SANG MAP TRƯỚC KHI SỬ DỤNG ---
-
-        // Sẽ chỉ có tối đa 1 phần tử trong List, nhưng vẫn dùng Stream để đảm bảo an toàn kiểu dữ liệu (Long)
         Map<Long, Long> studentsCountMap = listToObjectMap(studentCountsList);
-        Map<Long, Long> totalLessonsCountMap = listToObjectMap(totalLessonsList);
-        Map<Long, Long> assignmentCountsMap = listToObjectMap(assignmentCountsList);
-
-        // 4. Lấy giá trị chính xác từ Map (đã được đảm bảo là Long -> Long)
         Long totalStudents = studentsCountMap.getOrDefault(courseId, 0L);
-        Long lessonsCountTotal = totalLessonsCountMap.getOrDefault(courseId, 0L);
-        Long assignmentsCount = assignmentCountsMap.getOrDefault(courseId, 0L);
 
-        // 5. Ánh xạ và trả về DTO
-        return buildCourseRegisResponse(
-                course,
-                totalStudents,
-                lessonsCountTotal,
-                assignmentsCount
-        );
+        // Get contents list
+        List<CourseContent> courseContents = course.getCourseContents().stream().toList();
+        List<CourseRegisResponse.ContentItem> contentItems = courseContents.stream()
+                .map(cc -> CourseRegisResponse.ContentItem.builder()
+                        .id(cc.getContent().getId())
+                        .title(cc.getContent().getTitle())
+                        .orderNo(cc.getContent().getOrderNo())
+                        .build())
+                .sorted((a, b) -> Integer.compare(a.getOrderNo() != null ? a.getOrderNo() : 0, 
+                                                   b.getOrderNo() != null ? b.getOrderNo() : 0))
+                .collect(Collectors.toList());
+
+        // Get assignments list
+        List<CourseAssignment> courseAssignments = course.getCourseAssignments().stream().toList();
+        List<CourseRegisResponse.AssignmentItem> assignmentItems = courseAssignments.stream()
+                .map(ca -> CourseRegisResponse.AssignmentItem.builder()
+                        .id(ca.getAssignment().getId())
+                        .title(ca.getAssignment().getTitle())
+                        .openAt(ca.getOpenAt())
+                        .dueAt(ca.getDueAt())
+                        .build())
+                .sorted((a, b) -> {
+                    if (a.getDueAt() == null && b.getDueAt() == null) return 0;
+                    if (a.getDueAt() == null) return 1;
+                    if (b.getDueAt() == null) return -1;
+                    return a.getDueAt().compareTo(b.getDueAt());
+                })
+                .collect(Collectors.toList());
+
+        return buildCourseRegisResponse(course, totalStudents, contentItems, assignmentItems);
     }
     private Map<Long, Long> listToObjectMap(List<Object[]> list) {
         if (list == null || list.isEmpty()) {
@@ -295,38 +298,31 @@ public class CourseServicesImpl implements CourseServices {
     private CourseRegisResponse buildCourseRegisResponse(
             Course course,
             Long totalStudents,
-            Long lessonsCountTotal, // Total lessons (total content)
-            Long assignmentsCount
+            List<CourseRegisResponse.ContentItem> contents,
+            List<CourseRegisResponse.AssignmentItem> assignments
     ) {
-        // 1. Lấy Entity người tạo
-        User creator = course.getCreator(); // Giả định quan hệ @ManyToOne hoạt động
-
-        // 2. TÍNH TOÁN các trường cần thiết cho Giảng viên (InstructorInfo)
+        User creator = course.getCreator();
         Long creatorId = creator.getId();
 
-        // Giả định: Bạn đã viết các phương thức Repository/Service để lấy các giá trị này
-        // CẦN THIẾT: Giả định các hàm này tồn tại hoặc bạn phải tự tính toán:
         Long coursesCountByCreator = courseRepository.countCoursesByCreatorId(creatorId);
         Long totalStudentViews = enrollmentRepository.countTotalStudentsByCreatorId(creatorId);
 
-        // 3. Ánh xạ Instructor Info (Đã truyền giá trị vào)
         CourseRegisResponse.InstructorInfo instructorInfo = CourseRegisResponse.InstructorInfo.builder()
                 .id(creatorId)
                 .name(creator.getName())
                 .email(creator.getEmail())
-                .coursesCount(coursesCountByCreator) // <--- TRUYỀN GIÁ TRỊ TÍNH TOÁN
-                .studentViews(totalStudentViews)     // <--- TRUYỀN GIÁ TRỊ TÍNH TOÁN
+                .coursesCount(coursesCountByCreator)
+                .studentViews(totalStudentViews)
                 .build();
-
 
         return CourseRegisResponse.builder()
                 .id(course.getId())
                 .name(course.getName())
                 .description(course.getDescription())
                 .totalStudents(totalStudents)
-                .lessonsCount(lessonsCountTotal)
-                .totalAssignments(assignmentsCount)
                 .instructor(instructorInfo)
+                .contents(contents)
+                .assignments(assignments)
                 .build();
     }
     @Override
