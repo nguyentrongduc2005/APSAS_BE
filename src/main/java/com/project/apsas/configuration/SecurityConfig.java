@@ -1,8 +1,6 @@
 package com.project.apsas.configuration;
 
-import com.project.apsas.enums.Role;
-import lombok.RequiredArgsConstructor;
-import org.apache.catalina.filters.CorsFilter;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -23,6 +21,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtGra
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 
 import javax.crypto.spec.SecretKeySpec;
 
@@ -41,23 +40,11 @@ public class SecurityConfig {
             "/auth/verify",
             "/auth/refresh-token",
             "/auth/resend-code",
-            "/api/courses",
-            "/api/me",
-            "/feedback",
-            "/submission",
-            "/ai",
-            "/test",
-            "login/oauth2/**",
-            "teacher/stats/total-students"
     };
 
     private final String[] PUBLIC_ENDPOINTS_GET = {
             "/courses",
-            "/courses/{courseId}/register-details",
-            "/progress/{studentId}",
-            "/submissions/**",
-            "/tutorials",
-            "/tutorials/**",
+            "/courses/{courseId}/register-details"
     };
 
     @Bean
@@ -95,12 +82,13 @@ public class SecurityConfig {
         corsConfiguration.addAllowedOrigin("http://localhost:5173");
         corsConfiguration.addAllowedHeader("*");
         corsConfiguration.addAllowedMethod("*");
+        corsConfiguration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource basedCorsConfigurationSource = new UrlBasedCorsConfigurationSource();
         basedCorsConfigurationSource.registerCorsConfiguration("/**",corsConfiguration);
 
 
-        return new CorsFilter();
+        return new CorsFilter(basedCorsConfigurationSource);
     }
 
 

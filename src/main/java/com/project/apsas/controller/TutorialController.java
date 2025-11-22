@@ -12,6 +12,7 @@ import com.project.apsas.dto.response.assignment.CreateAssignmentResponse;
 import com.project.apsas.dto.response.content.CreateContentResponse;
 import com.project.apsas.dto.response.content.UpdateContentResponse;
 import com.project.apsas.dto.response.tutorial.CreateTutorialResponse;
+import com.project.apsas.dto.response.tutorial.DetailAssignmentResponse;
 import com.project.apsas.dto.response.tutorial.DetailContentResponse;
 import com.project.apsas.dto.response.tutorial.DetailTutorialResponse;
 import com.project.apsas.service.AssignmentService;
@@ -31,6 +32,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -178,6 +180,15 @@ public class TutorialController {
                 .code("ok")
                 .message("Tutorial submitted for review successfully")
                 .data(tutorialService.submitTutorialForReview(tutorialId))
+                .build();
+    }
+    @PreAuthorize("hasRole('PROVIDER')")
+    @GetMapping("/assignments/{assignmentId}")
+    public ApiResponse<DetailAssignmentResponse> getAssignmentDetail(@PathVariable Long assignmentId) throws JsonProcessingException {
+        return ApiResponse.<DetailAssignmentResponse>builder()
+                .code("ok")
+                .message("successfully get tutorial")
+                .data(assignmentService.detailAssignmentTutorial(assignmentId))
                 .build();
     }
     @GetMapping

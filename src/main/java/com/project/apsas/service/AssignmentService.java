@@ -6,6 +6,7 @@ import com.project.apsas.dto.request.assignment.AssignmentListItemDTO;
 import com.project.apsas.dto.request.assignment.CreateAssigmentRequest;
 import com.project.apsas.dto.request.assignment.UpdateAssignmentRequest;
 import com.project.apsas.dto.response.assignment.CreateAssignmentResponse;
+import com.project.apsas.dto.response.tutorial.DetailAssignmentResponse;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -20,4 +21,7 @@ public interface AssignmentService {
     List<AssignmentListItemDTO> getAssignmentsByCourseId(Long courseId);
 
     AssignmentDetailDTO getAssignmentDetail(Long courseId, Long assignmentId);
+
+    public DetailAssignmentResponse detailAssignmentTutorial(Long assignmentId) throws JsonProcessingException;
+
 }

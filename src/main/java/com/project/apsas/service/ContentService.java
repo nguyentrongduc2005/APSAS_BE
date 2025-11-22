@@ -6,6 +6,7 @@ import com.project.apsas.dto.request.content.UpdateContentRequest;
 import com.project.apsas.dto.response.assignment.CreateAssignmentResponse;
 import com.project.apsas.dto.response.content.CreateContentResponse;
 import com.project.apsas.dto.response.content.UpdateContentResponse;
+import com.project.apsas.dto.response.tutorial.DetailAssignmentResponse;
 import com.project.apsas.dto.response.tutorial.DetailContentResponse;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -20,5 +21,6 @@ public interface ContentService {
     );
 
     public DetailContentResponse detailContentTutorial(Long contentId);
+
 
 }
