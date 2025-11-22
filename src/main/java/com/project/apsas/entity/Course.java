@@ -40,7 +40,7 @@ public class Course {
     @Column(name = "avatar_url", length = 255)
     private String avatarUrl;
 
-    @Column(name = "limit")
+    @Column(name = "`limit`")
     private Integer limit;
 
     @Column(name = "created_at", insertable = false, updatable = false)

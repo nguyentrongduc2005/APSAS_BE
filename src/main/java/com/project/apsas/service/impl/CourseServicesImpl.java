@@ -3,9 +3,6 @@ package com.project.apsas.service.impl;
 import com.project.apsas.dto.request.CreateCourseFromTutorialRequest;
 import com.project.apsas.dto.request.course.JoinCourseRequest;
 import com.project.apsas.dto.response.*;
-import com.project.apsas.dto.response.course.AssignmentResourceDTO;
-import com.project.apsas.dto.response.course.ContentResourceDTO;
-import com.project.apsas.dto.response.course.CourseResourceListDTO;
 import com.project.apsas.dto.response.course.JoinCourseResponse;
 import com.project.apsas.dto.teacher.CreateCourseRequestDTO;
 import com.project.apsas.dto.teacher.CreateCourseResponseDTO;
@@ -17,17 +14,20 @@ import com.project.apsas.exception.AppException;
 import com.project.apsas.exception.ErrorCode;
 import com.project.apsas.repository.*;
 import com.project.apsas.service.AuthService;
+import com.project.apsas.service.CloudinaryService;
 import com.project.apsas.service.CourseServices;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.NonFinal;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.util.*;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -44,6 +44,13 @@ public class CourseServicesImpl implements CourseServices {
     private final AssignmentRepository assignmentRepository;
     private final TutorialRepository tutorialRepository;
     private final ContentRepository contentRepository;
+    private final CloudinaryService cloudinaryService;
+
+    @NonFinal
+    @Value("${cloudinary.option.folder-name}")
+    String folder;
+
+
     @Override
     public Page<PublicCourseItem> getPublicCourses(Pageable pageable, String search) {
 
@@ -152,22 +159,9 @@ public class CourseServicesImpl implements CourseServices {
 //                .build();
 //    }
 //            throw new AppException(ErrorCode.BAD_REQUEST);
-    @Override
-    @Transactional(readOnly = true)
-    public CourseResourceListDTO getAvailableResources() {
-        // Lấy tất cả content có thể sử dụng
-        List<ContentResourceDTO> contents = contentRepository
-                .findAvailableContents();
-        // Lấy tất cả assignment có thể sử dụng
-        List<AssignmentResourceDTO> assignments = assignmentRepository
-                .findAvailableAssignmentsForCourse();
-        return CourseResourceListDTO.builder()
-                .availableContents(contents)
-                .availableAssignments(assignments)
-                .build();
-    }
 
     @Override
+    @Transactional
     public CreateCourseResponseDTO createCourse(CreateCourseRequestDTO request) {
         // Get current user
         String currentIdStr = authService.currentId();
@@ -175,6 +169,10 @@ public class CourseServicesImpl implements CourseServices {
 
         User creator = userRepository.findById(creatorId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        // Validate tutorial exists
+        Tutorial tutorial = tutorialRepository.findById(request.getTutorialId())
+                .orElseThrow(() -> new AppException(ErrorCode.TUTORIAL_NOT_EXISTED));
 
         // Create course
         Course course = Course.builder()
@@ -190,7 +188,7 @@ public class CourseServicesImpl implements CourseServices {
 
         Course savedCourse = courseRepository.save(course);
 
-        // Enroll creator as LECTURER
+        // Enroll creator as TEACHER
         Enrollment creatorEnrollment = Enrollment.builder()
                 .userId(creatorId)
                 .courseId(savedCourse.getId())
@@ -198,40 +196,64 @@ public class CourseServicesImpl implements CourseServices {
                 .build();
         enrollmentRepository.save(creatorEnrollment);
 
-        // Add contents to course
-        if (request.getContentIds() != null && !request.getContentIds().isEmpty()) {
-            List<CourseContent> courseContents = request.getContentIds().stream()
-                    .map(contentId -> CourseContent.builder()
+        // XỬ LÝ CONTENTS (CHỈ ADD NHỮNG CÁI ĐƯỢC CHỌN)
+        int contentsAdded = 0;
+        if (tutorial.getContents() != null && !tutorial.getContents().isEmpty()
+                && request.getSelectedContentIds() != null && !request.getSelectedContentIds().isEmpty()) {
+
+            Set<Long> selectedContentIds = new HashSet<>(request.getSelectedContentIds());
+
+            List<CourseContent> courseContents = tutorial.getContents().stream()
+                    .filter(content -> selectedContentIds.contains(content.getId()))
+                    .map(content -> CourseContent.builder()
                             .courseId(savedCourse.getId())
-                            .contentId(contentId)
+                            .contentId(content.getId())
                             .build())
                     .collect(Collectors.toList());
-            courseContentRepository.saveAll(courseContents);
+
+            if (!courseContents.isEmpty()) {
+                courseContentRepository.saveAll(courseContents);
+                contentsAdded = courseContents.size();
+            }
         }
 
-        // Add assignments to course with schedule
-        if (request.getAssignments() != null && !request.getAssignments().isEmpty()) {
-            List<CourseAssignment> courseAssignments = request.getAssignments().stream()
-                    .map(assignmentSchedule -> {
+        // XỬ LÝ ASSIGNMENTS (CHỈ ADD NHỮNG CÁI CÓ TRONG SCHEDULE LIST)
+        int assignmentsAdded = 0;
+        if (tutorial.getAssignments() != null && !tutorial.getAssignments().isEmpty()
+                && request.getAssignmentSchedules() != null && !request.getAssignmentSchedules().isEmpty()) {
+
+            final Map<Long, CreateCourseRequestDTO.AssignmentScheduleDTO> selectedScheduleMap =
+                    request.getAssignmentSchedules().stream()
+                            .collect(Collectors.toMap(
+                                    CreateCourseRequestDTO.AssignmentScheduleDTO::getAssignmentId,
+                                    dto -> dto,
+                                    (existing, replacement) -> existing
+                            ));
+
+            List<CourseAssignment> courseAssignments = tutorial.getAssignments().stream()
+                    .filter(assignment -> selectedScheduleMap.containsKey(assignment.getId()))
+                    .map(assignment -> {
+                        CreateCourseRequestDTO.AssignmentScheduleDTO schedule = selectedScheduleMap.get(assignment.getId());
+
                         LocalDateTime openAt = null;
                         LocalDateTime dueAt = null;
 
-                        if (assignmentSchedule.getOpenAt() != null) {
-                            openAt = LocalDateTime.parse(assignmentSchedule.getOpenAt());
-                        }
-                        if (assignmentSchedule.getDueAt() != null) {
-                            dueAt = LocalDateTime.parse(assignmentSchedule.getDueAt());
-                        }
+                        if (schedule.getOpenAt() != null) openAt = LocalDateTime.parse(schedule.getOpenAt());
+                        if (schedule.getDueAt() != null) dueAt = LocalDateTime.parse(schedule.getDueAt());
 
                         return CourseAssignment.builder()
                                 .courseId(savedCourse.getId())
-                                .assignmentId(assignmentSchedule.getAssignmentId())
+                                .assignmentId(assignment.getId())
                                 .openAt(openAt)
                                 .dueAt(dueAt)
                                 .build();
                     })
                     .collect(Collectors.toList());
-            courseAssignmentRepository.saveAll(courseAssignments);
+
+            if (!courseAssignments.isEmpty()) {
+                courseAssignmentRepository.saveAll(courseAssignments);
+                assignmentsAdded = courseAssignments.size();
+            }
         }
 
         return CreateCourseResponseDTO.builder()
@@ -239,8 +261,8 @@ public class CourseServicesImpl implements CourseServices {
                 .name(savedCourse.getName())
                 .code(savedCourse.getCode())
                 .message("Course created successfully")
-                .totalContents(request.getContentIds() != null ? request.getContentIds().size() : 0)
-                .totalAssignments(request.getAssignments() != null ? request.getAssignments().size() : 0)
+                .totalContents(contentsAdded)
+                .totalAssignments(assignmentsAdded)
                 .build();
     }
     @Override
@@ -248,39 +270,42 @@ public class CourseServicesImpl implements CourseServices {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
 
-        // 2. Chuẩn bị List ID cho truy vấn BATCH (Chỉ cần 1 phần tử)
+        // Count total students
         List<Long> singleCourseIdList = List.of(courseId);
-
-        // 3. Thực hiện BATCH COUNTING - Lấy các List<Object[]>
-
-        // Học viên
         List<Object[]> studentCountsList = enrollmentRepository.findStudentCountsByCourseIds(singleCourseIdList);
-
-        // Tổng số nội dung (Bài học)
-        List<Object[]> totalLessonsList = courseContentRepository.findTotalLessonsByCourseIds(singleCourseIdList);
-
-        // Tổng số Assignment
-        List<Object[]> assignmentCountsList = courseAssignmentRepository.findAssignmentLessonsByCourseIds(singleCourseIdList);
-
-        // --- SỬA LỖI LỚN: CHUYỂN ĐỔI LIST SANG MAP TRƯỚC KHI SỬ DỤNG ---
-
-        // Sẽ chỉ có tối đa 1 phần tử trong List, nhưng vẫn dùng Stream để đảm bảo an toàn kiểu dữ liệu (Long)
         Map<Long, Long> studentsCountMap = listToObjectMap(studentCountsList);
-        Map<Long, Long> totalLessonsCountMap = listToObjectMap(totalLessonsList);
-        Map<Long, Long> assignmentCountsMap = listToObjectMap(assignmentCountsList);
-
-        // 4. Lấy giá trị chính xác từ Map (đã được đảm bảo là Long -> Long)
         Long totalStudents = studentsCountMap.getOrDefault(courseId, 0L);
-        Long lessonsCountTotal = totalLessonsCountMap.getOrDefault(courseId, 0L);
-        Long assignmentsCount = assignmentCountsMap.getOrDefault(courseId, 0L);
 
-        // 5. Ánh xạ và trả về DTO
-        return buildCourseRegisResponse(
-                course,
-                totalStudents,
-                lessonsCountTotal,
-                assignmentsCount
-        );
+        // Get contents list
+        List<CourseContent> courseContents = course.getContentLinks().stream().toList();
+        List<CourseRegisResponse.ContentItem> contentItems = courseContents.stream()
+                .map(cc -> CourseRegisResponse.ContentItem.builder()
+                        .id(cc.getContent().getId())
+                        .title(cc.getContent().getTitle())
+                        .orderNo(cc.getContent().getOrderNo())
+                        .build())
+                .sorted((a, b) -> Integer.compare(a.getOrderNo() != null ? a.getOrderNo() : 0, 
+                                                   b.getOrderNo() != null ? b.getOrderNo() : 0))
+                .collect(Collectors.toList());
+
+        // Get assignments list
+        List<CourseAssignment> courseAssignments = course.getAssignmentLinks().stream().toList();
+        List<CourseRegisResponse.AssignmentItem> assignmentItems = courseAssignments.stream()
+                .map(ca -> CourseRegisResponse.AssignmentItem.builder()
+                        .id(ca.getAssignment().getId())
+                        .title(ca.getAssignment().getTitle())
+                        .openAt(ca.getOpenAt())
+                        .dueAt(ca.getDueAt())
+                        .build())
+                .sorted((a, b) -> {
+                    if (a.getDueAt() == null && b.getDueAt() == null) return 0;
+                    if (a.getDueAt() == null) return 1;
+                    if (b.getDueAt() == null) return -1;
+                    return a.getDueAt().compareTo(b.getDueAt());
+                })
+                .collect(Collectors.toList());
+
+        return buildCourseRegisResponse(course, totalStudents, contentItems, assignmentItems);
     }
     private Map<Long, Long> listToObjectMap(List<Object[]> list) {
         if (list == null || list.isEmpty()) {
@@ -295,38 +320,31 @@ public class CourseServicesImpl implements CourseServices {
     private CourseRegisResponse buildCourseRegisResponse(
             Course course,
             Long totalStudents,
-            Long lessonsCountTotal, // Total lessons (total content)
-            Long assignmentsCount
+            List<CourseRegisResponse.ContentItem> contents,
+            List<CourseRegisResponse.AssignmentItem> assignments
     ) {
-        // 1. Lấy Entity người tạo
-        User creator = course.getCreator(); // Giả định quan hệ @ManyToOne hoạt động
-
-        // 2. TÍNH TOÁN các trường cần thiết cho Giảng viên (InstructorInfo)
+        User creator = course.getCreator();
         Long creatorId = creator.getId();
 
-        // Giả định: Bạn đã viết các phương thức Repository/Service để lấy các giá trị này
-        // CẦN THIẾT: Giả định các hàm này tồn tại hoặc bạn phải tự tính toán:
         Long coursesCountByCreator = courseRepository.countCoursesByCreatorId(creatorId);
         Long totalStudentViews = enrollmentRepository.countTotalStudentsByCreatorId(creatorId);
 
-        // 3. Ánh xạ Instructor Info (Đã truyền giá trị vào)
         CourseRegisResponse.InstructorInfo instructorInfo = CourseRegisResponse.InstructorInfo.builder()
                 .id(creatorId)
                 .name(creator.getName())
                 .email(creator.getEmail())
-                .coursesCount(coursesCountByCreator) // <--- TRUYỀN GIÁ TRỊ TÍNH TOÁN
-                .studentViews(totalStudentViews)     // <--- TRUYỀN GIÁ TRỊ TÍNH TOÁN
+                .coursesCount(coursesCountByCreator)
+                .studentViews(totalStudentViews)
                 .build();
-
 
         return CourseRegisResponse.builder()
                 .id(course.getId())
                 .name(course.getName())
                 .description(course.getDescription())
                 .totalStudents(totalStudents)
-                .lessonsCount(lessonsCountTotal)
-                .totalAssignments(assignmentsCount)
                 .instructor(instructorInfo)
+                .contents(contents)
+                .assignments(assignments)
                 .build();
     }
     @Override
@@ -661,4 +679,54 @@ public class CourseServicesImpl implements CourseServices {
                 .build();
 
     }
+    @Override
+    @Transactional
+    public CourseAvatarResponseDTO updateCourseAvatar(Long courseId, MultipartFile file) throws IOException {
+        // 1. Validate file
+        if (file == null || file.isEmpty()) {
+            throw new AppException(ErrorCode.VALIDATION_FAILED, "File avatar không được để trống");
+        }
+
+        // 2. Get current user
+        Long userId;
+        try {
+            userId = Long.parseLong(authService.currentId());
+        } catch (NumberFormatException e) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+
+        User currentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        // 3. Validate course exists
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Course không tồn tại"));
+
+        // 4. Upload to Cloudinary
+        String publicId = "course_" + courseId + "_" + UUID.randomUUID().toString();
+        boolean success = false;
+        String avatarUrl = null;
+
+        try {
+            UploadResult uploadResult = cloudinaryService.upload(file, folder + "/courses", publicId);
+            avatarUrl = uploadResult.getUrl();
+            success = true;
+
+            // 6. Update course avatar URL
+            course.setAvatarUrl(avatarUrl);
+            courseRepository.save(course);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // 7. Build response
+        return CourseAvatarResponseDTO.builder()
+                .courseId(courseId)
+                .avatarUrl(avatarUrl)
+                .success(success)
+                .message("Upload avatar thành công")
+                .build();
+    }
+
 }

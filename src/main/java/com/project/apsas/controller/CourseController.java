@@ -3,12 +3,7 @@ package com.project.apsas.controller;
 import com.project.apsas.dto.ApiResponse;
 import com.project.apsas.dto.request.CreateCourseFromTutorialRequest;
 import com.project.apsas.dto.request.course.JoinCourseRequest;
-import com.project.apsas.dto.response.CourseItemStudentResponse;
-import com.project.apsas.dto.response.CourseItemTeacherResponse;
-import com.project.apsas.dto.response.CourseRegisResponse;
-import com.project.apsas.dto.response.CreateCourseResponse;
-import com.project.apsas.dto.response.PublicCourseItem;
-import com.project.apsas.dto.response.course.CourseResourceListDTO;
+import com.project.apsas.dto.response.*;
 import com.project.apsas.dto.response.course.JoinCourseResponse;
 import com.project.apsas.dto.teacher.CreateCourseRequestDTO;
 import com.project.apsas.dto.teacher.CreateCourseResponseDTO;
@@ -20,17 +15,18 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/courses")
 @RequiredArgsConstructor
 public class CourseController {
     private final CourseServices service;
-
 
     //    @PostMapping
 //    public ApiResponse<CourseItemResponse> createCourse(@RequestBody @Valid CreateCourseRequest req) {
@@ -109,13 +105,10 @@ public class CourseController {
         return sortList;
     }
 
-    @GetMapping("/{courseId}/register-details")
-    public ApiResponse<CourseRegisResponse> getRegistrationDetails(@PathVariable Long courseId) {
-
-        // Gọi Service để lấy dữ liệu chi tiết
+    @GetMapping("/{courseId}/teacher-overview")
+    @PreAuthorize("hasAuthority('VIEW_COURSES')")
+    public ApiResponse<CourseRegisResponse> getCourseDetailForTeacher(@PathVariable Long courseId) {
         var data = service.getCourseRegistrationDetails(courseId);
-
-        // Trả về phản hồi chuẩn
         return ApiResponse.<CourseRegisResponse>builder()
                 .code("0")
                 .message("SUCCESS")
@@ -145,17 +138,6 @@ public class CourseController {
                 .data(service.joinCourse(request))
                 .build();
     }
-    @PreAuthorize("hasAuthority('CREATE_COURSE')")
-    @GetMapping("/resources")
-    public ApiResponse<CourseResourceListDTO> getAvailableResources() {
-        CourseResourceListDTO resources = service.getAvailableResources();
-
-        return ApiResponse.<CourseResourceListDTO>builder()
-                .code("ok")
-                .message("RESOURCES_RETRIEVED")
-                .data(resources)
-                .build();
-    }
 
     @PreAuthorize("hasAuthority('CREATE_COURSE')")
     @PostMapping("/create")
@@ -171,4 +153,18 @@ public class CourseController {
                 .build();
     }
 
+    @PostMapping("/{courseId}/avatar")
+    @PreAuthorize("hasAuthority('CREATE_COURSE')")
+    public ApiResponse<CourseAvatarResponseDTO> uploadCourseAvatar(
+            @PathVariable Long courseId,
+            @RequestParam("file") MultipartFile file) throws IOException {
+
+        CourseAvatarResponseDTO response = service.updateCourseAvatar(courseId, file);
+
+        return ApiResponse.<CourseAvatarResponseDTO>builder()
+                .code("ok")
+                .message("AVATAR_UPLOADED_SUCCESS")
+                .data(response)
+                .build();
+    }
 }

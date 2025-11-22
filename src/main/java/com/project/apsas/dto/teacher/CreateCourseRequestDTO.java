@@ -1,6 +1,5 @@
 package com.project.apsas.dto.teacher;
 
-
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -34,11 +33,13 @@ public class CreateCourseRequestDTO {
 
     private Integer limit;
 
-    @NotNull(message = "Contents list cannot be null")
-    private List<Long> contentIds;
 
-    @NotNull(message = "Assignments list cannot be null")
-    private List<AssignmentScheduleDTO> assignments;
+
+    @NotNull(message = "Tutorial ID is required")
+    private Long tutorialId;
+
+    private List<Long> selectedContentIds;
+    private List<AssignmentScheduleDTO> assignmentSchedules;
 
     @Data
     @Builder
@@ -49,7 +50,6 @@ public class CreateCourseRequestDTO {
         private Long assignmentId;
 
         private String openAt; // ISO format: 2024-01-15T10:00:00
-
-        private String dueAt; // ISO format: 2024-01-20T23:59:59
+        private String dueAt;  // ISO format: 2024-01-20T23:59:59
     }
 }
