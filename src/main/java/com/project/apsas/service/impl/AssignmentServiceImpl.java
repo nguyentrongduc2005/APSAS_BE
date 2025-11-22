@@ -55,7 +55,8 @@ public class AssignmentServiceImpl implements AssignmentService {
     AuthService authService;
     CourseAssignmentRepository courseAssignmentRepository;
     NotificationService notificationService;
-
+    Parser markdownParser;
+    HtmlRenderer htmlRenderer;
 
     @Override
     @Transactional
@@ -300,6 +301,9 @@ public class AssignmentServiceImpl implements AssignmentService {
         Assignment assignment = assignmentRepository.findById(assignmentId).orElseThrow(() ->
                 new AppException(ErrorCode.ASSIGNMENT_NOT_EXISTED));
         String markdownInput = assignment.getStatementMd();
+
+
+
         Node document = markdownParser.parse(markdownInput);
         String htmlOutput = htmlRenderer.render(document);
 
