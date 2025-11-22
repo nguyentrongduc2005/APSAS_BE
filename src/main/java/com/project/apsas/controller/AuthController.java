@@ -70,7 +70,7 @@ public class AuthController {
                 .build();
     }
     @PostMapping("/refresh-token")
-    public ApiResponse<LoginResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest request){
+        public ApiResponse<LoginResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest request){
         LoginResponse response = authService.refreshToken(request);
         return ApiResponse.<LoginResponse>builder()
                 .code("OK")
