@@ -20,10 +20,12 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
 import javax.crypto.spec.SecretKeySpec;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -50,7 +52,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity, CustomOAuth2UserService customOAuth2UserService,
                                            OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler) throws Exception {
-        httpSecurity.csrf(AbstractHttpConfigurer::disable);
+        httpSecurity.csrf(AbstractHttpConfigurer::disable).cors(cors -> cors.configurationSource(corsConfigurationSource()));
         httpSecurity.authorizeHttpRequests(request -> request
                         .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.GET, PUBLIC_ENDPOINTS_GET).permitAll()
@@ -76,19 +78,32 @@ public class SecurityConfig {
     }
 
     @Bean
-    public CorsFilter corsFilter(){
-        CorsConfiguration corsConfiguration = new CorsConfiguration();
+    public CorsConfigurationSource corsConfigurationSource(){
+        CorsConfiguration config = new CorsConfiguration();
+        // Origin FE
+        config.setAllowedOrigins(List.of("http://localhost:5173"));
+        // Nếu bạn dùng cookie / Authorization header => cần dòng này
+        config.setAllowCredentials(true);
 
-        corsConfiguration.addAllowedOrigin("http://localhost:5173");
-        corsConfiguration.addAllowedHeader("*");
-        corsConfiguration.addAllowedMethod("*");
-        corsConfiguration.setAllowCredentials(true);
+        // Các method cho phép
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 
-        UrlBasedCorsConfigurationSource basedCorsConfigurationSource = new UrlBasedCorsConfigurationSource();
-        basedCorsConfigurationSource.registerCorsConfiguration("/**",corsConfiguration);
+        // Các header cho phép
+        config.setAllowedHeaders(List.of(
+                "Authorization",
+                "Content-Type",
+                "X-Requested-With",
+                "Accept",
+                "Origin"
+        ));
 
+        // Nếu cần expose header (vd: Authorization) cho FE đọc
+        config.setExposedHeaders(List.of("Authorization"));
 
-        return new CorsFilter(basedCorsConfigurationSource);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        // Áp dụng cho tất cả endpoint
+        source.registerCorsConfiguration("/**", config);
+        return source;
     }
 
 
