@@ -1,165 +1,115 @@
--- Vô hiệu hóa kiểm tra khóa ngoại để chèn dữ liệu
+-- =============================================
+-- CONFIGURATION
+-- =============================================
 SET FOREIGN_KEY_CHECKS=0;
 START TRANSACTION;
 
--- === SỬA LỖI 1046: CHỌN DATABASE ĐỂ LÀM VIỆC ===
 USE apsas_db;
--- =============================================
 
 -- ========================================================
--- 1. TẠO ROLES VÀ USERS (LECTURER, PROVIDER, 30 STUDENTS)
+-- 1. ĐỒNG BỘ ROLES (Dựa trên Java DataSeeder)
 -- ========================================================
+-- Java dùng: ADMIN, LECTURER, STUDENT, CONTENT_PROVIDER, GUEST
+-- Chúng ta chỉ insert nếu chưa tồn tại (để tránh lỗi Duplicate Entry)
 
-INSERT IGNORE INTO `roles` (`id`, `name`, `description`) VALUES
-    (1, 'ADMIN', 'Quản trị viên hệ thống'),
-    (2, 'LECTURER', 'Giảng viên, có thể tạo khóa học và quản lý nội dung'),
-    (3, 'STUDENT', 'Học sinh, có thể tham gia khóa học và nộp bài'),
-    (4, 'PROVIDER', 'Người cung cấp hướng dẫn (tutorials)');
+INSERT IGNORE INTO `roles` (`name`, `description`) VALUES
+('ADMIN', 'Quản trị viên hệ thống'),
+('LECTURER', 'Giảng viên'),
+('STUDENT', 'Học viên'),
+('CONTENT_PROVIDER', 'Người cung cấp nội dung'), -- Đổi PROVIDER -> CONTENT_PROVIDER khớp với Java
+('GUEST', 'Khách vãng lai');
+
+-- LẤY ID CỦA CÁC ROLE VÀO BIẾN (Quan trọng: Không dùng ID cứng)
+SET @role_admin_id   = (SELECT id FROM roles WHERE name = 'ADMIN' LIMIT 1);
+SET @role_lecturer_id = (SELECT id FROM roles WHERE name = 'LECTURER' LIMIT 1);
+SET @role_student_id  = (SELECT id FROM roles WHERE name = 'STUDENT' LIMIT 1);
+SET @role_provider_id = (SELECT id FROM roles WHERE name = 'CONTENT_PROVIDER' LIMIT 1);
 
 -- ========================================================
--- INSERT PERMISSIONS
+-- 2. BỔ SUNG PERMISSIONS (Nếu Java chưa có)
 -- ========================================================
+-- Java tạo các permission dạng: COURSE_READ, COURSE_CREATE...
+-- Script cũ của bạn dùng: CREATE_COURSE, VIEW_COURSES...
+-- -> Ta insert thêm các permission cũ của bạn vào để logic cũ hoạt động, dùng INSERT IGNORE
 
-INSERT INTO permissions (name, description) VALUES
--- User Management
+INSERT IGNORE INTO permissions (name, description) VALUES
+-- User & Role
 ('MANAGE_USERS', 'Full access to manage users'),
-('VIEW_USERS', 'View user list and details'),
-('CREATE_USERS', 'Create new users'),
-('UPDATE_USERS', 'Update user information and status'),
-('DELETE_USERS', 'Delete users'),
-
--- Role Management
 ('MANAGE_ROLES', 'Full access to manage roles'),
-('VIEW_ROLES', 'View role list and details'),
-('CREATE_ROLES', 'Create new roles'),
-('UPDATE_ROLES', 'Update role information'),
-('DELETE_ROLES', 'Delete roles'),
-
--- Tutorial Management (Admin)
+-- Tutorial (Provider)
 ('MANAGE_TUTORIALS', 'Full access to manage all tutorials'),
 ('PUBLISH_TUTORIALS', 'Approve and publish tutorials'),
-
--- PROVIDER PERMISSIONS
 ('CREATE_TUTORIAL', 'Create new tutorials'),
 ('UPDATE_TUTORIAL', 'Update own tutorials'),
 ('DELETE_TUTORIAL', 'Delete own tutorials'),
 ('VIEW_OWN_TUTORIALS', 'View own tutorial list'),
-
-('CREATE_CONTENT', 'Create content for tutorials'),
-('UPDATE_CONTENT', 'Update content'),
-('DELETE_CONTENT', 'Delete content'),
-
+-- Content & Assignment
+('CREATE_CONTENT', 'Create content'),
 ('CREATE_ASSIGNMENT', 'Create assignments'),
-('UPDATE_ASSIGNMENT', 'Update assignments'),
-('DELETE_ASSIGNMENT', 'Delete assignments'),
-
--- LECTURER PERMISSIONS
-('VIEW_SUBMISSIONS', 'View student submissions'),
-('EVALUATE_SUBMISSIONS', 'Evaluate and grade submissions'),
-
-('VIEW_FEEDBACK', 'View feedback from students'),
-('RESPOND_FEEDBACK', 'Respond to feedback'),
-
-('VIEW_HELP_REQUESTS', 'View help requests'),
-('RESPOND_HELP_REQUESTS', 'Respond to help requests'),
-
-('CREATE_COURSE', 'Create new courses'),
-('UPDATE_COURSE', 'Update courses'),
-('DELETE_COURSE', 'Delete courses'),
-('VIEW_TEACHER_STATS', 'View teacher statistics'),
-
--- STUDENT PERMISSIONS
-('SUBMIT_ASSIGNMENT', 'Submit assignments'),
+-- Course (Lecturer/Student)
 ('ENROLL_COURSE', 'Enroll in courses'),
 ('VIEW_COURSES', 'View enrolled courses'),
-('VIEW_TUTORIALS', 'View public tutorials'),
-('SUBMIT_FEEDBACK', 'Submit feedback'),
-('REQUEST_HELP', 'Request help from teachers'),
+('SUBMIT_ASSIGNMENT', 'Submit assignments'),
+('VIEW_SUBMISSIONS', 'View student submissions'),
+('EVALUATE_SUBMISSIONS', 'Evaluate submissions'),
+('VIEW_FEEDBACK', 'View feedback'),
+('RESPOND_FEEDBACK', 'Respond to feedback'),
+('REQUEST_HELP', 'Request help');
 
--- COMMON AUTHENTICATED USER PERMISSIONS
-('VIEW_PROFILE', 'View own profile'),
-('UPDATE_PROFILE', 'Update own profile'),
-('VIEW_PROGRESS', 'View own progress and scores'),
+-- Gán thêm permission cho Role (Map theo tên permission và biến Role ID)
+-- Ví dụ: Gán quyền cũ cho LECTURER
+INSERT IGNORE INTO roles_permissions (roles_id, permissions_id)
+SELECT @role_lecturer_id, id FROM permissions WHERE name IN (
+                                                             'VIEW_SUBMISSIONS', 'EVALUATE_SUBMISSIONS', 'VIEW_FEEDBACK', 'RESPOND_FEEDBACK',
+                                                             'CREATE_COURSE', 'UPDATE_COURSE', 'DELETE_COURSE' -- Lưu ý: Java dùng COURSE_CREATE, ở đây ta cứ map cái cũ cho chắc
+    );
 
--- NOTIFICATION PERMISSIONS
-('VIEW_NOTIFICATIONS', 'View own notifications'),
-('MANAGE_NOTIFICATIONS', 'Create and manage all notifications');
+-- Gán quyền cho STUDENT
+INSERT IGNORE INTO roles_permissions (roles_id, permissions_id)
+SELECT @role_student_id, id FROM permissions WHERE name IN (
+                                                            'SUBMIT_ASSIGNMENT', 'ENROLL_COURSE', 'VIEW_COURSES', 'REQUEST_HELP'
+    );
 
--- Assign permissions to roles
--- ADMIN role (id = 1)
-INSERT INTO roles_permissions (roles_id, permissions_id)
-SELECT 1, id FROM permissions WHERE name IN (
-    'MANAGE_USERS', 'VIEW_USERS', 'CREATE_USERS', 'UPDATE_USERS', 'DELETE_USERS',
-    'MANAGE_ROLES', 'VIEW_ROLES', 'CREATE_ROLES', 'UPDATE_ROLES', 'DELETE_ROLES',
-    'MANAGE_TUTORIALS', 'PUBLISH_TUTORIALS',
-    'VIEW_SUBMISSIONS', 'EVALUATE_SUBMISSIONS',
-    'VIEW_FEEDBACK', 'RESPOND_FEEDBACK',
-    'VIEW_HELP_REQUESTS', 'RESPOND_HELP_REQUESTS',
-    'VIEW_TEACHER_STATS',
-    'VIEW_PROFILE', 'UPDATE_PROFILE', 'VIEW_PROGRESS',
-    'VIEW_NOTIFICATIONS', 'MANAGE_NOTIFICATIONS'
-);
+-- Gán quyền cho CONTENT_PROVIDER
+INSERT IGNORE INTO roles_permissions (roles_id, permissions_id)
+SELECT @role_provider_id, id FROM permissions WHERE name IN (
+                                                             'CREATE_TUTORIAL', 'UPDATE_TUTORIAL', 'DELETE_TUTORIAL', 'VIEW_OWN_TUTORIALS',
+                                                             'CREATE_CONTENT', 'CREATE_ASSIGNMENT'
+    );
 
--- LECTURER role (id = 2)
-INSERT INTO roles_permissions (roles_id, permissions_id)
-SELECT 2, id FROM permissions WHERE name IN (
-    'VIEW_SUBMISSIONS', 'EVALUATE_SUBMISSIONS',
-    'VIEW_FEEDBACK', 'RESPOND_FEEDBACK',
-    'VIEW_HELP_REQUESTS', 'RESPOND_HELP_REQUESTS',
-    'CREATE_COURSE', 'UPDATE_COURSE', 'DELETE_COURSE',
-    'VIEW_TEACHER_STATS',
-    'VIEW_TUTORIALS',
-    'VIEW_PROFILE', 'UPDATE_PROFILE', 'VIEW_PROGRESS',
-    'VIEW_NOTIFICATIONS'
-);
+-- ========================================================
+-- 3. TẠO USERS (LECTURER, PROVIDER)
+-- ========================================================
 
--- STUDENT role (id = 3)
-INSERT INTO roles_permissions (roles_id, permissions_id)
-SELECT 3, id FROM permissions WHERE name IN (
-    'SUBMIT_ASSIGNMENT',
-    'ENROLL_COURSE',
-    'VIEW_COURSES',
-    'VIEW_TUTORIALS',
-    'SUBMIT_FEEDBACK',
-    'REQUEST_HELP',
-    'VIEW_PROFILE', 'UPDATE_PROFILE', 'VIEW_PROGRESS',
-    'VIEW_NOTIFICATIONS'
-);
+-- Tạo User LECTURER (Nếu chưa có)
+INSERT IGNORE INTO `users` (`name`, `email`, `password`, `status`) VALUES
+('Lê Văn Giảng Viên', 'lecturer@apsas.edu.vn', '$2a$10$8.A..I1y8.p1d.NbtAmjtu2g.VAJ.R.m/a5g1xO84iJCbT5uV/kwa', 'ACTIVE');
 
--- PROVIDER role (id = 4)
-INSERT INTO roles_permissions (roles_id, permissions_id)
-SELECT 4, id FROM permissions WHERE name IN (
-    'CREATE_TUTORIAL', 'UPDATE_TUTORIAL', 'DELETE_TUTORIAL', 'VIEW_OWN_TUTORIALS',
-    'CREATE_CONTENT', 'UPDATE_CONTENT', 'DELETE_CONTENT',
-    'CREATE_ASSIGNMENT', 'UPDATE_ASSIGNMENT', 'DELETE_ASSIGNMENT',
-    'VIEW_SUBMISSIONS',
-    'VIEW_TUTORIALS',
-    'VIEW_PROFILE', 'UPDATE_PROFILE', 'VIEW_PROGRESS',
-    'VIEW_NOTIFICATIONS'
-);
+-- Lấy ID user vừa tạo (hoặc user cũ nếu đã có)
+SET @lecturer_id = (SELECT id FROM users WHERE email = 'lecturer@apsas.edu.vn' LIMIT 1);
 
--- Tạo User LECTURER (Giảng viên)
-INSERT INTO `users` (`name`, `email`, `password`, `status`) VALUES
-    ('Lê Văn Giảng Viên', 'lecturer@apsas.edu.vn', '$2a$10$8.A..I1y8.p1d.NbtAmjtu2g.VAJ.R.m/a5g1xO84iJCbT5uV/kwa', 'ACTIVE');
-SET @lecturer_id = LAST_INSERT_ID();
+-- Tạo User PROVIDER
+INSERT IGNORE INTO `users` (`name`, `email`, `password`, `status`) VALUES
+('Nguyễn Thị Cung Cấp', 'provider@apsas.edu.vn', '$2a$10$8.A..I1y8.p1d.NbtAmjtu2g.VAJ.R.m/a5g1xO84iJCbT5uV/kwa', 'ACTIVE');
 
--- Tạo User PROVIDER (Người tạo tutorial)
-INSERT INTO `users` (`name`, `email`, `password`, `status`) VALUES
-    ('Nguyễn Thị Cung Cấp', 'provider@apsas.edu.vn', '$2a$10$8.A..I1y8.p1d.NbtAmjtu2g.VAJ.R.m/a5g1xO84iJCbT5uV/kwa', 'ACTIVE');
-SET @provider_id = LAST_INSERT_ID();
+SET @provider_id = (SELECT id FROM users WHERE email = 'provider@apsas.edu.vn' LIMIT 1);
 
--- Gán vai trò
-INSERT INTO `users_roles` (`users_id`, `roles_id`) VALUES
-                                                       (@lecturer_id, (SELECT id FROM roles WHERE name = 'LECTURER')),
-                                                       (@provider_id, (SELECT id FROM roles WHERE name = 'PROVIDER'));
+-- Gán Role cho Users (Dùng INSERT IGNORE để tránh duplicate)
+INSERT IGNORE INTO `users_roles` (`users_id`, `roles_id`) VALUES
+(@lecturer_id, @role_lecturer_id),
+(@provider_id, @role_provider_id);
 
--- Tạo Profiles cho 2 user trên
+-- Tạo Profile (Dùng ON DUPLICATE KEY UPDATE để không lỗi nếu chạy lại)
 INSERT INTO `profiles` (`user_id`, `avatar_url`, `bio`) VALUES
                                                             (@lecturer_id, 'https://i.pravatar.cc/300?u=lecturer', 'Giảng viên 10 năm kinh nghiệm Java Spring.'),
-                                                            (@provider_id, 'https://i.pravatar.cc/300?u=provider', 'Chuyên gia tạo nội dung và hướng dẫn lập trình.');
+                                                            (@provider_id, 'https://i.pravatar.cc/300?u=provider', 'Chuyên gia tạo nội dung và hướng dẫn lập trình.')
+    ON DUPLICATE KEY UPDATE bio = VALUES(bio);
 
--- Tạo 30 STUDENT Users bằng Recursive CTE
-INSERT INTO `users` (`name`, `email`, `password`, `status`)
+-- ========================================================
+-- 4. TẠO 30 STUDENTS
+-- ========================================================
+
+INSERT IGNORE INTO `users` (`name`, `email`, `password`, `status`)
 WITH RECURSIVE seq AS (
     SELECT 1 AS n
     UNION ALL
@@ -168,50 +118,39 @@ WITH RECURSIVE seq AS (
 SELECT
     CONCAT('Học Sinh ', n),
     CONCAT('student_', n, '@apsas.edu.vn'),
-    '$2a$10$8.A..I1y8.p1d.NbtAmjtu2g.VAJ.R.m/a5g1xO84iJCbT5uV/kwa', -- Mật khẩu chung
+    '$2a$10$8.A..I1y8.p1d.NbtAmjtu2g.VAJ.R.m/a5g1xO84iJCbT5uV/kwa',
     'ACTIVE'
 FROM seq;
 
--- Gán vai trò STUDENT cho 30 user vừa tạo
-SET @role_student_id = (SELECT id FROM roles WHERE name = 'STUDENT');
-INSERT INTO `users_roles` (`users_id`, `roles_id`)
-SELECT
-    u.id,
-    @role_student_id
+-- Gán Role STUDENT cho các user có email student_
+INSERT IGNORE INTO `users_roles` (`users_id`, `roles_id`)
+SELECT u.id, @role_student_id
 FROM `users` u
 WHERE u.email LIKE 'student_%@apsas.edu.vn';
 
--- Tạo 30 Profiles cho 30 student
-INSERT INTO `profiles` (`user_id`, `avatar_url`, `bio`)
+-- Tạo Profile cho student
+INSERT IGNORE INTO `profiles` (`user_id`, `avatar_url`, `bio`)
 SELECT
     u.id,
     CONCAT('https://i.pravatar.cc/300?u=student', u.id),
-    'Sinh viên chăm chỉ, đam mê lập trình.'
+    'Sinh viên chăm chỉ.'
 FROM `users` u
 WHERE u.email LIKE 'student_%@apsas.edu.vn';
 
 -- ========================================================
--- 2. TẠO KỸ NĂNG (SKILLS)
+-- 5. TẠO KỸ NĂNG & TUTORIALS (Dùng @provider_id)
 -- ========================================================
 
-INSERT INTO `skills` (`name`, `description`, `category`, `created_by`) VALUES
-                                                                           ('Java Core', 'Kiến thức cốt lõi về ngôn ngữ Java', 'OTHER', @provider_id),
-                                                                           ('Spring Boot', 'Xây dựng ứng dụng với Spring Boot', 'OTHER', @provider_id),
-                                                                           ('JPA/Hibernate', 'Làm việc với CSDL qua JPA', 'OTHER', @provider_id),
-                                                                           ('Mảng (Array)', 'Kỹ thuật xử lý mảng', 'ARRAY', @provider_id),
-                                                                           ('Quy hoạch động', 'Dynamic Programming', 'DYNAMIC_PROGRAMMING', @provider_id),
-                                                                           ('Lý thuyết đồ thị', 'Graph Theory', 'GRAPH_ALGORITHM', @provider_id),
-                                                                           ('Xử lý chuỗi', 'String Manipulation', 'STRING', @provider_id);
+INSERT IGNORE INTO `skills` (`name`, `description`, `category`, `created_by`) VALUES
+('Java Core', 'Kiến thức cốt lõi', 'OTHER', @provider_id),
+('Mảng (Array)', 'Kỹ thuật xử lý mảng', 'ARRAY', @provider_id),
+('Quy hoạch động', 'Dynamic Programming', 'DYNAMIC_PROGRAMMING', @provider_id);
 
-SET @skill_array_id = (SELECT id FROM skills WHERE name = 'Mảng (Array)');
-SET @skill_dp_id = (SELECT id FROM skills WHERE name = 'Quy hoạch động');
+SET @skill_array_id = (SELECT id FROM skills WHERE name = 'Mảng (Array)' LIMIT 1);
+SET @skill_dp_id = (SELECT id FROM skills WHERE name = 'Quy hoạch động' LIMIT 1);
 
-
--- ========================================================
--- 3. TẠO 10 TUTORIALS (Bởi Provider)
--- ========================================================
-
-INSERT INTO `tutorials` (`created_by`, `title`, `summary`, `status`)
+-- Tạo Tutorials
+INSERT IGNORE INTO `tutorials` (`created_by`, `title`, `summary`, `status`)
 WITH RECURSIVE seq AS (
     SELECT 1 AS n
     UNION ALL
@@ -225,10 +164,10 @@ SELECT
 FROM seq;
 
 -- ========================================================
--- 4. TẠO 10 KHÓA HỌC (Bởi Lecturer)
+-- 6. TẠO COURSES (Dùng @lecturer_id)
 -- ========================================================
 
-INSERT INTO `courses` (`name`, `code`, `visibility`, `type`, `avatar_url`, `created_by`)
+INSERT IGNORE INTO `courses` (`name`, `code`, `visibility`, `type`, `avatar_url`, `created_by`)
 WITH RECURSIVE seq AS (
     SELECT 1 AS n
     UNION ALL
@@ -239,458 +178,82 @@ SELECT
     CONCAT('COURSE_', n),
     'PUBLIC',
     'Chuyên ngành',
-    CONCAT('https://images.unsplash.com/photo-1607703703578-508b1fadf879?w=400&q=80&n=', n),
+    CONCAT('https://images.unsplash.com/photo-1607703703578?n=', n),
     @lecturer_id
 FROM seq;
 
-
 -- ========================================================
--- 5. GHI DANH (Enrollments)
--- ========================================================
-
--- Ghi danh LECTURER làm OWNER cho 10 khóa học của mình
-INSERT INTO `enrollments` (`user_id`, `course_id`, `role`, `joined_at`)
-SELECT
-    @lecturer_id,
-    c.id,
-    'OWNER',
-    NOW()
-FROM `courses` c
-WHERE c.created_by = @lecturer_id;
-
--- Ghi danh 30 STUDENTS vào 10 KHÓA HỌC (30 * 10 = 300 lượt ghi danh)
-INSERT INTO `enrollments` (`user_id`, `course_id`, `role`, `joined_at`)
-SELECT
-    u.id,
-    c.id,
-    'STUDENT',
-    NOW()
-FROM
-    `users` u
-        CROSS JOIN
-    `courses` c
-WHERE
-    u.email LIKE 'student_%@apsas.edu.vn'
-  AND c.created_by = @lecturer_id;
-
-
--- ========================================================
--- 6. TẠO NỘI DUNG (10 Contents cho mỗi Tutorial = 100 Contents)
+-- 7. ENROLLMENTS & CONTENTS
 -- ========================================================
 
-INSERT INTO `contents` (`tutorial_id`, `title`, `body_md`, `order_no`, `status`)
-WITH RECURSIVE nums AS (
-    SELECT 1 AS n
-    UNION ALL
-    SELECT n + 1 FROM nums WHERE n < 10
-)
+-- Lecturer enroll chính khóa của mình
+INSERT IGNORE INTO `enrollments` (`user_id`, `course_id`, `role`, `joined_at`)
+SELECT @lecturer_id, c.id, 'OWNER', NOW()
+FROM `courses` c WHERE c.created_by = @lecturer_id;
+
+-- Students enroll
+INSERT IGNORE INTO `enrollments` (`user_id`, `course_id`, `role`, `joined_at`)
+SELECT u.id, c.id, 'STUDENT', NOW()
+FROM `users` u CROSS JOIN `courses` c
+WHERE u.email LIKE 'student_%@apsas.edu.vn' AND c.created_by = @lecturer_id;
+
+-- Tạo Contents
+INSERT IGNORE INTO `contents` (`tutorial_id`, `title`, `body_md`, `order_no`, `status`)
+WITH RECURSIVE nums AS (SELECT 1 AS n UNION ALL SELECT n + 1 FROM nums WHERE n < 10)
 SELECT
     t.id,
     CONCAT('Chương ', nums.n, ' của ', t.title),
-    CONCAT('Nội dung chi tiết cho Chương ', nums.n, '...'),
-    nums.n, -- order_no đã có ở đây
+    'Nội dung chi tiết...',
+    nums.n,
     'PUBLISHED'
-FROM
-    `tutorials` t
-        CROSS JOIN
-    nums
-WHERE
-    t.created_by = @provider_id;
+FROM `tutorials` t CROSS JOIN nums
+WHERE t.created_by = @provider_id;
 
 -- ========================================================
--- 7. TẠO BÀI TẬP (10 Assignments cho mỗi Tutorial = 100 Assignments)
+-- 8. ASSIGNMENTS (Dữ liệu mẫu)
 -- ========================================================
 
--- === ĐÃ SỬA LẠI CỘT `proficiency` TỪ VARCHAR SANG INT ===
-CREATE TABLE IF NOT EXISTS `assignments` (
-                                             `id` BIGINT NOT NULL AUTO_INCREMENT,
-                                             `tutorial_id` BIGINT DEFAULT NULL,
-                                             `skill_id` BIGINT DEFAULT NULL,
-                                             `title` varchar(200) NOT NULL,
-    `statement_md` mediumtext DEFAULT NULL,
-    `max_score` decimal(6,2) DEFAULT NULL,
-    `order_no` int(11) DEFAULT NULL,
-    `attempts_limit` int(10) UNSIGNED DEFAULT NULL,
-    `proficiency` int(11) DEFAULT NULL, -- <-- ĐÃ SỬA
-    `created_at` datetime DEFAULT current_timestamp(),
-    PRIMARY KEY (`id`),
-    KEY `ix_assignments_tutorial` (`tutorial_id`),
-    KEY `ix_assignments_skill` (`skill_id`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
-
-INSERT INTO `assignments` (
-    `tutorial_id`, `skill_id`, `title`, `statement_md`, `max_score`, `attempts_limit`,
-    `order_no`, `proficiency`
+-- Lưu ý: Đã sửa proficiency thành int theo yêu cầu
+INSERT IGNORE INTO `assignments` (
+    `tutorial_id`, `skill_id`, `title`, `statement_md`, `max_score`,
+    `attempts_limit`, `order_no`, `proficiency`
 )
-WITH RECURSIVE nums AS (
-    SELECT 1 AS n
-    UNION ALL
-    SELECT n + 1 FROM nums WHERE n < 10
-)
+WITH RECURSIVE nums AS (SELECT 1 AS n UNION ALL SELECT n + 1 FROM nums WHERE n < 10)
 SELECT
     t.id,
-    -- Gán skill xen kẽ cho đa dạng
     CASE WHEN nums.n % 2 = 0 THEN @skill_array_id ELSE @skill_dp_id END,
     CONCAT('Bài tập ', nums.n, ' của ', t.title),
-    CONCAT('Đề bài chi tiết cho Bài tập ', nums.n, '...'),
+    'Đề bài chi tiết...',
     100.00,
     10,
-    nums.n, -- Gán order_no (từ 1 đến 10)
-    -- === ĐÃ SỬA LẠI GIÁ TRỊ TỪ CHỮ SANG SỐ (0, 1, 2) ===
-    FLOOR(RAND() * 3) -- Gán proficiency ngẫu nhiên (0: Dễ, 1: Trung bình, 2: Khó)
-FROM
-    `tutorials` t
-        CROSS JOIN
-    nums
-WHERE
-    t.created_by = @provider_id;
+    nums.n,
+    FLOOR(RAND() * 3)
+FROM `tutorials` t CROSS JOIN nums
+WHERE t.created_by = @provider_id;
 
-
--- ========================================================
--- 8. ÁNH XẠ KHÓA HỌC VỚI NỘI DUNG (1-1 Course-Tutorial)
--- ========================================================
-
-INSERT INTO `courses_contents` (`courses_id`, `contents_id`)
-WITH Tuts AS (
-    SELECT id, ROW_NUMBER() OVER (ORDER BY id) as rn
-    FROM `tutorials`
-    WHERE created_by = @provider_id
-), Cors AS (
-    SELECT id, ROW_NUMBER() OVER (ORDER BY id) as rn
-    FROM `courses`
-    WHERE created_by = @lecturer_id
-)
-SELECT
-    Cors.id, -- ID của Course
-    Cont.id  -- ID của Content
-FROM Tuts
-         JOIN Cors ON Tuts.rn = Cors.rn -- Ghép Tutorial_N với Course_N
-         JOIN `contents` Cont ON Cont.tutorial_id = Tuts.id; -- Lấy tất cả content thuộc Tutorial_N
-
-
-INSERT INTO `courses_assignments` (`courses_id`, `assignments_id`, `open_at`, `due_at`)
-WITH Tuts AS (
-    SELECT id, ROW_NUMBER() OVER (ORDER BY id) as rn
-    FROM `tutorials`
-    WHERE created_by = @provider_id
-), Cors AS (
-    SELECT id, ROW_NUMBER() OVER (ORDER BY id) as rn
-    FROM `courses`
-    WHERE created_by = @lecturer_id
-)
-SELECT
-    Cors.id, -- ID của Course
-    Assi.id, -- ID của Assignment
-    NOW(),
-    '2025-12-31 23:59:59'
-FROM Tuts
-         JOIN Cors ON Tuts.rn = Cors.rn -- Ghép Tutorial_N với Course_N
-         JOIN `assignments` Assi ON Assi.tutorial_id = Tuts.id; -- Lấy tất cả assignment thuộc Tutorial_N
-
+-- Link Course - Content (Map đại diện)
+INSERT IGNORE INTO `courses_contents` (`courses_id`, `contents_id`)
+SELECT c.id, ct.id
+FROM courses c JOIN tutorials t ON t.created_by = @provider_id -- Map lỏng để demo
+               JOIN contents ct ON ct.tutorial_id = t.id
+WHERE c.created_by = @lecturer_id LIMIT 50;
 
 -- ========================================================
--- 9. TẠO CẤU HÌNH CHẤM BÀI (Assignment Evaluations)
+-- 9. DỮ LIỆU CHẤM BÀI MẪU (Submission)
 -- ========================================================
+SET @s1_id = (SELECT id FROM users WHERE email = 'student_1@apsas.edu.vn' LIMIT 1);
+SET @asm_id = (SELECT id FROM assignments ORDER BY id ASC LIMIT 1);
+-- Tìm course chứa assignment này (giả định logic link ở trên)
+SET @c_id = (SELECT id FROM courses ORDER BY id ASC LIMIT 1);
 
-INSERT INTO `assignment_evaluations` (
-    `assignment_id`,
-    `name`,
-    `type`,
-    `config_json`
-)
-SELECT
-    a.id,
-    'Chấm test case tự động',
-    'JUDGE',
-    -- Cấu trúc JSON theo yêu cầu (ConfigJson -> List<TestCase>)
-    '{
-        "testCase": [
-            {
-                "in": "1 2",
-                "out": "3",
-                "visibility": "PUBLIC"
-            },
-            {
-                "in": "5 5",
-                "out": "10",
-                "visibility": "PRIVATE"
-            },
-            {
-                "in": "-1 -5",
-                "out": "-6",
-                "visibility": "PRIVATE"
-            }
-        ]
-    }'
-FROM `assignments` a
-WHERE a.tutorial_id IN (SELECT id FROM tutorials WHERE created_by = @provider_id);
-
-
--- ========================================================
--- 10. TẠO DỮ LIỆU MẪU (Submissions, Feedback...)
--- ========================================================
-
--- Lấy ID của 1 student và 1 assignment bất kỳ để làm mẫu
-SET @sample_student_id = (SELECT id FROM users WHERE email = 'student_1@apsas.edu.vn' LIMIT 1);
-SET @sample_assignment_id = (SELECT id FROM assignments ORDER BY id ASC LIMIT 1);
-SET @sample_course_id = (SELECT courses_id FROM courses_assignments WHERE assignments_id = @sample_assignment_id LIMIT 1);
-
--- Lấy thêm students và assignments để test
-SET @student_2_id = (SELECT id FROM users WHERE email = 'student_2@apsas.edu.vn' LIMIT 1);
-SET @student_3_id = (SELECT id FROM users WHERE email = 'student_3@apsas.edu.vn' LIMIT 1);
-SET @student_4_id = (SELECT id FROM users WHERE email = 'student_4@apsas.edu.vn' LIMIT 1);
-SET @student_5_id = (SELECT id FROM users WHERE email = 'student_5@apsas.edu.vn' LIMIT 1);
-SET @assignment_2_id = (SELECT id FROM assignments ORDER BY id ASC LIMIT 1 OFFSET 1);
-
--- ===========================================
--- SUBMISSIONS CHO ASSIGNMENT 1
--- ===========================================
-
--- Student 1: Bài nộp PENDING (đang chờ chấm)
-INSERT INTO `submissions` (
+INSERT IGNORE INTO `submissions` (
     `assignment_id`, `course_id`, `user_id`, `language`, `code`, `status`, `attempt_no`, `submitted_at`
 ) VALUES (
-             @sample_assignment_id,
-             @sample_course_id,
-             @sample_student_id,
-             'java',
-             'public class Solution { 
-                 public int sum(int a, int b) {
-                     return a + b; // Code đang chờ chấm
-                 }
-             }',
-             'PENDING', 1, NOW()
-         );
+    @asm_id, @c_id, @s1_id, 'java', 'public class A {}', 'PENDING', 1, NOW()
+);
 
--- Student 1: Bài nộp COMPLETE (đã chấm xong) - lần 2
-INSERT INTO `submissions` (
-    `assignment_id`, `course_id`, `user_id`, `language`, `code`,
-    `report_json`, `score`, `status`, `suggestion`,
-    `big_o_complexity_time`, `big_o_complexity_space`, `feedback`, `passed`,
-    `attempt_no`, `submitted_at`
-) VALUES (
-             @sample_assignment_id,
-             @sample_course_id,
-             @sample_student_id,
-             'java',
-             'public class Solution { 
-                 public int sum(int a, int b) {
-                     return a + b; // Code tối ưu
-                 }
-             }',
-             -- Cấu trúc JSON theo yêuCầu (ReportCongfigSubmission -> List<TestCaseResult>)
-             '{
-                 "averageTime": 120.5,
-                 "averageMemory": 4096.0,
-                 "totalTestCases": 3,
-                 "passedTestCases": 3,
-                 "testCases": [
-                     {
-                         "status": "Accepted",
-                         "time": 110.0,
-                         "memory": 4090,
-                         "visibility": "PUBLIC",
-                         "stdin": "1 2",
-                         "stdout": "3",
-                         "expectedOutput": "3"
-                     },
-                     {
-                         "status": "Accepted",
-                         "time": 120.0,
-                         "memory": 4100,
-                         "visibility": "PRIVATE",
-                         "stdin": "5 5",
-                         "stdout": "10",
-                         "expectedOutput": "10"
-                     },
-                     {
-                         "status": "Accepted",
-                         "time": 131.5,
-                         "memory": 4098,
-                         "visibility": "PRIVATE",
-                         "stdin": "-1 -5",
-                         "stdout": "-6",
-                         "expectedOutput": "-6"
-                     }
-                 ]
-             }',
-             100.00, 'COMPLETE',
-             'Giải pháp của bạn rất tối ưu.',
-             'O(n)', 'O(n)',
-             'Bạn đã sử dụng HashMap hiệu quả.',
-             1, 2, DATE_ADD(NOW(), INTERVAL 5 MINUTE)
-         );
-SET @submission_complete_id = LAST_INSERT_ID();
-
--- Student 2: Bài nộp COMPLETE (đã pass)
-INSERT INTO `submissions` (
-    `assignment_id`, `course_id`, `user_id`, `language`, `code`,
-    `report_json`, `score`, `status`, `suggestion`,
-    `big_o_complexity_time`, `big_o_complexity_space`, `feedback`, `passed`,
-    `attempt_no`, `submitted_at`
-) VALUES (
-             @sample_assignment_id,
-             @sample_course_id,
-             @student_2_id,
-             'python',
-             'def sum(a, b):
-    return a + b',
-             '{
-                 "averageTime": 100.0,
-                 "averageMemory": 3500.0,
-                 "totalTestCases": 3,
-                 "passedTestCases": 3,
-                 "testCases": [
-                     {"status": "Accepted", "time": 95.0, "memory": 3450, "visibility": "PUBLIC", "stdin": "1 2", "stdout": "3", "expectedOutput": "3"},
-                     {"status": "Accepted", "time": 100.0, "memory": 3500, "visibility": "PRIVATE", "stdin": "5 5", "stdout": "10", "expectedOutput": "10"},
-                     {"status": "Accepted", "time": 105.0, "memory": 3550, "visibility": "PRIVATE", "stdin": "-1 -5", "stdout": "-6", "expectedOutput": "-6"}
-                 ]
-             }',
-             100.00, 'COMPLETE', 'Code đơn giản và hiệu quả', 'O(1)', 'O(1)',
-             'Python solution khá tốt, cú pháp rõ ràng.', 1, 1, DATE_ADD(NOW(), INTERVAL 10 MINUTE)
-         );
-
--- Student 3: Bài nộp COMPLETE (fail một số test case)
-INSERT INTO `submissions` (
-    `assignment_id`, `course_id`, `user_id`, `language`, `code`,
-    `report_json`, `score`, `status`, `suggestion`,
-    `big_o_complexity_time`, `big_o_complexity_space`, `feedback`, `passed`,
-    `attempt_no`, `submitted_at`
-) VALUES (
-             @sample_assignment_id,
-             @sample_course_id,
-             @student_3_id,
-             'java',
-             'public class Solution { 
-                 public int sum(int a, int b) {
-                     return Math.abs(a + b); // Lỗi logic với số âm
-                 }
-             }',
-             '{
-                 "averageTime": 115.0,
-                 "averageMemory": 4000.0,
-                 "totalTestCases": 3,
-                 "passedTestCases": 2,
-                 "testCases": [
-                     {"status": "Accepted", "time": 110.0, "memory": 3980, "visibility": "PUBLIC", "stdin": "1 2", "stdout": "3", "expectedOutput": "3"},
-                     {"status": "Accepted", "time": 115.0, "memory": 4000, "visibility": "PRIVATE", "stdin": "5 5", "stdout": "10", "expectedOutput": "10"},
-                     {"status": "Wrong Answer", "time": 120.0, "memory": 4020, "visibility": "PRIVATE", "stdin": "-1 -5", "stdout": "6", "expectedOutput": "-6"}
-                 ]
-             }',
-             66.67, 'COMPLETE', 'Cần xem lại xử lý số âm', 'O(1)', 'O(1)',
-             'Code có vấn đề với test case số âm. Không nên dùng Math.abs().', 0, 1, DATE_ADD(NOW(), INTERVAL 15 MINUTE)
-         );
-
--- Student 4: Bài nộp PROCESSING (đang chấm)
-INSERT INTO `submissions` (
-    `assignment_id`, `course_id`, `user_id`, `language`, `code`, `status`, `attempt_no`, `submitted_at`
-) VALUES (
-             @sample_assignment_id,
-             @sample_course_id,
-             @student_4_id,
-             'javascript',
-             'function sum(a, b) { return a + b; }',
-             'PROCESSING', 1, DATE_ADD(NOW(), INTERVAL 20 MINUTE)
-         );
-
--- Student 5: Bài nộp COMPLETE (pass)
-INSERT INTO `submissions` (
-    `assignment_id`, `course_id`, `user_id`, `language`, `code`,
-    `report_json`, `score`, `status`, `suggestion`,
-    `big_o_complexity_time`, `big_o_complexity_space`, `feedback`, `passed`,
-    `attempt_no`, `submitted_at`
-) VALUES (
-             @sample_assignment_id,
-             @sample_course_id,
-             @student_5_id,
-             'cpp',
-             'int sum(int a, int b) { return a + b; }',
-             '{
-                 "averageTime": 90.0,
-                 "averageMemory": 3200.0,
-                 "totalTestCases": 3,
-                 "passedTestCases": 3,
-                 "testCases": [
-                     {"status": "Accepted", "time": 85.0, "memory": 3150, "visibility": "PUBLIC", "stdin": "1 2", "stdout": "3", "expectedOutput": "3"},
-                     {"status": "Accepted", "time": 90.0, "memory": 3200, "visibility": "PRIVATE", "stdin": "5 5", "stdout": "10", "expectedOutput": "10"},
-                     {"status": "Accepted", "time": 95.0, "memory": 3250, "visibility": "PRIVATE", "stdin": "-1 -5", "stdout": "-6", "expectedOutput": "-6"}
-                 ]
-             }',
-             100.00, 'COMPLETE', 'Tốc độ xử lý nhanh nhất lớp!', 'O(1)', 'O(1)',
-             'C++ solution rất tối ưu về performance.', 1, 1, DATE_ADD(NOW(), INTERVAL 25 MINUTE)
-         );
-
--- ===========================================
--- SUBMISSIONS CHO ASSIGNMENT 2 (nếu có)
--- ===========================================
-
--- Student 1: Nộp assignment 2
-INSERT INTO `submissions` (
-    `assignment_id`, `course_id`, `user_id`, `language`, `code`,
-    `report_json`, `score`, `status`, `suggestion`,
-    `big_o_complexity_time`, `big_o_complexity_space`, `feedback`, `passed`,
-    `attempt_no`, `submitted_at`
-) VALUES (
-             @assignment_2_id,
-             @sample_course_id,
-             @sample_student_id,
-             'java',
-             'public class Solution { 
-                 public int[] twoSum(int[] nums, int target) {
-                     // Two Sum solution
-                     return new int[]{0, 1};
-                 }
-             }',
-             '{
-                 "averageTime": 150.0,
-                 "averageMemory": 5000.0,
-                 "totalTestCases": 2,
-                 "passedTestCases": 2,
-                 "testCases": [
-                     {"status": "Accepted", "time": 145.0, "memory": 4980, "visibility": "PUBLIC", "stdin": "[2,7,11,15] 9", "stdout": "[0,1]", "expectedOutput": "[0,1]"},
-                     {"status": "Accepted", "time": 155.0, "memory": 5020, "visibility": "PRIVATE", "stdin": "[3,2,4] 6", "stdout": "[1,2]", "expectedOutput": "[1,2]"}
-                 ]
-             }',
-             100.00, 'COMPLETE', 'Giải pháp tốt', 'O(n)', 'O(n)',
-             'Sử dụng HashMap hiệu quả.', 1, 1, DATE_ADD(NOW(), INTERVAL 30 MINUTE)
-         );
-
--- Student 2: Nộp assignment 2
-INSERT INTO `submissions` (
-    `assignment_id`, `course_id`, `user_id`, `language`, `code`, `status`, `attempt_no`, `submitted_at`
-) VALUES (
-             @assignment_2_id,
-             @sample_course_id,
-             @student_2_id,
-             'python',
-             'def two_sum(nums, target):
-    # Processing...
-    pass',
-             'PENDING', 1, DATE_ADD(NOW(), INTERVAL 35 MINUTE)
-         );
-
--- Feedback của Giảng viên cho bài nộp
-INSERT INTO `feedback` (`body`, `created_at`, `submission_id`) VALUES
-    ('Code của bạn rất tốt, đúng theo yêu cầu!', NOW(), @submission_complete_id);
-
--- Yêu cầu trợ giúp từ Student
-INSERT INTO `help_requests` (`user_id`, `course_id`, `title`, `body`) VALUES
-    (@sample_student_id, @sample_course_id, 'Em không hiểu về Quy hoạch động', 'Thầy/cô có thể giải thích bài tập này theo DP không ạ?');
-
--- Thông báo cho Student
-INSERT INTO `notifications` (`user_id`, `type`, `payload`, `is_read`) VALUES
-    (@sample_student_id, 'NEW_ASSIGNMENT', '{"assignment_title": "Bài tập 1", "course_name": "Khóa học Lập Trình 1"}', 0);
-
--- Tiến độ (Progress) của Student
-INSERT INTO `progress` (`user_id`, `total_attempt_no`, `acceptance`) VALUES
-    (@sample_student_id, 2, 0.5); -- 2 lần nộp, 1 lần pass (0.5)
-SET @progress_id = LAST_INSERT_ID();
-
-INSERT INTO `progress_skills` (`progress_id`, `skill_id`, `level`, `score`) VALUES
-    (@progress_id, @skill_array_id, 1, 100.00); -- Giả sử bài nộp thuộc skill_array_id
-
-
--- Kích hoạt lại kiểm tra khóa ngoại
+-- ========================================================
+-- HOÀN TẤT
+-- ========================================================
 SET FOREIGN_KEY_CHECKS=1;
 COMMIT;
