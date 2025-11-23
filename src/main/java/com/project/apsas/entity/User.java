@@ -72,4 +72,8 @@ public class User {
     @ToString.Exclude
     RefreshToken refreshToken;
 
+    public String getAvatarUrl() {
+
+        return "";
+    }
 }
