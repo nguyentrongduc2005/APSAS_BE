@@ -1,0 +1,6 @@
+-- Grant permissions for remote access
+CREATE USER IF NOT EXISTS 'user'@'%' IDENTIFIED BY '1234';
+GRANT ALL PRIVILEGES ON apsas_db.* TO 'user'@'%';
+CREATE USER IF NOT EXISTS 'root'@'%' IDENTIFIED BY '123';
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;
+FLUSH PRIVILEGES;

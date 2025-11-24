@@ -567,7 +567,7 @@ INSERT INTO permissions (name, description) VALUES
 
 -- Assign permissions to roles
 -- ADMIN role (id = 1)
-INSERT INTO roles_permissions (role_id, permission_id)
+INSERT INTO roles_permissions (roles_id, permissions_id)
 SELECT 1, id FROM permissions WHERE name IN (
     'MANAGE_USERS', 'VIEW_USERS', 'CREATE_USERS', 'UPDATE_USERS', 'DELETE_USERS',
     'MANAGE_ROLES', 'VIEW_ROLES', 'CREATE_ROLES', 'UPDATE_ROLES', 'DELETE_ROLES',
@@ -580,7 +580,7 @@ SELECT 1, id FROM permissions WHERE name IN (
 );
 
 -- LECTURER role (id = 2)
-INSERT INTO roles_permissions (role_id, permission_id)
+INSERT INTO roles_permissions (roles_id, permissions_id)
 SELECT 2, id FROM permissions WHERE name IN (
     'VIEW_SUBMISSIONS', 'EVALUATE_SUBMISSIONS',
     'VIEW_FEEDBACK', 'RESPOND_FEEDBACK',
@@ -592,7 +592,7 @@ SELECT 2, id FROM permissions WHERE name IN (
 );
 
 -- STUDENT role (id = 3)
-INSERT INTO roles_permissions (role_id, permission_id)
+INSERT INTO roles_permissions (roles_id, permissions_id)
 SELECT 3, id FROM permissions WHERE name IN (
     'SUBMIT_ASSIGNMENT',
     'ENROLL_COURSE',
@@ -604,7 +604,7 @@ SELECT 3, id FROM permissions WHERE name IN (
 );
 
 -- PROVIDER role (id = 4)
-INSERT INTO roles_permissions (role_id, permission_id)
+INSERT INTO roles_permissions (roles_id, permissions_id)
 SELECT 4, id FROM permissions WHERE name IN (
     'CREATE_TUTORIAL', 'UPDATE_TUTORIAL', 'DELETE_TUTORIAL', 'VIEW_OWN_TUTORIALS',
     'CREATE_CONTENT', 'UPDATE_CONTENT', 'DELETE_CONTENT',
