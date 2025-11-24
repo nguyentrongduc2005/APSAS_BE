@@ -113,6 +113,7 @@ public class CourseServicesImpl implements CourseServices {
         return PublicCourseItem.builder()
                 .id(courseId)
                 .name(course.getName())
+                .url(course.getAvatarUrl())
                 .description(course.getDescription())
                 .studentsCount(studentsCount)
                 .lessonsCount(lessonsCount)
@@ -263,6 +264,83 @@ public class CourseServicesImpl implements CourseServices {
                 .message("Course created successfully")
                 .totalContents(contentsAdded)
                 .totalAssignments(assignmentsAdded)
+                .build();
+    }
+    public CourseRegisPublicReponse getCourseRegistrationDetailss(Long courseId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+
+        // 2. Chuẩn bị List ID cho truy vấn BATCH (Chỉ cần 1 phần tử)
+        List<Long> singleCourseIdList = List.of(courseId);
+
+        // 3. Thực hiện BATCH COUNTING - Lấy các List<Object[]>
+
+        // Học viên
+        List<Object[]> studentCountsList = enrollmentRepository.findStudentCountsByCourseIds(singleCourseIdList);
+
+        // Tổng số nội dung (Bài học)
+        List<Object[]> totalLessonsList = courseContentRepository.findTotalLessonsByCourseIds(singleCourseIdList);
+
+        // Tổng số Assignment
+        List<Object[]> assignmentCountsList = courseAssignmentRepository.findAssignmentLessonsByCourseIds(singleCourseIdList);
+
+        // --- SỬA LỖI LỚN: CHUYỂN ĐỔI LIST SANG MAP TRƯỚC KHI SỬ DỤNG ---
+
+        // Sẽ chỉ có tối đa 1 phần tử trong List, nhưng vẫn dùng Stream để đảm bảo an toàn kiểu dữ liệu (Long)
+        Map<Long, Long> studentsCountMap = listToObjectMap(studentCountsList);
+        Map<Long, Long> totalLessonsCountMap = listToObjectMap(totalLessonsList);
+        Map<Long, Long> assignmentCountsMap = listToObjectMap(assignmentCountsList);
+
+        // 4. Lấy giá trị chính xác từ Map (đã được đảm bảo là Long -> Long)
+        Long totalStudents = studentsCountMap.getOrDefault(courseId, 0L);
+        Long lessonsCountTotal = totalLessonsCountMap.getOrDefault(courseId, 0L);
+        Long assignmentsCount = assignmentCountsMap.getOrDefault(courseId, 0L);
+
+        // 5. Ánh xạ và trả về DTO
+        return buildCourseRegisResponses(
+                course,
+                totalStudents,
+                lessonsCountTotal,
+                assignmentsCount
+        );
+    }
+
+    private CourseRegisPublicReponse buildCourseRegisResponses(
+            Course course,
+            Long totalStudents,
+            Long lessonsCountTotal, // Total lessons (total content)
+            Long assignmentsCount
+    ) {
+        // 1. Lấy Entity người tạo
+        User creator = course.getCreator(); // Giả định quan hệ @ManyToOne hoạt động
+
+        // 2. TÍNH TOÁN các trường cần thiết cho Giảng viên (InstructorInfo)
+        Long creatorId = creator.getId();
+
+        // Giả định: Bạn đã viết các phương thức Repository/Service để lấy các giá trị này
+        // CẦN THIẾT: Giả định các hàm này tồn tại hoặc bạn phải tự tính toán:
+        Long coursesCountByCreator = courseRepository.countCoursesByCreatorId(creatorId);
+        Long totalStudentViews = enrollmentRepository.countTotalStudentsByCreatorId(creatorId);
+
+        // 3. Ánh xạ Instructor Info (Đã truyền giá trị vào)
+        CourseRegisPublicReponse.InstructorInfo instructorInfo = CourseRegisPublicReponse.InstructorInfo.builder()
+                .id(creatorId)
+                .name(creator.getName())
+                .email(creator.getEmail())
+                .coursesCount(coursesCountByCreator) // <--- TRUYỀN GIÁ TRỊ TÍNH TOÁN
+                .studentViews(totalStudentViews)     // <--- TRUYỀN GIÁ TRỊ TÍNH TOÁN
+                .build();
+
+
+        return CourseRegisPublicReponse.builder()
+                .id(course.getId())
+                .name(course.getName())
+                .description(course.getDescription())
+                .url(course.getAvatarUrl())
+                .totalStudents(totalStudents)
+                .lessonsCount(lessonsCountTotal)
+                .totalAssignments(assignmentsCount)
+                .instructor(instructorInfo)
                 .build();
     }
     @Override
