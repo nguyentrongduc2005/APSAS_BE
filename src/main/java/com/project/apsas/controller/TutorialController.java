@@ -11,10 +11,7 @@ import com.project.apsas.dto.request.tutorial.UpdateTutorialRequest;
 import com.project.apsas.dto.response.assignment.CreateAssignmentResponse;
 import com.project.apsas.dto.response.content.CreateContentResponse;
 import com.project.apsas.dto.response.content.UpdateContentResponse;
-import com.project.apsas.dto.response.tutorial.CreateTutorialResponse;
-import com.project.apsas.dto.response.tutorial.DetailAssignmentResponse;
-import com.project.apsas.dto.response.tutorial.DetailContentResponse;
-import com.project.apsas.dto.response.tutorial.DetailTutorialResponse;
+import com.project.apsas.dto.response.tutorial.*;
 import com.project.apsas.service.AssignmentService;
 import com.project.apsas.service.ContentService;
 import com.project.apsas.service.TutorialService;
@@ -191,8 +188,9 @@ public class TutorialController {
                 .data(assignmentService.detailAssignmentTutorial(assignmentId))
                 .build();
     }
+    @PreAuthorize("hasAuthority('RESOURCE_READ')")
     @GetMapping
-    public ApiResponse<Page<CreateTutorialResponse>> getAllTutorials(
+    public ApiResponse<Page<SearchTutorialResponse>> getAllTutorials(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt,desc", required = false) String[] sort,
@@ -200,9 +198,9 @@ public class TutorialController {
     ) {
         Sort sortObj = createSortObject(sort);
         Pageable pageable = PageRequest.of(page, size, sortObj);
-        Page<CreateTutorialResponse> data = tutorialService.searchTutorials(search, pageable);
+        Page<SearchTutorialResponse> data = tutorialService.searchTutorials(search, pageable);
 
-        return ApiResponse.<Page<CreateTutorialResponse>>builder()
+        return ApiResponse.<Page<SearchTutorialResponse>>builder()
                 .code("ok")
                 .message("SUCCESS")
                 .data(data)

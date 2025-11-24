@@ -6,6 +6,7 @@ import com.project.apsas.dto.response.assignment.TutorialAssignmentItemDto;
 import com.project.apsas.dto.response.content.TutorialContentItemDto;
 import com.project.apsas.dto.response.tutorial.CreateTutorialResponse;
 import com.project.apsas.dto.response.tutorial.DetailTutorialResponse;
+import com.project.apsas.dto.response.tutorial.SearchTutorialResponse;
 import com.project.apsas.dto.response.tutorial.TutorialItemDto;
 import com.project.apsas.entity.Assignment;
 import com.project.apsas.entity.Content;
@@ -15,10 +16,7 @@ import com.project.apsas.enums.ContentStatus;
 import com.project.apsas.enums.TutorialStatus;
 import com.project.apsas.exception.AppException;
 import com.project.apsas.exception.ErrorCode;
-import com.project.apsas.repository.AssignmentRepository;
-import com.project.apsas.repository.ContentRepository;
-import com.project.apsas.repository.TutorialRepository;
-import com.project.apsas.repository.UserRepository;
+import com.project.apsas.repository.*;
 import com.project.apsas.service.AuthService;
 import com.project.apsas.service.TutorialService;
 import lombok.AccessLevel;
@@ -29,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -51,6 +50,7 @@ public class TutorialServiceImpl implements TutorialService {
     UserRepository userRepository;
     AssignmentRepository assignmentRepository;
     ContentRepository contentRepository;
+    CourseRepository courseRepository;
 
     @Override
     public CreateTutorialResponse createTutorial(CreateTutorialRequest request) {
@@ -158,7 +158,7 @@ public class TutorialServiceImpl implements TutorialService {
     }
 
     @Override
-    public Page<CreateTutorialResponse> searchTutorials(String keyword, Pageable pageable) {
+    public Page<SearchTutorialResponse> searchTutorials(String keyword, Pageable pageable) {
         Specification<Tutorial> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -173,18 +173,61 @@ public class TutorialServiceImpl implements TutorialService {
                 predicates.add(cb.or(titleLike, summaryLike));
             }
 
+            // Để tránh lỗi N+1 khi đếm assignments/contents, có thể fetch join nếu cần thiết
+            // Tuy nhiên với Pageable, fetch join collection thường gây warning in memory paging.
+            // Ở đây dùng Lazy loading mặc định và transaction để xử lý.
             return cb.and(predicates.toArray(new Predicate[0]));
         };
 
+        // 2. Query lấy danh sách Tutorials
         Page<Tutorial> pageResult = tutorialRepository.findAll(spec, pageable);
 
-        return pageResult.map(t -> CreateTutorialResponse.builder()
-                .id(t.getId())
-                .title(t.getTitle())
-                .summary(t.getSummary())
-                .createdBy(t.getCreatedBy())
-                .status(t.getStatus())
-                .build());
+        // 3. TỐI ƯU HIỆU NĂNG: Bulk Fetch thông tin Creator
+        // Lấy list user ID từ kết quả page
+        Set<Long> userIds = pageResult.getContent().stream()
+                .map(Tutorial::getCreatedBy)
+                .collect(Collectors.toSet());
+
+        // Query 1 lần để lấy map User (Id -> User)
+        Map<Long, User> creatorMap = userRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(User::getId, Function.identity()));
+
+        // 4. Map Entity sang Response DTO
+        return pageResult.map(t -> {
+            // Lấy user từ map đã cache
+            User creator = creatorMap.get(t.getCreatedBy());
+
+            // Xử lý các trường count (bảo vệ null safe)
+            int lessonCount = (t.getContents() != null) ? t.getContents().size() : 0;
+            int assignmentCount = (t.getAssignments() != null) ? t.getAssignments().size() : 0;
+
+            // TODO: Logic cho mediaCount và courseCount
+            // Nếu Content có trường type là VIDEO/IMAGE, bạn có thể filter ở đây
+            int mediaCount = 0;
+            assert t.getContents() != null;
+            for(Content content : t.getContents()) {
+                if(content.getMediaList() != null) {
+                    mediaCount += content.getMediaList().size();
+                }
+            }
+            // Nếu cần đếm Course, gọi repo: courseRepository.countByTutorialId(t.getId())
+            // Lưu ý: Gọi repo trong loop map() sẽ không tốt cho hiệu năng nếu list lớn.
+
+
+            return SearchTutorialResponse.builder()
+                    .id(t.getId())
+                    .title(t.getTitle())
+                    .summary(t.getSummary())
+                    .status(t.getStatus())
+                    // Mapping các số liệu thống kê
+                    .lessonCount(lessonCount)
+                    .assignmentCount(assignmentCount)
+                    .mediaCount(mediaCount)
+                    // Mapping thông tin Creator
+                    .creatorName(creator != null ? creator.getName() : "Unknown User") // Giả định User có getFullName
+                    .creatorAvatar(creator != null ? creator.getAvatarUrl() : null)           // Giả định User có getAvatar
+                    .build();
+        });
     }
     @Override
     public Boolean updateTutorial(UpdateTutorialRequest request, Long tutorialId) {
