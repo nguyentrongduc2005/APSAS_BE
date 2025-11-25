@@ -21,4 +21,5 @@ public interface CourseServices {
     JoinCourseResponse joinCourse(JoinCourseRequest request);
     CreateCourseResponseDTO createCourse(CreateCourseRequestDTO request);
     CourseAvatarResponseDTO updateCourseAvatar(Long courseId, MultipartFile file) throws IOException;
+    public CourseRegisPublicReponse getCourseRegistrationDetailss(Long courseId);
 }

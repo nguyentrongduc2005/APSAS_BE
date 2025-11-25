@@ -4,6 +4,7 @@ import com.project.apsas.dto.request.tutorial.CreateTutorialRequest;
 import com.project.apsas.dto.request.tutorial.UpdateTutorialRequest;
 import com.project.apsas.dto.response.tutorial.CreateTutorialResponse;
 import com.project.apsas.dto.response.tutorial.DetailTutorialResponse;
+import com.project.apsas.dto.response.tutorial.SearchTutorialResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -26,7 +27,7 @@ public interface TutorialService {
     public Boolean updateTutorial(UpdateTutorialRequest request, Long tutorialId);
 
     // API public list tutorial (tìm kiếm + phân trang)
-    Page<CreateTutorialResponse> searchTutorials(String keyword, Pageable pageable);
+    Page<SearchTutorialResponse> searchTutorials(String keyword, Pageable pageable);
 
     public DetailTutorialResponse getTutorialDetail(Long tutorialId);
     
