@@ -374,19 +374,11 @@ public class AuthServiceImpl implements AuthService {
 @Override
 public LoginResponse refreshToken(RefreshTokenRequest request) {
     String refreshTokenValue = request.getRefreshToken();
-
+    Long userId = request.getUserId();
     // Bước 1: Kiểm tra null hoặc empty
-    if (refreshTokenValue == null || refreshTokenValue.trim().isEmpty()) {
+    if (refreshTokenValue == null || refreshTokenValue.trim().isEmpty() || userId == null) {
         throw new AppException(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
     }
-
-    // Bước 2: Lấy user hiện tại từ access token nếu có (hoặc client gửi kèm)
-    String currentUserId = currentId(); // lấy từ SecurityContextHolder
-    if (currentUserId == null) {
-        throw new AppException(ErrorCode.USER_NOT_FOUND);
-    }
-
-    Long userId = Long.parseLong(currentUserId);
 
     // Bước 3: Tìm refresh token theo userId
     RefreshToken refreshToken = refreshTokenRepository.findByUserId(userId)
