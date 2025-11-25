@@ -104,6 +104,7 @@ public class UserManagementController {
      * PUT /api/admin/users/{userId}/status
      */
     @PutMapping("/{userId}/status")
+    @PreAuthorize("hasAuthority('UPDATE_USERS')")
     public ApiResponse<UserManagementResponse> updateUserStatus(
             @PathVariable Long userId,
             @Valid @RequestBody UpdateUserStatusRequest request

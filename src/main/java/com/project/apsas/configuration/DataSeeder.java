@@ -65,10 +65,33 @@ public class DataSeeder implements ApplicationRunner {
     protected void seedPermissions() {
         log.info("Seeding permissions...");
         List<String> P = List.of(
+                // Admin - User Management
+                "VIEW_USERS", "CREATE_USERS", "UPDATE_USERS", "DELETE_USERS",
+                // Admin - Role Management
+                "VIEW_ROLES", "CREATE_ROLES", "UPDATE_ROLES", "DELETE_ROLES",
+                // Admin - Tutorial Management
+                "MANAGE_TUTORIALS", "PUBLISH_TUTORIALS",
+                // Content Provider - Tutorial Operations
+                "CREATE_TUTORIAL", "UPDATE_TUTORIAL", "DELETE_TUTORIAL", "VIEW_OWN_TUTORIALS",
+                // Content Provider - Content & Assignment
+                "CREATE_CONTENT", "UPDATE_CONTENT", "CREATE_ASSIGNMENT", "UPDATE_ASSIGNMENT",
+                // Lecturer - Course Management
+                "VIEW_COURSES", "CREATE_COURSE", "UPDATE_COURSE", "DELETE_COURSE",
+                // Student - Course Operations
+                "ENROLL_COURSE",
+                // Teacher - Submission & Evaluation
+                "VIEW_SUBMISSIONS", "EVALUATE_SUBMISSIONS",
+                // Student - Assignment Operations
+                "SUBMIT_ASSIGNMENT",
+                // Support & Help
+                "VIEW_FEEDBACK", "RESPOND_FEEDBACK", "REQUEST_HELP", "VIEW_HELP_REQUESTS",
+                // Notifications
+                "VIEW_NOTIFICATIONS", "MANAGE_NOTIFICATIONS",
+                // Statistics
+                "VIEW_TEACHER_STATS",
+                // General
                 "DASHBOARD_VIEW", "PROFILE_READ", "PROFILE_WRITE", "SUPPORT_CREATE",
-                "COURSE_READ", "COURSE_CREATE", "COURSE_UPDATE", "COURSE_DELETE",
-                "ASSIGNMENT_READ", "ASSIGNMENT_CREATE", "ASSIGNMENT_UPDATE", "ASSIGNMENT_DELETE",
-                "TESTCASE_READ", "TESTCASE_WRITE", "RESOURCE_READ", "RESOURCE_WRITE",
+                "RESOURCE_READ", "RESOURCE_WRITE", "TESTCASE_READ", "TESTCASE_WRITE",
                 "SCHEDULE_READ", "NOTIF_READ", "NOTIF_WRITE",
                 "USER_MANAGE", "API_MANAGE", "MAINTENANCE_MANAGE", "POLICY_MANAGE"
         );
@@ -93,24 +116,48 @@ public class DataSeeder implements ApplicationRunner {
         log.info("Seeding roles and role-permission mappings...");
         
         Map<String, List<String>> R = new LinkedHashMap<>();
-        R.put("GUEST", List.of("COURSE_READ", "RESOURCE_READ", "SUPPORT_CREATE"));
-        R.put("STUDENT", List.of("DASHBOARD_VIEW", "COURSE_READ", "ASSIGNMENT_READ", "RESOURCE_READ",
-                "SCHEDULE_READ", "NOTIF_READ", "PROFILE_READ", "PROFILE_WRITE", "SUPPORT_CREATE"));
-        R.put("LECTURER", List.of("DASHBOARD_VIEW", "COURSE_READ", "COURSE_CREATE", "COURSE_UPDATE",
-                "ASSIGNMENT_READ", "ASSIGNMENT_CREATE", "ASSIGNMENT_UPDATE",
-                "TESTCASE_READ", "TESTCASE_WRITE", "RESOURCE_READ", "RESOURCE_WRITE",
-                "NOTIF_READ", "NOTIF_WRITE", "PROFILE_READ", "PROFILE_WRITE", "SUPPORT_CREATE"));
-        R.put("CONTENT_PROVIDER", List.of("DASHBOARD_VIEW", "COURSE_READ", "COURSE_CREATE", "COURSE_UPDATE",
-                "ASSIGNMENT_READ", "ASSIGNMENT_CREATE", "ASSIGNMENT_UPDATE",
-                "TESTCASE_READ", "TESTCASE_WRITE", "RESOURCE_READ", "RESOURCE_WRITE",
-                "PROFILE_READ", "PROFILE_WRITE", "SUPPORT_CREATE"));
         
-        // ADMIN gets all permissions
+        // GUEST - Chỉ xem public content
+        R.put("GUEST", List.of("RESOURCE_READ", "SUPPORT_CREATE"));
+        
+        // STUDENT - Học viên
+        R.put("STUDENT", List.of(
+                "DASHBOARD_VIEW", "PROFILE_READ", "PROFILE_WRITE",
+                "VIEW_COURSES", "ENROLL_COURSE", "SUBMIT_ASSIGNMENT",
+                "VIEW_NOTIFICATIONS", "REQUEST_HELP", "RESOURCE_READ",
+                "SCHEDULE_READ", "SUPPORT_CREATE"
+        ));
+        
+        // LECTURER - Giảng viên
+        R.put("LECTURER", List.of(
+                "DASHBOARD_VIEW", "PROFILE_READ", "PROFILE_WRITE",
+                "VIEW_COURSES", "CREATE_COURSE", "UPDATE_COURSE", "DELETE_COURSE",
+                "VIEW_SUBMISSIONS", "EVALUATE_SUBMISSIONS", "VIEW_HELP_REQUESTS",
+                "RESPOND_FEEDBACK", "VIEW_TEACHER_STATS", "VIEW_NOTIFICATIONS",
+                "RESOURCE_READ", "RESOURCE_WRITE", "SUPPORT_CREATE"
+        ));
+        
+        // CONTENT_PROVIDER - Người cung cấp nội dung
+        R.put("CONTENT_PROVIDER", List.of(
+                "DASHBOARD_VIEW", "PROFILE_READ", "PROFILE_WRITE",
+                "CREATE_TUTORIAL", "UPDATE_TUTORIAL", "DELETE_TUTORIAL", "VIEW_OWN_TUTORIALS",
+                "CREATE_CONTENT", "UPDATE_CONTENT", "CREATE_ASSIGNMENT", "UPDATE_ASSIGNMENT",
+                "RESOURCE_READ", "RESOURCE_WRITE", "VIEW_NOTIFICATIONS", "SUPPORT_CREATE"
+        ));
+        
+        // ADMIN - Quản trị viên (tất cả permissions)
         List<String> allPermissions = List.of(
+                "VIEW_USERS", "CREATE_USERS", "UPDATE_USERS", "DELETE_USERS",
+                "VIEW_ROLES", "CREATE_ROLES", "UPDATE_ROLES", "DELETE_ROLES",
+                "MANAGE_TUTORIALS", "PUBLISH_TUTORIALS",
+                "CREATE_TUTORIAL", "UPDATE_TUTORIAL", "DELETE_TUTORIAL", "VIEW_OWN_TUTORIALS",
+                "CREATE_CONTENT", "UPDATE_CONTENT", "CREATE_ASSIGNMENT", "UPDATE_ASSIGNMENT",
+                "VIEW_COURSES", "CREATE_COURSE", "UPDATE_COURSE", "DELETE_COURSE", "ENROLL_COURSE",
+                "VIEW_SUBMISSIONS", "EVALUATE_SUBMISSIONS", "SUBMIT_ASSIGNMENT",
+                "VIEW_FEEDBACK", "RESPOND_FEEDBACK", "REQUEST_HELP", "VIEW_HELP_REQUESTS",
+                "VIEW_NOTIFICATIONS", "MANAGE_NOTIFICATIONS", "VIEW_TEACHER_STATS",
                 "DASHBOARD_VIEW", "PROFILE_READ", "PROFILE_WRITE", "SUPPORT_CREATE",
-                "COURSE_READ", "COURSE_CREATE", "COURSE_UPDATE", "COURSE_DELETE",
-                "ASSIGNMENT_READ", "ASSIGNMENT_CREATE", "ASSIGNMENT_UPDATE", "ASSIGNMENT_DELETE",
-                "TESTCASE_READ", "TESTCASE_WRITE", "RESOURCE_READ", "RESOURCE_WRITE",
+                "RESOURCE_READ", "RESOURCE_WRITE", "TESTCASE_READ", "TESTCASE_WRITE",
                 "SCHEDULE_READ", "NOTIF_READ", "NOTIF_WRITE",
                 "USER_MANAGE", "API_MANAGE", "MAINTENANCE_MANAGE", "POLICY_MANAGE"
         );

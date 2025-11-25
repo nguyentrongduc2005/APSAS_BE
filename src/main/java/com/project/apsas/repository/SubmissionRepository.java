@@ -124,10 +124,17 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
     @Query(value = """
         SELECT s.* FROM submissions s
         JOIN assignments a ON s.assignment_id = a.id
-        JOIN courses_assignments ca ON a.id = ca.assignment_id
-        WHERE ca.course_id = :courseId
+        JOIN courses_assignments ca ON a.id = ca.assignments_id
+        WHERE ca.courses_id = :courseId
         ORDER BY s.submitted_at DESC
-        """, nativeQuery = true)
+        """,
+        countQuery = """
+        SELECT COUNT(*) FROM submissions s
+        JOIN assignments a ON s.assignment_id = a.id
+        JOIN courses_assignments ca ON a.id = ca.assignments_id
+        WHERE ca.courses_id = :courseId
+        """,
+        nativeQuery = true)
     Page<Submission> findByCourseId(@Param("courseId") Long courseId, Pageable pageable);
 
     /**
@@ -137,10 +144,18 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
         SELECT s.* FROM submissions s
         JOIN assignments a ON s.assignment_id = a.id
         WHERE a.id = :assignmentId AND a.id IN (
-            SELECT assignment_id FROM courses_assignments WHERE course_id = :courseId
+            SELECT assignments_id FROM courses_assignments WHERE courses_id = :courseId
         )
         ORDER BY s.submitted_at DESC
-        """, nativeQuery = true)
+        """, 
+        countQuery = """
+        SELECT COUNT(*) FROM submissions s
+        JOIN assignments a ON s.assignment_id = a.id
+        WHERE a.id = :assignmentId AND a.id IN (
+            SELECT assignments_id FROM courses_assignments WHERE courses_id = :courseId
+        )
+        """,
+        nativeQuery = true)
     Page<Submission> findByAssignmentIdAndCourseId(
             @Param("assignmentId") Long assignmentId,
             @Param("courseId") Long courseId,

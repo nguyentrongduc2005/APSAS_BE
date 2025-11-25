@@ -153,6 +153,7 @@ public class TutorialController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('RESOURCE_READ')")
     public ApiResponse<DetailTutorialResponse> getTutorialDetail(@PathVariable Long id) {
         return ApiResponse.<DetailTutorialResponse>builder()
                 .code("ok")
@@ -162,6 +163,7 @@ public class TutorialController {
     }
 
     @GetMapping("/contents/{contentId}")
+    @PreAuthorize("hasAuthority('RESOURCE_READ')")
     public ApiResponse<DetailContentResponse> getContentDetail(@PathVariable Long contentId) {
         return ApiResponse.<DetailContentResponse>builder()
                 .code("ok")
@@ -179,7 +181,7 @@ public class TutorialController {
                 .data(tutorialService.submitTutorialForReview(tutorialId))
                 .build();
     }
-    @PreAuthorize("hasRole('PROVIDER')")
+    @PreAuthorize("hasAuthority('VIEW_OWN_TUTORIALS') or hasAuthority('RESOURCE_READ')")
     @GetMapping("/assignments/{assignmentId}")
     public ApiResponse<DetailAssignmentResponse> getAssignmentDetail(@PathVariable Long assignmentId) throws JsonProcessingException {
         return ApiResponse.<DetailAssignmentResponse>builder()

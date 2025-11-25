@@ -22,7 +22,7 @@ public class StudentInsightController {
     StudentInsightService studentInsightService;
 
     @GetMapping("/my-courses")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('VIEW_COURSES') or hasAuthority('DASHBOARD_VIEW')")
     public ApiResponse<List<StudentCourseInsightDto>> getMyCourseInsights() {
         List<StudentCourseInsightDto> data = studentInsightService.getMyCourseInsights();
 
