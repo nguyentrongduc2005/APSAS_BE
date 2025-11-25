@@ -251,7 +251,7 @@ CREATE TABLE `users` (
                          `name` varchar(120) NOT NULL,
                          `email` varchar(190) NOT NULL,
                          `password` varchar(255) NOT NULL,
-                         `status` enum('ACTIVE','INACTIVE','BANNED') DEFAULT 'ACTIVE',
+                         `status` enum('ACTIVE','INACTIVE','BANNED','BLOCKED','UNVERIFIED') DEFAULT 'ACTIVE',
                          `created_at` datetime NOT NULL DEFAULT current_timestamp(),
                          PRIMARY KEY (`id`),
                          UNIQUE KEY `email` (`email`)
