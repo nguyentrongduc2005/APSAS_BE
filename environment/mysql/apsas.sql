@@ -241,7 +241,7 @@ CREATE TABLE `tutorials` (
                              `created_by` BIGINT DEFAULT NULL,
                              `title` varchar(200) NOT NULL,
                              `summary` text DEFAULT NULL,
-                             `status` enum('DRAFT','PUBLISHED','ARCHIVED') DEFAULT 'DRAFT',
+                             `status` enum('DRAFT','PUBLISHED','ARCHIVED','PENDING') DEFAULT 'PENDING',
                              `created_at` datetime DEFAULT current_timestamp(),
                              PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
