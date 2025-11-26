@@ -86,7 +86,7 @@ public class SecurityConfig {
         config.setAllowCredentials(true);
 
         // Các method cho phép
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedMethods(List.of("GET", "POST","PATCH", "PUT", "DELETE", "OPTIONS"));
 
         // Các header cho phép
         config.setAllowedHeaders(List.of(
