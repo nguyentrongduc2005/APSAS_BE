@@ -1,8 +1,8 @@
 -- =============================================
 -- APSAS DATABASE SEED DATA
--- Synchronized with DataSeeder.java
--- Version: 2.0
--- Date: 2025-11-25
+-- Complete test data for all tables
+-- Version: 3.0
+-- Date: 2025-01-XX
 -- =============================================
 
 SET FOREIGN_KEY_CHECKS=0;
@@ -180,10 +180,10 @@ INSERT IGNORE INTO `users_roles` (`users_id`, `roles_id`) VALUES
 (@provider_id, @role_provider_id);
 
 -- Create Profiles
-INSERT INTO `profiles` (`user_id`, `avatar_url`, `bio`) VALUES
-    (@lecturer_id, 'https://i.pravatar.cc/300?u=lecturer', '10+ years of experience in Java and Spring Boot development'),
-    (@lecturer2_id, 'https://i.pravatar.cc/300?u=lecturer2', 'Specializing in Data Structures and Algorithms'),
-    (@provider_id, 'https://i.pravatar.cc/300?u=provider', 'Professional content creator and programming educator')
+INSERT INTO `profiles` (`user_id`, `avatar_url`, `bio`, `phone`, `address`) VALUES
+    (@lecturer_id, 'https://i.pravatar.cc/300?u=lecturer', '10+ years of experience in Java and Spring Boot development', '0901234567', '123 University Street, Ho Chi Minh City'),
+    (@lecturer2_id, 'https://i.pravatar.cc/300?u=lecturer2', 'Specializing in Data Structures and Algorithms', '0901234568', '456 Academic Avenue, Hanoi'),
+    (@provider_id, 'https://i.pravatar.cc/300?u=provider', 'Professional content creator and programming educator', '0901234569', '789 Education Road, Da Nang')
 ON DUPLICATE KEY UPDATE bio = VALUES(bio);
 
 -- ========================================================
@@ -253,6 +253,7 @@ SET @skill_array_basics = (SELECT id FROM skills WHERE name = 'Array Basics' LIM
 SET @skill_dp_fundamentals = (SELECT id FROM skills WHERE name = 'DP Fundamentals' LIMIT 1);
 SET @skill_tree_traversal = (SELECT id FROM skills WHERE name = 'Tree Traversal' LIMIT 1);
 SET @skill_sorting = (SELECT id FROM skills WHERE name = 'Sorting Algorithms' LIMIT 1);
+SET @skill_string_processing = (SELECT id FROM skills WHERE name = 'String Processing' LIMIT 1);
 
 -- ========================================================
 -- 7. TUTORIALS - Complete learning materials
@@ -275,28 +276,32 @@ SET @tutorial_java_basics = (SELECT id FROM tutorials WHERE title = 'Java Progra
 SET @tutorial_ds = (SELECT id FROM tutorials WHERE title = 'Data Structures in Java' LIMIT 1);
 SET @tutorial_algorithms = (SELECT id FROM tutorials WHERE title = 'Algorithm Design Techniques' LIMIT 1);
 SET @tutorial_dp = (SELECT id FROM tutorials WHERE title = 'Dynamic Programming Mastery' LIMIT 1);
+SET @tutorial_string = (SELECT id FROM tutorials WHERE title = 'String Algorithms' LIMIT 1);
 
 -- ========================================================
 -- 8. COURSES - Various course types for testing
 -- ========================================================
 
-INSERT IGNORE INTO `courses` (`name`, `code`, `visibility`, `type`, `avatar_url`, `created_by`) VALUES
+INSERT IGNORE INTO `courses` (`name`, `code`, `description`, `visibility`, `type`, `avatar_url`, `created_by`) VALUES
 -- Public Courses by Lecturer 1
-('Introduction to Programming', 'CS101', 'PUBLIC', 'Core Course', 'https://images.unsplash.com/photo-1607706189992-eae578626c86', @lecturer_id),
-('Data Structures and Algorithms', 'CS201', 'PUBLIC', 'Core Course', 'https://images.unsplash.com/photo-1516116216624-53e697fedbea', @lecturer_id),
-('Advanced Java Programming', 'CS301', 'PUBLIC', 'Elective', 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97', @lecturer_id),
-('Software Engineering Principles', 'CS401', 'PRIVATE', 'Core Course', 'https://images.unsplash.com/photo-1555066931-4365d14bab8c', @lecturer_id),
+('Introduction to Programming', 'CS101', 'Fundamental programming concepts using Java', 'PUBLIC', 'Core Course', 'https://images.unsplash.com/photo-1607706189992-eae578626c86', @lecturer_id),
+('Data Structures and Algorithms', 'CS201', 'Learn essential data structures and algorithm design', 'PUBLIC', 'Core Course', 'https://images.unsplash.com/photo-1516116216624-53e697fedbea', @lecturer_id),
+('Advanced Java Programming', 'CS301', 'Advanced Java features and best practices', 'PUBLIC', 'Elective', 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97', @lecturer_id),
+('Software Engineering Principles', 'CS401', 'Software development methodologies and practices', 'PRIVATE', 'Core Course', 'https://images.unsplash.com/photo-1555066931-4365d14bab8c', @lecturer_id),
 
 -- Public Courses by Lecturer 2
-('Object-Oriented Design', 'CS202', 'PUBLIC', 'Core Course', 'https://images.unsplash.com/photo-1498050108023-c5249f4df085', @lecturer2_id),
-('Web Development with Spring', 'CS302', 'PUBLIC', 'Elective', 'https://images.unsplash.com/photo-1547658719-da2b51169166', @lecturer2_id),
-('Database Management Systems', 'CS203', 'PUBLIC', 'Core Course', 'https://images.unsplash.com/photo-1544383835-bda2bc66a55d', @lecturer2_id);
+('Object-Oriented Design', 'CS202', 'OOP principles and design patterns', 'PUBLIC', 'Core Course', 'https://images.unsplash.com/photo-1498050108023-c5249f4df085', @lecturer2_id),
+('Web Development with Spring', 'CS302', 'Building web applications with Spring Framework', 'PUBLIC', 'Elective', 'https://images.unsplash.com/photo-1547658719-da2b51169166', @lecturer2_id),
+('Database Management Systems', 'CS203', 'Database design and SQL fundamentals', 'PUBLIC', 'Core Course', 'https://images.unsplash.com/photo-1544383835-bda2bc66a55d', @lecturer2_id);
 
 -- Store course IDs
 SET @course_cs101 = (SELECT id FROM courses WHERE code = 'CS101' LIMIT 1);
 SET @course_cs201 = (SELECT id FROM courses WHERE code = 'CS201' LIMIT 1);
 SET @course_cs301 = (SELECT id FROM courses WHERE code = 'CS301' LIMIT 1);
 SET @course_cs202 = (SELECT id FROM courses WHERE code = 'CS202' LIMIT 1);
+SET @course_cs302 = (SELECT id FROM courses WHERE code = 'CS302' LIMIT 1);
+SET @course_cs203 = (SELECT id FROM courses WHERE code = 'CS203' LIMIT 1);
+SET @course_cs401 = (SELECT id FROM courses WHERE code = 'CS401' LIMIT 1);
 
 -- ========================================================
 -- 9. TUTORIAL CONTENTS - Detailed learning materials
@@ -326,10 +331,37 @@ INSERT IGNORE INTO `contents` (`tutorial_id`, `title`, `body_md`, `order_no`, `s
 -- Contents for DP Tutorial
 (@tutorial_dp, 'Introduction to Dynamic Programming', '# DP Fundamentals\n\nMemoization, tabulation, optimal substructure...', 1, 'PUBLISHED'),
 (@tutorial_dp, 'Classic DP Problems', '# Classic Problems\n\nFibonacci, coin change, knapsack...', 2, 'PUBLISHED'),
-(@tutorial_dp, 'Advanced DP Techniques', '# Advanced DP\n\nState compression, DP on trees...', 3, 'PUBLISHED');
+(@tutorial_dp, 'Advanced DP Techniques', '# Advanced DP\n\nState compression, DP on trees...', 3, 'PUBLISHED'),
+
+-- Contents for String Algorithms Tutorial
+(@tutorial_string, 'String Basics', '# String Operations\n\nString creation, concatenation, and basic methods...', 1, 'PUBLISHED'),
+(@tutorial_string, 'Pattern Matching', '# Pattern Matching\n\nKMP algorithm, Rabin-Karp, and string search...', 2, 'PUBLISHED');
+
+-- Store some content IDs for media
+SET @content_java_intro = (SELECT id FROM contents WHERE title = 'Introduction to Java' LIMIT 1);
+SET @content_ds_intro = (SELECT id FROM contents WHERE title = 'Introduction to Data Structures' LIMIT 1);
+SET @content_algo_analysis = (SELECT id FROM contents WHERE title = 'Algorithm Analysis' LIMIT 1);
 
 -- ========================================================
--- 10. COURSE ENROLLMENTS
+-- 10. MEDIA - Images, videos, and files for contents
+-- ========================================================
+
+INSERT IGNORE INTO `media` (`content_id`, `type`, `url`, `caption`, `order_no`) VALUES
+-- Media for Java Introduction
+(@content_java_intro, 'IMAGE', 'https://images.unsplash.com/photo-1516116216624-53e697fedbea', 'Java Logo', 1),
+(@content_java_intro, 'VIDEO', 'https://www.youtube.com/watch?v=eIrMbAQSU34', 'Java Introduction Video', 2),
+(@content_java_intro, 'LINK', 'https://docs.oracle.com/javase/tutorial/', 'Official Java Tutorial', 3),
+
+-- Media for Data Structures Introduction
+(@content_ds_intro, 'IMAGE', 'https://images.unsplash.com/photo-1555066931-4365d14bab8c', 'Data Structures Visualization', 1),
+(@content_ds_intro, 'VIDEO', 'https://www.youtube.com/watch?v=RBSGKlAvoiM', 'Data Structures Overview', 2),
+
+-- Media for Algorithm Analysis
+(@content_algo_analysis, 'IMAGE', 'https://images.unsplash.com/photo-1544383835-bda2bc66a55d', 'Big O Notation Chart', 1),
+(@content_algo_analysis, 'FILE', 'https://example.com/files/big-o-cheatsheet.pdf', 'Big O Cheat Sheet PDF', 2);
+
+-- ========================================================
+-- 11. COURSE ENROLLMENTS
 -- ========================================================
 
 -- Lecturers as course owners
@@ -359,7 +391,7 @@ INSERT IGNORE INTO `courses_contents` (`courses_id`, `contents_id`)
 SELECT @course_cs301, ct.id FROM contents ct WHERE ct.tutorial_id = @tutorial_dp;
 
 -- ========================================================
--- 11. ASSIGNMENTS - Programming exercises
+-- 12. ASSIGNMENTS - Programming exercises
 -- ========================================================
 
 -- Java Basics Assignments
@@ -400,15 +432,88 @@ INSERT IGNORE INTO `assignments` (
 
 (@tutorial_dp, @skill_dp_fundamentals, 'Climbing Stairs',
 '# Problem: Climbing Stairs\n\nYou are climbing a staircase with n steps. Each time you can climb 1 or 2 steps. How many distinct ways can you climb to the top?\n\n**Input:** int n\n**Output:** int ways\n\n**Example:**\n```\nInput: n = 3\nOutput: 3\nExplanation: [1,1,1], [1,2], [2,1]\n```',
-100.00, 10, 2, 1);
+100.00, 10, 2, 1),
+
+-- String Algorithm Assignments
+(@tutorial_string, @skill_string_processing, 'Reverse String',
+'# Problem: Reverse String\n\nReverse a given string.\n\n**Input:** String s\n**Output:** String reversed\n\n**Example:**\n```\nInput: "hello"\nOutput: "olleh"\n```',
+100.00, 5, 1, 0);
 
 -- Store some assignment IDs
 SET @assignment_sum = (SELECT id FROM assignments WHERE title = 'Sum of Array Elements' LIMIT 1);
 SET @assignment_max = (SELECT id FROM assignments WHERE title = 'Find Maximum Element' LIMIT 1);
 SET @assignment_reverse = (SELECT id FROM assignments WHERE title = 'Reverse an Array' LIMIT 1);
+SET @assignment_tree = (SELECT id FROM assignments WHERE title = 'Binary Tree Inorder Traversal' LIMIT 1);
+SET @assignment_bubble = (SELECT id FROM assignments WHERE title = 'Implement Bubble Sort' LIMIT 1);
+SET @assignment_binary = (SELECT id FROM assignments WHERE title = 'Binary Search Implementation' LIMIT 1);
+SET @assignment_fib = (SELECT id FROM assignments WHERE title = 'Fibonacci Number' LIMIT 1);
+SET @assignment_stairs = (SELECT id FROM assignments WHERE title = 'Climbing Stairs' LIMIT 1);
 
 -- ========================================================
--- 12. SUBMISSIONS - Sample student submissions with course_id
+-- 13. ASSIGNMENT EVALUATIONS - Test configurations
+-- ========================================================
+
+INSERT IGNORE INTO `assignment_evaluations` (`assignment_id`, `name`, `type`, `config_json`) VALUES
+-- Unit Test Evaluator for Sum of Array Elements
+(@assignment_sum, 'Unit Test Evaluator', 'UNIT_TEST', 
+'{"testCases":[{"input":"[1,2,3,4,5]","expectedOutput":"15","description":"Basic test case"},{"input":"[10,20,30]","expectedOutput":"60","description":"Multiple elements"},{"input":"[5]","expectedOutput":"5","description":"Single element"},{"input":"[]","expectedOutput":"0","description":"Empty array"}]}'),
+
+-- Unit Test Evaluator for Find Maximum
+(@assignment_max, 'Unit Test Evaluator', 'UNIT_TEST',
+'{"testCases":[{"input":"[3,7,2,9,1]","expectedOutput":"9","description":"Basic test"},{"input":"[-5,-2,-10]","expectedOutput":"-2","description":"Negative numbers"},{"input":"[100]","expectedOutput":"100","description":"Single element"}]}'),
+
+-- Unit Test Evaluator for Reverse Array
+(@assignment_reverse, 'Unit Test Evaluator', 'UNIT_TEST',
+'{"testCases":[{"input":"[1,2,3,4,5]","expectedOutput":"[5,4,3,2,1]","description":"Basic reverse"},{"input":"[10,20]","expectedOutput":"[20,10]","description":"Two elements"}]}'),
+
+-- Code Quality Evaluator for Tree Traversal
+(@assignment_tree, 'Code Quality Evaluator', 'CODE_QUALITY',
+'{"checks":["timeComplexity","spaceComplexity","codeStyle"],"minScore":70}'),
+
+-- Performance Evaluator for Bubble Sort
+(@assignment_bubble, 'Performance Evaluator', 'PERFORMANCE',
+'{"timeLimit":2000,"memoryLimit":256,"testCases":[{"input":"[5,2,8,1,9]","expectedOutput":"[1,2,5,8,9]"}]}'),
+
+-- Unit Test Evaluator for Binary Search
+(@assignment_binary, 'Unit Test Evaluator', 'UNIT_TEST',
+'{"testCases":[{"input":"arr=[1,3,5,7,9],target=5","expectedOutput":"2","description":"Found in middle"},{"input":"arr=[1,3,5,7,9],target=10","expectedOutput":"-1","description":"Not found"}]}'),
+
+-- Unit Test Evaluator for Fibonacci
+(@assignment_fib, 'Unit Test Evaluator', 'UNIT_TEST',
+'{"testCases":[{"input":"10","expectedOutput":"55","description":"n=10"},{"input":"0","expectedOutput":"0","description":"n=0"},{"input":"1","expectedOutput":"1","description":"n=1"}]}'),
+
+-- Unit Test Evaluator for Climbing Stairs
+(@assignment_stairs, 'Unit Test Evaluator', 'UNIT_TEST',
+'{"testCases":[{"input":"3","expectedOutput":"3","description":"n=3"},{"input":"2","expectedOutput":"2","description":"n=2"},{"input":"5","expectedOutput":"8","description":"n=5"}]}');
+
+-- ========================================================
+-- 14. COURSES_ASSIGNMENTS (Link assignments to courses)
+-- ========================================================
+
+-- Course 1 (CS101): 3 assignments
+INSERT IGNORE INTO `courses_assignments` (`courses_id`, `assignments_id`, `open_at`, `due_at`) VALUES
+(@course_cs101, @assignment_sum, DATE_SUB(NOW(), INTERVAL 10 DAY), DATE_ADD(NOW(), INTERVAL 7 DAY)),
+(@course_cs101, @assignment_max, DATE_SUB(NOW(), INTERVAL 5 DAY), DATE_ADD(NOW(), INTERVAL 14 DAY)),
+(@course_cs101, @assignment_reverse, NOW(), DATE_ADD(NOW(), INTERVAL 21 DAY));
+
+-- Course 2 (CS201): 3 assignments
+INSERT IGNORE INTO `courses_assignments` (`courses_id`, `assignments_id`, `open_at`, `due_at`) VALUES
+(@course_cs201, @assignment_tree, DATE_SUB(NOW(), INTERVAL 8 DAY), DATE_ADD(NOW(), INTERVAL 10 DAY)),
+(@course_cs201, @assignment_bubble, DATE_SUB(NOW(), INTERVAL 3 DAY), DATE_ADD(NOW(), INTERVAL 17 DAY)),
+(@course_cs201, @assignment_binary, NOW(), DATE_ADD(NOW(), INTERVAL 24 DAY));
+
+-- Course 3 (CS301): 2 assignments
+INSERT IGNORE INTO `courses_assignments` (`courses_id`, `assignments_id`, `open_at`, `due_at`) VALUES
+(@course_cs301, @assignment_fib, DATE_SUB(NOW(), INTERVAL 7 DAY), DATE_ADD(NOW(), INTERVAL 9 DAY)),
+(@course_cs301, @assignment_stairs, DATE_SUB(NOW(), INTERVAL 2 DAY), DATE_ADD(NOW(), INTERVAL 16 DAY));
+
+-- Course 2 (CS202): 2 assignments
+INSERT IGNORE INTO `courses_assignments` (`courses_id`, `assignments_id`, `open_at`, `due_at`) VALUES
+(@course_cs202, @assignment_sum, DATE_SUB(NOW(), INTERVAL 6 DAY), DATE_ADD(NOW(), INTERVAL 12 DAY)),
+(@course_cs202, @assignment_tree, DATE_SUB(NOW(), INTERVAL 1 DAY), DATE_ADD(NOW(), INTERVAL 19 DAY));
+
+-- ========================================================
+-- 15. SUBMISSIONS - Sample student submissions with course_id
 -- ========================================================
 
 -- Get some student IDs
@@ -422,75 +527,115 @@ SET @student7_id = (SELECT id FROM users WHERE email = 'student7@apsas.edu.vn' L
 SET @student8_id = (SELECT id FROM users WHERE email = 'student8@apsas.edu.vn' LIMIT 1);
 SET @student10_id = (SELECT id FROM users WHERE email = 'student10@apsas.edu.vn' LIMIT 1);
 
--- Submissions for CS101 course (assignment_id 41, 42, 43 linked to course_id from @course_cs101)
+-- Submissions for CS101 course
 INSERT IGNORE INTO `submissions` (
-    `assignment_id`, `course_id`, `user_id`, `language`, `code`, `status`, `attempt_no`, `submitted_at`, `score`
+    `assignment_id`, `course_id`, `user_id`, `language`, `code`, `status`, 
+    `attempt_no`, `submitted_at`, `score`, `passed`, `big_o_complexity_time`, `big_o_complexity_space`
 ) VALUES
--- Student 1 submissions (Excellent student) - Assignment 41 (Sum of Array Elements)
-(41, @course_cs101, @student1_id, 'java', 
+-- Student 1 submissions (Excellent student)
+(@assignment_sum, @course_cs101, @student1_id, 'java', 
 'public class Solution {\n    public int sumArray(int[] arr) {\n        int sum = 0;\n        for (int num : arr) {\n            sum += num;\n        }\n        return sum;\n    }\n}',
-'PASSED', 1, DATE_SUB(NOW(), INTERVAL 5 DAY), 100.00),
+'PASSED', 1, DATE_SUB(NOW(), INTERVAL 5 DAY), 100.00, 1, 'O(n)', 'O(1)'),
 
--- Assignment 42 (Find Maximum Element)
-(42, @course_cs101, @student1_id, 'java',
+(@assignment_max, @course_cs101, @student1_id, 'java',
 'public class Solution {\n    public int findMax(int[] arr) {\n        int max = arr[0];\n        for (int i = 1; i < arr.length; i++) {\n            if (arr[i] > max) max = arr[i];\n        }\n        return max;\n    }\n}',
-'PASSED', 1, DATE_SUB(NOW(), INTERVAL 3 DAY), 100.00),
+'PASSED', 1, DATE_SUB(NOW(), INTERVAL 3 DAY), 100.00, 1, 'O(n)', 'O(1)'),
 
--- Assignment 43 (Reverse an Array)
-(43, @course_cs101, @student1_id, 'java',
+(@assignment_reverse, @course_cs101, @student1_id, 'java',
 'public class Solution {\n    public void reverseArray(int[] arr) {\n        int left = 0, right = arr.length - 1;\n        while (left < right) {\n            int temp = arr[left];\n            arr[left] = arr[right];\n            arr[right] = temp;\n            left++;\n            right--;\n        }\n    }\n}',
-'PASSED', 1, DATE_SUB(NOW(), INTERVAL 1 DAY), 100.00),
+'PASSED', 1, DATE_SUB(NOW(), INTERVAL 1 DAY), 100.00, 1, 'O(n)', 'O(1)'),
 
 -- Student 2 submissions (Good with one failure)
-(41, @course_cs101, @student2_id, 'java',
+(@assignment_sum, @course_cs101, @student2_id, 'java',
 'public class Solution {\n    public int sumArray(int[] arr) {\n        return java.util.Arrays.stream(arr).sum();\n    }\n}',
-'PASSED', 1, DATE_SUB(NOW(), INTERVAL 4 DAY), 95.00),
+'PASSED', 1, DATE_SUB(NOW(), INTERVAL 4 DAY), 95.00, 1, 'O(n)', 'O(1)'),
 
-(42, @course_cs101, @student2_id, 'java',
+(@assignment_max, @course_cs101, @student2_id, 'java',
 'public class Solution {\n    public int findMax(int[] arr) {\n        // Wrong implementation - only returns first element\n        return arr[0];\n    }\n}',
-'FAILED', 1, DATE_SUB(NOW(), INTERVAL 2 DAY), 20.00),
+'FAILED', 1, DATE_SUB(NOW(), INTERVAL 2 DAY), 20.00, 0, 'O(1)', 'O(1)'),
 
 -- Student 3 - Pending submission
-(41, @course_cs101, @student3_id, 'java',
+(@assignment_sum, @course_cs101, @student3_id, 'java',
 'public class Solution {\n    public int sumArray(int[] arr) {\n        int result = 0;\n        // TODO: implement\n        return result;\n    }\n}',
-'PENDING', 1, DATE_SUB(NOW(), INTERVAL 6 HOUR), NULL),
+'PENDING', 1, DATE_SUB(NOW(), INTERVAL 6 HOUR), NULL, NULL, NULL, NULL),
 
 -- Student 4 submissions
-(41, @course_cs101, @student4_id, 'java',
+(@assignment_sum, @course_cs101, @student4_id, 'java',
 'public class Solution {\n    public int sumArray(int[] arr) {\n        int sum = 0;\n        for(int i = 0; i < arr.length; i++) {\n            sum += arr[i];\n        }\n        return sum;\n    }\n}',
-'PASSED', 2, DATE_SUB(NOW(), INTERVAL 3 DAY), 90.00),
+'PASSED', 2, DATE_SUB(NOW(), INTERVAL 3 DAY), 90.00, 1, 'O(n)', 'O(1)'),
 
--- Submissions for CS201 course (assignment_id 44, 45, 46 linked to course_id from @course_cs201)
--- Assignment 44 (Binary Tree Inorder Traversal)
-(44, @course_cs201, @student5_id, 'java',
+-- Submissions for CS201 course
+(@assignment_tree, @course_cs201, @student5_id, 'java',
 'public class Solution {\n    public List<Integer> inorderTraversal(TreeNode root) {\n        List<Integer> result = new ArrayList<>();\n        inorder(root, result);\n        return result;\n    }\n    \n    private void inorder(TreeNode node, List<Integer> result) {\n        if (node == null) return;\n        inorder(node.left, result);\n        result.add(node.val);\n        inorder(node.right, result);\n    }\n}',
-'PASSED', 1, DATE_SUB(NOW(), INTERVAL 2 DAY), 100.00),
+'PASSED', 1, DATE_SUB(NOW(), INTERVAL 2 DAY), 100.00, 1, 'O(n)', 'O(h)'),
 
--- Assignment 45 (Implement Bubble Sort)
-(45, @course_cs201, @student5_id, 'java',
+(@assignment_bubble, @course_cs201, @student5_id, 'java',
 'public class Solution {\n    public void bubbleSort(int[] arr) {\n        int n = arr.length;\n        for (int i = 0; i < n - 1; i++) {\n            for (int j = 0; j < n - i - 1; j++) {\n                if (arr[j] > arr[j + 1]) {\n                    int temp = arr[j];\n                    arr[j] = arr[j + 1];\n                    arr[j + 1] = temp;\n                }\n            }\n        }\n    }\n}',
-'PASSED', 1, DATE_SUB(NOW(), INTERVAL 1 DAY), 100.00),
+'PASSED', 1, DATE_SUB(NOW(), INTERVAL 1 DAY), 100.00, 1, 'O(n²)', 'O(1)'),
 
-(44, @course_cs201, @student6_id, 'java',
+(@assignment_tree, @course_cs201, @student6_id, 'java',
 'public class Solution {\n    public List<Integer> inorderTraversal(TreeNode root) {\n        // Incomplete implementation\n        return new ArrayList<>();\n    }\n}',
-'FAILED', 1, DATE_SUB(NOW(), INTERVAL 1 DAY), 25.00),
+'FAILED', 1, DATE_SUB(NOW(), INTERVAL 1 DAY), 25.00, 0, NULL, NULL),
 
-(45, @course_cs201, @student7_id, 'java',
+(@assignment_bubble, @course_cs201, @student7_id, 'java',
 'public class Solution {\n    public void bubbleSort(int[] arr) {\n        // Using Arrays.sort instead of implementing bubble sort\n        Arrays.sort(arr);\n    }\n}',
-'FAILED', 1, DATE_SUB(NOW(), INTERVAL 8 HOUR), 40.00),
+'FAILED', 1, DATE_SUB(NOW(), INTERVAL 8 HOUR), 40.00, 0, 'O(n log n)', 'O(1)'),
 
 -- Student 8 - Multiple attempts
-(41, @course_cs101, @student8_id, 'java',
+(@assignment_sum, @course_cs101, @student8_id, 'java',
 'public class Solution {\n    public int sumArray(int[] arr) {\n        int sum = 0;\n        for (int num : arr) {\n            sum += num;\n        }\n        return sum;\n    }\n}',
-'PASSED', 3, DATE_SUB(NOW(), INTERVAL 2 DAY), 85.00),
+'PASSED', 3, DATE_SUB(NOW(), INTERVAL 2 DAY), 85.00, 1, 'O(n)', 'O(1)'),
 
 -- Student 10 submissions
-(42, @course_cs101, @student10_id, 'java',
+(@assignment_max, @course_cs101, @student10_id, 'java',
 'public class Solution {\n    public int findMax(int[] arr) {\n        return Arrays.stream(arr).max().getAsInt();\n    }\n}',
-'PASSED', 1, DATE_SUB(NOW(), INTERVAL 4 DAY), 100.00);
+'PASSED', 1, DATE_SUB(NOW(), INTERVAL 4 DAY), 100.00, 1, 'O(n)', 'O(1)');
 
 -- ========================================================
--- 13. HELP REQUESTS - Student support tickets
+-- 16. PROGRESS - Student progress tracking
+-- ========================================================
+
+-- Create progress records for active students
+INSERT IGNORE INTO `progress` (`user_id`, `total_attempt_no`, `acceptance`)
+SELECT 
+    u.id,
+    COALESCE(COUNT(s.id), 0) as total_attempts,
+    CASE 
+        WHEN COUNT(s.id) > 0 THEN 
+            ROUND(SUM(CASE WHEN s.passed = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(s.id), 2)
+        ELSE 0 
+    END as acceptance_rate
+FROM `users` u
+LEFT JOIN `submissions` s ON u.id = s.user_id
+WHERE u.email LIKE 'student%@apsas.edu.vn'
+GROUP BY u.id;
+
+-- ========================================================
+-- 17. PROGRESS_SKILLS - Skill level tracking
+-- ========================================================
+
+-- Create progress_skills records based on submissions
+INSERT IGNORE INTO `progress_skills` (`progress_id`, `skill_id`, `level`, `score`)
+SELECT 
+    p.id as progress_id,
+    a.skill_id,
+    CASE 
+        WHEN AVG(s.score) >= 90 THEN 3
+        WHEN AVG(s.score) >= 70 THEN 2
+        WHEN AVG(s.score) >= 50 THEN 1
+        ELSE 0
+    END as level,
+    ROUND(AVG(s.score), 2) as avg_score
+FROM `progress` p
+INNER JOIN `users` u ON p.user_id = u.id
+INNER JOIN `submissions` s ON u.id = s.user_id
+INNER JOIN `assignments` a ON s.assignment_id = a.id
+WHERE a.skill_id IS NOT NULL
+  AND s.score IS NOT NULL
+GROUP BY p.id, a.skill_id;
+
+-- ========================================================
+-- 18. HELP REQUESTS - Student support tickets
 -- ========================================================
 
 INSERT IGNORE INTO `help_requests` (`course_id`, `user_id`, `title`, `body`, `created_at`) VALUES
@@ -504,90 +649,50 @@ DATE_SUB(NOW(), INTERVAL 2 DAY)),
 
 (@course_cs101, @student2_id, 'Failed test cases for Find Maximum',
 'My solution fails for negative numbers. Can you help?',
-DATE_SUB(NOW(), INTERVAL 1 DAY));
+DATE_SUB(NOW(), INTERVAL 1 DAY)),
+
+(@course_cs201, @student6_id, 'Tree Traversal Question',
+'How do I handle null nodes in the tree traversal?',
+DATE_SUB(NOW(), INTERVAL 5 HOUR));
 
 -- ========================================================
--- 14. NOTIFICATIONS - System notifications
+-- 19. NOTIFICATIONS - System notifications
 -- ========================================================
 
 INSERT IGNORE INTO `notifications` (`user_id`, `type`, `payload`, `is_read`, `created_at`) VALUES
 (@student1_id, 'SYSTEM', '{"title":"Welcome to APSAS","message":"Welcome to Automated Programming Skills Assessment System!"}', 0, DATE_SUB(NOW(), INTERVAL 7 DAY)),
-(@student2_id, 'ASSIGNMENT', '{"title":"New Assignment Available","message":"Check out the new assignments in Data Structures course"}', 0, DATE_SUB(NOW(), INTERVAL 2 DAY)),
-(@student3_id, 'SUBMISSION', '{"title":"Submission Graded","message":"Your submission for Array Sum has been graded"}', 1, DATE_SUB(NOW(), INTERVAL 1 DAY));
+(@student2_id, 'ASSIGNMENT', CONCAT('{"title":"New Assignment Available","message":"Check out the new assignments in Data Structures course","courseId":', @course_cs201, '}'), 0, DATE_SUB(NOW(), INTERVAL 2 DAY)),
+(@student3_id, 'SUBMISSION', CONCAT('{"title":"Submission Graded","message":"Your submission for Array Sum has been graded","submissionId":', (SELECT id FROM submissions WHERE user_id = @student3_id LIMIT 1), '}'), 1, DATE_SUB(NOW(), INTERVAL 1 DAY)),
+(@student1_id, 'ASSIGNMENT', CONCAT('{"title":"Assignment Due Soon","message":"Your assignment is due in 2 days","assignmentId":', @assignment_reverse, '}'), 0, DATE_SUB(NOW(), INTERVAL 1 DAY)),
+(@lecturer_id, 'HELP_REQUEST', '{"title":"New Help Request","message":"Student has requested help","helpRequestId":1}', 0, DATE_SUB(NOW(), INTERVAL 3 HOUR));
 
 -- ========================================================
--- 15. FEEDBACK - Teacher feedback on submissions
+-- 20. USERS_NOTIFICATIONS - User notification mapping
+-- ========================================================
+
+-- Link notifications to users (for many-to-many relationship)
+INSERT IGNORE INTO `users_notifications` (`users_id`, `notifications_id`, `is_read`, `read_at`)
+SELECT 
+    n.user_id,
+    n.id,
+    n.is_read,
+    CASE WHEN n.is_read = 1 THEN n.created_at ELSE NULL END
+FROM `notifications` n
+WHERE n.user_id IS NOT NULL;
+
+-- ========================================================
+-- 21. FEEDBACK - Teacher feedback on submissions
 -- ========================================================
 
 -- Get some submission IDs
 SET @sub_passed = (SELECT id FROM submissions WHERE user_id = @student1_id AND status = 'PASSED' LIMIT 1);
 SET @sub_failed = (SELECT id FROM submissions WHERE user_id = @student2_id AND status = 'FAILED' LIMIT 1);
+SET @sub_pending = (SELECT id FROM submissions WHERE user_id = @student3_id AND status = 'PENDING' LIMIT 1);
 
 INSERT IGNORE INTO `feedback` (`submission_id`, `body`, `created_at`) VALUES
-(@sub_passed, 'Excellent work! Your solution is clean and efficient. Good use of enhanced for-loop.', DATE_SUB(NOW(), INTERVAL 1 DAY)),
-(@sub_failed, 'Your solution only returns the first element. You need to iterate through the entire array to find the maximum. Try using a loop!', DATE_SUB(NOW(), INTERVAL 1 DAY));
-
--- ========================================================
--- 11. COURSES_ASSIGNMENTS (Link assignments to courses)
--- ========================================================
--- Each course gets 2-3 assignments with open_at and due_at dates
--- Course IDs: 36-49 (14 courses)
--- Assignment IDs: 41-56 (16 assignments)
-
-SET @course1 = (SELECT id FROM courses WHERE code = 'CS101' LIMIT 1);
-SET @course2 = (SELECT id FROM courses WHERE code = 'CS201' LIMIT 1);
-SET @course3 = (SELECT id FROM courses WHERE code = 'CS301' LIMIT 1);
-SET @course4 = (SELECT id FROM courses WHERE code = 'DB101' LIMIT 1);
-SET @course5 = (SELECT id FROM courses WHERE code = 'WEB101' LIMIT 1);
-SET @course6 = (SELECT id FROM courses WHERE code = 'ALG101' LIMIT 1);
-SET @course7 = (SELECT id FROM courses WHERE code = 'SE101' LIMIT 1);
-
-SET @assign1 = (SELECT id FROM assignments WHERE title = 'Sum of Array Elements' LIMIT 1);
-SET @assign2 = (SELECT id FROM assignments WHERE title = 'Find Maximum Element' LIMIT 1);
-SET @assign3 = (SELECT id FROM assignments WHERE title = 'Reverse an Array' LIMIT 1);
-SET @assign4 = (SELECT id FROM assignments WHERE title = 'Binary Tree Inorder Traversal' LIMIT 1);
-SET @assign5 = (SELECT id FROM assignments WHERE title = 'Implement Bubble Sort' LIMIT 1);
-SET @assign6 = (SELECT id FROM assignments WHERE title = 'Binary Search Implementation' LIMIT 1);
-SET @assign7 = (SELECT id FROM assignments WHERE title = 'Fibonacci Number' LIMIT 1);
-SET @assign8 = (SELECT id FROM assignments WHERE title = 'Climbing Stairs' LIMIT 1);
-
--- Course 1 (CS101): 3 assignments
-INSERT IGNORE INTO `courses_assignments` (`courses_id`, `assignments_id`, `open_at`, `due_at`) VALUES
-(@course1, @assign1, DATE_SUB(NOW(), INTERVAL 10 DAY), DATE_ADD(NOW(), INTERVAL 7 DAY)),
-(@course1, @assign2, DATE_SUB(NOW(), INTERVAL 5 DAY), DATE_ADD(NOW(), INTERVAL 14 DAY)),
-(@course1, @assign3, NOW(), DATE_ADD(NOW(), INTERVAL 21 DAY));
-
--- Course 2 (CS201): 3 assignments
-INSERT IGNORE INTO `courses_assignments` (`courses_id`, `assignments_id`, `open_at`, `due_at`) VALUES
-(@course2, @assign4, DATE_SUB(NOW(), INTERVAL 8 DAY), DATE_ADD(NOW(), INTERVAL 10 DAY)),
-(@course2, @assign5, DATE_SUB(NOW(), INTERVAL 3 DAY), DATE_ADD(NOW(), INTERVAL 17 DAY)),
-(@course2, @assign6, NOW(), DATE_ADD(NOW(), INTERVAL 24 DAY));
-
--- Course 3 (CS301): 2 assignments
-INSERT IGNORE INTO `courses_assignments` (`courses_id`, `assignments_id`, `open_at`, `due_at`) VALUES
-(@course3, @assign7, DATE_SUB(NOW(), INTERVAL 7 DAY), DATE_ADD(NOW(), INTERVAL 9 DAY)),
-(@course3, @assign8, DATE_SUB(NOW(), INTERVAL 2 DAY), DATE_ADD(NOW(), INTERVAL 16 DAY));
-
--- Course 4 (DB101): 2 assignments (reusing some assignments)
-INSERT IGNORE INTO `courses_assignments` (`courses_id`, `assignments_id`, `open_at`, `due_at`) VALUES
-(@course4, @assign1, DATE_SUB(NOW(), INTERVAL 6 DAY), DATE_ADD(NOW(), INTERVAL 12 DAY)),
-(@course4, @assign4, DATE_SUB(NOW(), INTERVAL 1 DAY), DATE_ADD(NOW(), INTERVAL 19 DAY));
-
--- Course 5 (WEB101): 3 assignments
-INSERT IGNORE INTO `courses_assignments` (`courses_id`, `assignments_id`, `open_at`, `due_at`) VALUES
-(@course5, @assign2, DATE_SUB(NOW(), INTERVAL 9 DAY), DATE_ADD(NOW(), INTERVAL 8 DAY)),
-(@course5, @assign5, DATE_SUB(NOW(), INTERVAL 4 DAY), DATE_ADD(NOW(), INTERVAL 15 DAY)),
-(@course5, @assign7, NOW(), DATE_ADD(NOW(), INTERVAL 22 DAY));
-
--- Course 6 (ALG101): 2 assignments
-INSERT IGNORE INTO `courses_assignments` (`courses_id`, `assignments_id`, `open_at`, `due_at`) VALUES
-(@course6, @assign3, DATE_SUB(NOW(), INTERVAL 5 DAY), DATE_ADD(NOW(), INTERVAL 11 DAY)),
-(@course6, @assign6, NOW(), DATE_ADD(NOW(), INTERVAL 18 DAY));
-
--- Course 7 (SE101): 2 assignments
-INSERT IGNORE INTO `courses_assignments` (`courses_id`, `assignments_id`, `open_at`, `due_at`) VALUES
-(@course7, @assign4, DATE_SUB(NOW(), INTERVAL 8 DAY), DATE_ADD(NOW(), INTERVAL 13 DAY)),
-(@course7, @assign8, DATE_SUB(NOW(), INTERVAL 3 DAY), DATE_ADD(NOW(), INTERVAL 20 DAY));
+(@sub_passed, 'Excellent work! Your solution is clean and efficient. Good use of enhanced for-loop. Consider edge cases for empty arrays.', DATE_SUB(NOW(), INTERVAL 1 DAY)),
+(@sub_failed, 'Your solution only returns the first element. You need to iterate through the entire array to find the maximum. Try using a loop!', DATE_SUB(NOW(), INTERVAL 1 DAY)),
+(@sub_passed, 'Great implementation! The two-pointer approach is optimal. Time complexity O(n) and space O(1) is perfect.', DATE_SUB(NOW(), INTERVAL 1 DAY));
 
 -- ========================================================
 -- COMPLETION
@@ -607,20 +712,24 @@ COMMIT;
 --   - 50 students (student1-50@apsas.edu.vn)
 -- Skills: 13 across various categories (ARRAY, STRING, DP, TREE, GRAPH, etc.)
 -- Tutorials: 10 complete tutorials with published status
--- Contents: 20 learning materials (linked to tutorials)
+-- Contents: 20+ learning materials (linked to tutorials)
+-- Media: 7 media items (images, videos, links, files) for contents
 -- Courses: 7 courses
 --   - 4 by Lecturer 1 (CS101, CS201, CS301, CS401)
 --   - 3 by Lecturer 2 (CS202, CS302, CS203)
 --   - Mix of PUBLIC and PRIVATE visibility
--- Assignments: 8 programming exercises
+-- Assignments: 9 programming exercises
 --   - Linked to tutorials with skills
 --   - Various difficulty levels (proficiency 0-2)
--- Courses_Assignments: 17 links
+-- Assignment Evaluations: 8 evaluation configurations
+--   - Unit test evaluators
+--   - Code quality evaluators
+--   - Performance evaluators
+-- Courses_Assignments: 10+ links
 --   - Assignments mapped to courses with open_at and due_at dates
---   - 7 courses each have 2-3 assignments
--- Courses_Contents: ~50+ links
+-- Courses_Contents: 20+ links
 --   - Contents mapped to appropriate courses
--- Enrollments: ~500+ records
+-- Enrollments: ~300+ records
 --   - All lecturers as OWNER of their courses
 --   - 60% random student enrollment in public courses
 -- Submissions: 14 diverse submissions
@@ -628,11 +737,14 @@ COMMIT;
 --   - FAILED: 4 (scores 20-40)
 --   - PENDING: 1 (no score yet)
 --   - Multiple courses (CS101, CS201)
---   - Includes proper course_id for teacher queries
--- Help Requests: 3 support tickets from students
--- Notifications: 3 system notifications (SYSTEM, ASSIGNMENT, SUBMISSION)
--- Feedback: 2 teacher feedback entries on submissions
+--   - Includes proper course_id, complexity analysis
+-- Progress: 50+ progress records (one per student)
+-- Progress_Skills: Skill level tracking based on submissions
+-- Help Requests: 4 support tickets from students
+-- Notifications: 5 system notifications (SYSTEM, ASSIGNMENT, SUBMISSION, HELP_REQUEST)
+-- Users_Notifications: Notification-user mappings
+-- Feedback: 3 teacher feedback entries on submissions
 -- 
 -- ALL FOREIGN KEYS VALID - No orphaned records
--- READY FOR API TESTING - All endpoints have data
+-- READY FOR API TESTING - All endpoints have comprehensive test data
 -- ========================================================

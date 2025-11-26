@@ -42,6 +42,7 @@ public class SecurityConfig {
             "/auth/verify",
             "/auth/refresh-token",
             "/auth/resend-code",
+            "oauth2/authorization/google"
     };
 
     private final String[] PUBLIC_ENDPOINTS_GET = {
