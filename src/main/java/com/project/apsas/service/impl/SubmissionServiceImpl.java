@@ -233,7 +233,7 @@ public class SubmissionServiceImpl implements SubmissionService {
         var result = submissionRepository.findByAssignmentIdAndUserId(assignmentId, studentId);
 
         if (result.isEmpty()) {
-            throw new RuntimeException("Submission not found");
+            throw new AppException(ErrorCode.SUBMISSION_NOT_FOUND);
         }
 
         return mapToResponse(result.get());
@@ -251,13 +251,17 @@ public class SubmissionServiceImpl implements SubmissionService {
             codePreview = submission.getCode().substring(0, Math.min(500, codeLength));
         }
 
+        // Kiểm tra null để tránh NPE
+        Assignment assignment = submission.getAssignment();
+        User user = submission.getUser();
+        
         return SubmissionResponse.builder()
                 .id(submission.getId())
-                .assignmentId(submission.getAssignment().getId())
-                .assignmentTitle(submission.getAssignment() != null ? submission.getAssignment().getTitle() : null)
+                .assignmentId(assignment != null ? assignment.getId() : submission.getAssignmentId())
+                .assignmentTitle(assignment != null ? assignment.getTitle() : null)
                 .studentId(submission.getUserId())
-                .studentName(submission.getUser() != null ? submission.getUser().getName() : null)
-                .studentEmail(submission.getUser() != null ? submission.getUser().getEmail() : null)
+                .studentName(user != null ? user.getName() : null)
+                .studentEmail(user != null ? user.getEmail() : null)
                 .language(submission.getLanguage())
                 .score(submission.getScore())
                 .passed(submission.getPassed())
@@ -320,11 +324,31 @@ public class SubmissionServiceImpl implements SubmissionService {
 
     @Override
     public CreateSubmissionResponse createSubmission(CreateSubmissionRequest req) {
-        Long userId = Long.parseLong(authService.currentId());
+        // Validate request
+        if (req == null || req.getCode() == null || req.getCode().trim().isEmpty()) {
+            throw new AppException(ErrorCode.VALIDATION_FAILED);
+        }
+        if (req.getAssignmentId() == null || req.getCourseId() == null || req.getLanguageId() <= 0) {
+            throw new AppException(ErrorCode.VALIDATION_FAILED);
+        }
+        
+        // Get current user ID
+        String currentId = authService.currentId();
+        if (currentId == null || currentId.trim().isEmpty()) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+        
+        Long userId;
+        try {
+            userId = Long.parseLong(currentId);
+        } catch (NumberFormatException e) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+        
         Long assignmentId = req.getAssignmentId();
         Long courseId = req.getCourseId();
 
-        User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         if(!enrollmentRepository.existsEnrollmentByCourseIdAndUserId(courseId, userId))
             throw new AppException(ErrorCode.BAD_REQUEST);
@@ -357,7 +381,7 @@ public class SubmissionServiceImpl implements SubmissionService {
                 .build();
         submissionRepository.save(submission);
         // add skill cho user
-        if(!(user.getProgress() == null)) {
+        if(user.getProgress() != null) {
             ProgressSkill progressSkill = ProgressSkill.builder()
                     .skillId(assignment.getSkill().getId())
                     .progressId(user.getProgress().getId())
@@ -366,8 +390,14 @@ public class SubmissionServiceImpl implements SubmissionService {
                     .build();
             progressSkillRepository.save(progressSkill);
         }
-        if(!assignment.getAssignmentEvaluations().stream().findFirst().isPresent())
+        // Kiểm tra assignment có evaluations không
+        if(assignment.getAssignmentEvaluations() == null || assignment.getAssignmentEvaluations().isEmpty())
             throw new AppException(ErrorCode.BAD_REQUEST);
+        
+        AssignmentEvaluation evaluation = assignment.getAssignmentEvaluations().stream()
+                .findFirst()
+                .orElseThrow(() -> new AppException(ErrorCode.BAD_REQUEST));
+        
         FeedbackEvent feedbackEvent = FeedbackEvent.builder()
                 .submissionId(submission.getId())
                 .code(req.getCode())
@@ -377,7 +407,7 @@ public class SubmissionServiceImpl implements SubmissionService {
         SubmitCodeEvent submitCodeEvent = SubmitCodeEvent.builder()
                 .code(req.getCode())
                 .submissionId(submission.getId())
-                .configJson(assignment.getAssignmentEvaluations().stream().findFirst().get().getConfigJson())
+                .configJson(evaluation.getConfigJson())
                 .languageId(Integer.parseInt(submission.getLanguage()))
                 .build();
         kafkaRCEProducer.push(executeTopic,submitCodeEvent.getSubmissionId().toString(),submitCodeEvent);
@@ -499,7 +529,17 @@ public class SubmissionServiceImpl implements SubmissionService {
             Pageable pageable
     ) {
         // 1. Lấy user ID hiện tại
-        Long currentUserId = Long.parseLong(authService.currentId());
+        String currentId = authService.currentId();
+        if (currentId == null || currentId.trim().isEmpty()) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+        
+        Long currentUserId;
+        try {
+            currentUserId = Long.parseLong(currentId);
+        } catch (NumberFormatException e) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
         
         // 2. Lấy tất cả submissions của user với pagination
         Page<Submission> submissions = submissionRepository
@@ -510,15 +550,25 @@ public class SubmissionServiceImpl implements SubmissionService {
             Assignment assignment = submission.getAssignment();
             Course course = submission.getCourse();
             
+            // Kiểm tra null để tránh NPE - sử dụng fallback values
+            Long assignmentId = assignment != null ? assignment.getId() : submission.getAssignmentId();
+            String assignmentTitle = assignment != null ? assignment.getTitle() : "Unknown Assignment";
+            String assignmentDescription = assignment != null ? assignment.getStatementMd() : null;
+            Integer assignmentMaxScore = assignment != null && assignment.getMaxScore() != null 
+                    ? assignment.getMaxScore().intValue() : null;
+            
+            Long courseId = course != null ? course.getId() : submission.getCourseId();
+            String courseName = course != null ? course.getName() : "Unknown Course";
+            
             return com.project.apsas.dto.StudentSubmittedAssignmentDTO.builder()
                     // Assignment info
-                    .assignmentId(assignment.getId())
-                    .assignmentTitle(assignment.getTitle())
-                    .assignmentDescription(assignment.getStatementMd())
-                    .assignmentMaxScore(assignment.getMaxScore() != null ? assignment.getMaxScore().intValue() : null)
+                    .assignmentId(assignmentId)
+                    .assignmentTitle(assignmentTitle)
+                    .assignmentDescription(assignmentDescription)
+                    .assignmentMaxScore(assignmentMaxScore)
                     // Course info
-                    .courseId(course.getId())
-                    .courseName(course.getName())
+                    .courseId(courseId)
+                    .courseName(courseName)
                     // Submission info
                     .submissionId(submission.getId())
                     .status(submission.getStatus() != null ? submission.getStatus().name() : null)
