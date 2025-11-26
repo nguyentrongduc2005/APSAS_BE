@@ -218,4 +218,13 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
      * Lấy tất cả submissions của một user, sắp xếp theo thời gian mới nhất
      */
     Page<Submission> findByUserIdOrderBySubmittedAtDesc(Long userId, Pageable pageable);
+
+    @Query("""
+    SELECT COUNT(s) 
+    FROM Submission s, CourseAssignment ca
+    WHERE s.assignment.id = ca.assignmentId
+    AND ca.courseId = :courseId
+    AND s.userId = :studentId
+""")
+    long countSubmittedAssignments(Long courseId, Long studentId);
 }
