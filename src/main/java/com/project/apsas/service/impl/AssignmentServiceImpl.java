@@ -321,7 +321,7 @@ public class AssignmentServiceImpl implements AssignmentService {
                 .createdDate(assignment.getCreatedAt())
                 .proficiency(assignment.getProficiency())
                 .statementHtml(htmlOutput)
-                .testCases(configJson.getTestCases())
+                .testCases(configJson.getTestCases() == null ? null : configJson.getTestCases())
                 .maxScore(assignment.getMaxScore())
                 .orderNo(assignment.getOrderNo())
                 .build();
