@@ -155,7 +155,7 @@ public class SubmissionController {
             @RequestBody CreateSubmissionRequest createSubmissionRequest) {
         return ApiResponse.<CreateSubmissionResponse>builder()
                 .code("ok")
-                .message("succcessfully")
+                .message("successfully")
                 .data(submissionService.createSubmission(createSubmissionRequest))
                 .build();
     }
