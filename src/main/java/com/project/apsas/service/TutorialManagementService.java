@@ -9,4 +9,5 @@ public interface TutorialManagementService {
     Page<TutorialManagementResponse> getAllTutorials(TutorialStatus status, String keyword, Pageable pageable);
     TutorialManagementResponse getTutorialDetail(Long tutorialId);
     TutorialManagementResponse publishTutorial(Long tutorialId);
+    TutorialManagementResponse reviewTutorial(Long tutorialId, com.project.apsas.dto.request.admin.ReviewTutorialRequest request);
 }
