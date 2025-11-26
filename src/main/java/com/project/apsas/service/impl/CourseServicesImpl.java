@@ -45,6 +45,7 @@ public class CourseServicesImpl implements CourseServices {
     private final TutorialRepository tutorialRepository;
     private final ContentRepository contentRepository;
     private final CloudinaryService cloudinaryService;
+    private final SubmissionRepository submissionRepository;
 
     @NonFinal
     @Value("${cloudinary.option.folder-name}")
@@ -807,4 +808,75 @@ public class CourseServicesImpl implements CourseServices {
                 .build();
     }
 
+    @Override
+    public DetailCourseStudentResponse getCourseDetailForStudent(Long courseId) {
+        // 1. Lấy thông tin User hiện tại (từ Security Context)
+        // String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        // User currentUser = userRepository.findByEmail(email)...;
+        // Giả sử bạn đã có ID của student đang login, ví dụ:
+        Long currentStudentId = 1L; // TODO: Lấy từ token/security context thực tế
+
+        // 2. Lấy thông tin Course
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new RuntimeException("Course not found"));
+
+        // 3. Mapping ContentItems
+        // Dựa vào quan hệ Course -> CourseContent -> Content
+        List<DetailCourseStudentResponse.ContentItem> contentItems = course.getContentLinks().stream()
+                .map(link -> {
+                    Content content = link.getContent();
+                    return DetailCourseStudentResponse.ContentItem.builder()
+                            .id(content.getId())
+                            .title(content.getTitle())
+                            .orderNo(content.getOrderNo())
+                            // size của set mediaList
+                            .totalMedia(content.getMediaList() != null ? content.getMediaList().size() : 0)
+                            .build();
+                })
+                .sorted(Comparator.comparingInt(item ->
+                        item.getOrderNo() != null ? item.getOrderNo() : Integer.MAX_VALUE))
+                .collect(Collectors.toList());
+
+        // 4. Mapping Assignments
+        // Dựa vào quan hệ Course -> CourseAssignment -> Assignment
+        List<DetailCourseStudentResponse.AssignmentItem> assignments = course.getAssignmentLinks().stream()
+                .map(link -> {
+                    // Entity CourseAssignment chứa thông tin openAt, dueAt
+                    // Entity Assignment chứa thông tin title (Giả định entity Assignment có getTitle)
+                    var assignmentEntity = link.getAssignment();
+
+                    return DetailCourseStudentResponse.AssignmentItem.builder()
+                            .id(assignmentEntity.getId())
+                            .title(assignmentEntity.getTitle()) // TODO: Đảm bảo Assignment entity có field này
+                            .openAt(link.getOpenAt())
+                            .dueAt(link.getDueAt())
+                            .orderNo(assignmentEntity.getOrderNo()) // CourseAssignment không có orderNo, Content mới có. Để null hoặc tự xử lý logic
+                            .build();
+                })
+                // Sort theo ngày mở nếu không có orderNo
+                .sorted(Comparator.comparing(item ->
+                        item.getOpenAt() != null ? item.getOpenAt() : java.time.LocalDateTime.MAX))
+                .collect(Collectors.toList());
+
+        // 5. Tính toán Progress (Bài đã nộp / Tổng bài tập)
+        int totalAssignment = assignments.size();
+        long submittedCount = submissionRepository.countSubmittedAssignments(courseId, currentStudentId);
+
+        int progressAverage = 0;
+        if (totalAssignment > 0) {
+            progressAverage = (int) (((double) submittedCount / totalAssignment) * 100);
+        }
+
+        // 6. Build Response
+        return DetailCourseStudentResponse.builder()
+                .name(course.getName())
+                .description(course.getDescription())
+                .totalStudent(course.getEnrollments() != null ? course.getEnrollments().size() : 0)
+                .totalLession(contentItems.size() + totalAssignment)
+                .totalAssignment(totalAssignment)
+                .progressAverage(progressAverage)
+                .contentItems(contentItems)
+                .assignments(assignments)
+                .build();
+    }
 }
