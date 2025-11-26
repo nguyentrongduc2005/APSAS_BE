@@ -20,9 +20,7 @@ public interface TutorialService {
      * @param status        filter theo status (PUBLISHED/DRAFT/ARCHIVED) - có thể null
      * @param hasAssignment true = chỉ lấy tutorial có assignment, false = chỉ lấy tutorial không có assignment, null = bỏ qua filter này
      */
-    List<CreateTutorialResponse> getMyTutorials(String keyword,
-                                                String status,
-                                                Boolean hasAssignment);
+    Page<SearchTutorialResponse> getMyTutorials(String keyword, String status, Boolean hasAssignment, Pageable pageable);
 
     public Boolean updateTutorial(UpdateTutorialRequest request, Long tutorialId);
 

@@ -298,21 +298,40 @@ public class AssignmentServiceImpl implements AssignmentService {
     @Override
     public DetailAssignmentResponse detailAssignmentTutorial(Long assignmentId) throws JsonProcessingException {
 
-        Assignment assignment = assignmentRepository.findById(assignmentId).orElseThrow(() ->
-                new AppException(ErrorCode.ASSIGNMENT_NOT_EXISTED));
+        Assignment assignment = assignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> new AppException(ErrorCode.ASSIGNMENT_NOT_EXISTED));
+
         String markdownInput = assignment.getStatementMd();
 
+        String htmlOutput = "";
+        if (markdownInput != null) {
+            Node document = markdownParser.parse(markdownInput);
+            htmlOutput = htmlRenderer.render(document);
+        }
 
+        // --- SỬA ĐOẠN NÀY ---
 
-        Node document = markdownParser.parse(markdownInput);
-        String htmlOutput = htmlRenderer.render(document);
+        // 1. Tìm evaluation, nếu không có thì trả về null (không ném lỗi nữa)
+        AssignmentEvaluation assignmentEvaluation = assignment.getAssignmentEvaluations().stream()
+                .findFirst()
+                .orElse(null);
 
-        AssignmentEvaluation assignmentEvaluation = assignment.getAssignmentEvaluations().stream().findFirst().get();
+        List<TestCase> testCases = null; // Mặc định là null
 
-
-        String configJsonString = assignmentEvaluation.getConfigJson();
-
-        ConfigJson configJson = objectMapper.readValue(configJsonString, ConfigJson.class);
+        // 2. Chỉ parse JSON nếu evaluation tồn tại
+        if (assignmentEvaluation != null) {
+            String configJsonString = assignmentEvaluation.getConfigJson();
+            if (configJsonString != null && !configJsonString.isEmpty()) {
+                // Bọc try-catch đề phòng JSON lỗi format cũng không làm sập API
+                try {
+                    ConfigJson configJson = objectMapper.readValue(configJsonString, ConfigJson.class);
+                    testCases = configJson.getTestCases();
+                } catch (Exception e) {
+                    // Log lỗi nếu cần, hoặc bỏ qua
+                    System.err.println("Lỗi parse JSON config: " + e.getMessage());
+                }
+            }
+        }
 
         return DetailAssignmentResponse.builder()
                 .id(assignment.getId())
@@ -321,10 +340,9 @@ public class AssignmentServiceImpl implements AssignmentService {
                 .createdDate(assignment.getCreatedAt())
                 .proficiency(assignment.getProficiency())
                 .statementHtml(htmlOutput)
-                .testCases(configJson.getTestCases() == null ? null : configJson.getTestCases())
+                .testCases(testCases) // Giá trị này sẽ là null nếu không có evaluation
                 .maxScore(assignment.getMaxScore())
                 .orderNo(assignment.getOrderNo())
                 .build();
     }
-
 }
