@@ -12,10 +12,12 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import com.project.apsas.entity.Permission;
+import com.project.apsas.entity.Profile;
 import com.project.apsas.entity.Role;
 import com.project.apsas.entity.User;
 import com.project.apsas.enums.UserStatus;
 import com.project.apsas.repository.PermissionRepository;
+import com.project.apsas.repository.ProfileRepository;
 import com.project.apsas.repository.RoleRepository;
 import com.project.apsas.repository.UserRepository;
 
@@ -25,13 +27,15 @@ public class DataSeeder implements ApplicationRunner {
     private final PermissionRepository permRepo;
     private final RoleRepository roleRepo;
     private final UserRepository userRepo;
+    private final ProfileRepository profileRepo;
     private final PasswordEncoder encoder;
     private final AdminProperties admin;
     @Value("${app.seed.enabled:true}") private boolean seedEnabled;
 
     public DataSeeder(PermissionRepository p, RoleRepository r, UserRepository u,
-                      PasswordEncoder e, AdminProperties a) {
-        this.permRepo = p; this.roleRepo = r; this.userRepo = u; this.encoder = e; this.admin = a;
+                      ProfileRepository pr, PasswordEncoder e, AdminProperties a) {
+        this.permRepo = p; this.roleRepo = r; this.userRepo = u; this.profileRepo = pr;
+        this.encoder = e; this.admin = a;
     }
 
     @Override 
@@ -66,15 +70,16 @@ public class DataSeeder implements ApplicationRunner {
         log.info("Seeding permissions...");
         List<String> P = List.of(
                 // Admin - User Management
-                "VIEW_USERS", "CREATE_USERS", "UPDATE_USERS", "DELETE_USERS",
+                "VIEW_USERS", "CREATE_USERS", "UPDATE_USERS", "DELETE_USERS", "MANAGE_USERS",
                 // Admin - Role Management
-                "VIEW_ROLES", "CREATE_ROLES", "UPDATE_ROLES", "DELETE_ROLES",
+                "VIEW_ROLES", "CREATE_ROLES", "UPDATE_ROLES", "DELETE_ROLES", "MANAGE_ROLES",
                 // Admin - Tutorial Management
-                "MANAGE_TUTORIALS", "PUBLISH_TUTORIALS",
+                "MANAGE_TUTORIALS", "PUBLISH_TUTORIALS", "VIEW_TUTORIALS",
                 // Content Provider - Tutorial Operations
                 "CREATE_TUTORIAL", "UPDATE_TUTORIAL", "DELETE_TUTORIAL", "VIEW_OWN_TUTORIALS",
                 // Content Provider - Content & Assignment
-                "CREATE_CONTENT", "UPDATE_CONTENT", "CREATE_ASSIGNMENT", "UPDATE_ASSIGNMENT",
+                "CREATE_CONTENT", "UPDATE_CONTENT", "DELETE_CONTENT",
+                "CREATE_ASSIGNMENT", "UPDATE_ASSIGNMENT", "DELETE_ASSIGNMENT",
                 // Lecturer - Course Management
                 "VIEW_COURSES", "CREATE_COURSE", "UPDATE_COURSE", "DELETE_COURSE",
                 // Student - Course Operations
@@ -84,11 +89,14 @@ public class DataSeeder implements ApplicationRunner {
                 // Student - Assignment Operations
                 "SUBMIT_ASSIGNMENT",
                 // Support & Help
-                "VIEW_FEEDBACK", "RESPOND_FEEDBACK", "REQUEST_HELP", "VIEW_HELP_REQUESTS",
+                "VIEW_FEEDBACK", "RESPOND_FEEDBACK", "SUBMIT_FEEDBACK", "RESPOND_HELP_REQUESTS",
+                "REQUEST_HELP", "VIEW_HELP_REQUESTS",
                 // Notifications
                 "VIEW_NOTIFICATIONS", "MANAGE_NOTIFICATIONS",
                 // Statistics
-                "VIEW_TEACHER_STATS",
+                "VIEW_TEACHER_STATS", "VIEW_PROGRESS",
+                // Profile
+                "VIEW_PROFILE", "UPDATE_PROFILE",
                 // General
                 "DASHBOARD_VIEW", "PROFILE_READ", "PROFILE_WRITE", "SUPPORT_CREATE",
                 "RESOURCE_READ", "RESOURCE_WRITE", "TESTCASE_READ", "TESTCASE_WRITE",
@@ -147,15 +155,27 @@ public class DataSeeder implements ApplicationRunner {
         
         // ADMIN - Quản trị viên (tất cả permissions)
         List<String> allPermissions = List.of(
-                "VIEW_USERS", "CREATE_USERS", "UPDATE_USERS", "DELETE_USERS",
-                "VIEW_ROLES", "CREATE_ROLES", "UPDATE_ROLES", "DELETE_ROLES",
-                "MANAGE_TUTORIALS", "PUBLISH_TUTORIALS",
+                // User & Role Management
+                "VIEW_USERS", "CREATE_USERS", "UPDATE_USERS", "DELETE_USERS", "MANAGE_USERS",
+                "VIEW_ROLES", "CREATE_ROLES", "UPDATE_ROLES", "DELETE_ROLES", "MANAGE_ROLES",
+                // Tutorial Management
+                "MANAGE_TUTORIALS", "PUBLISH_TUTORIALS", "VIEW_TUTORIALS",
                 "CREATE_TUTORIAL", "UPDATE_TUTORIAL", "DELETE_TUTORIAL", "VIEW_OWN_TUTORIALS",
-                "CREATE_CONTENT", "UPDATE_CONTENT", "CREATE_ASSIGNMENT", "UPDATE_ASSIGNMENT",
+                // Content & Assignment
+                "CREATE_CONTENT", "UPDATE_CONTENT", "DELETE_CONTENT",
+                "CREATE_ASSIGNMENT", "UPDATE_ASSIGNMENT", "DELETE_ASSIGNMENT",
+                // Course Management
                 "VIEW_COURSES", "CREATE_COURSE", "UPDATE_COURSE", "DELETE_COURSE", "ENROLL_COURSE",
+                // Submissions
                 "VIEW_SUBMISSIONS", "EVALUATE_SUBMISSIONS", "SUBMIT_ASSIGNMENT",
-                "VIEW_FEEDBACK", "RESPOND_FEEDBACK", "REQUEST_HELP", "VIEW_HELP_REQUESTS",
-                "VIEW_NOTIFICATIONS", "MANAGE_NOTIFICATIONS", "VIEW_TEACHER_STATS",
+                // Feedback & Help
+                "VIEW_FEEDBACK", "RESPOND_FEEDBACK", "SUBMIT_FEEDBACK", "RESPOND_HELP_REQUESTS",
+                "REQUEST_HELP", "VIEW_HELP_REQUESTS",
+                // Notifications & Stats
+                "VIEW_NOTIFICATIONS", "MANAGE_NOTIFICATIONS", "VIEW_TEACHER_STATS", "VIEW_PROGRESS",
+                // Profile
+                "VIEW_PROFILE", "UPDATE_PROFILE",
+                // General
                 "DASHBOARD_VIEW", "PROFILE_READ", "PROFILE_WRITE", "SUPPORT_CREATE",
                 "RESOURCE_READ", "RESOURCE_WRITE", "TESTCASE_READ", "TESTCASE_WRITE",
                 "SCHEDULE_READ", "NOTIF_READ", "NOTIF_WRITE",
@@ -203,13 +223,28 @@ public class DataSeeder implements ApplicationRunner {
                         .status(UserStatus.ACTIVE)
                         .build();
                 u.getRoles().add(adminRole);
-                userRepo.save(u);
+                User savedUser = userRepo.save(u);
                 
-                log.info("Created admin user: {}", email);
+                // Create profile for admin user
+                Profile profile = Profile.builder()
+                        .user(savedUser)
+                        .build();
+                profileRepo.save(profile);
+                
+                log.info("Created admin user with profile: {}", email);
             } catch (Exception e) {
                 log.error("Error creating admin user: {}", e.getMessage());
             }
         } else {
+            // Ensure existing admin user has a profile
+            User existingAdmin = userRepo.findByEmail(email).orElse(null);
+            if (existingAdmin != null && existingAdmin.getProfile() == null) {
+                Profile profile = Profile.builder()
+                        .user(existingAdmin)
+                        .build();
+                profileRepo.save(profile);
+                log.info("Created profile for existing admin user: {}", email);
+            }
             log.info("Admin user already exists: {}", email);
         }
     }

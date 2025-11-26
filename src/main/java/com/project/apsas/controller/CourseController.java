@@ -115,6 +115,15 @@ public class CourseController {
                 .data(data)
                 .build();
     }
+    @PreAuthorize("hasAuthority('VIEW_COURSES')")
+    @GetMapping("/{id}/detail-student")
+    public ApiResponse<DetailCourseStudentResponse> getCourseDetail(@PathVariable Long id) {
+        return ApiResponse.<DetailCourseStudentResponse>builder()
+                .code("ok")
+                .message("succces")
+                .data(service.getCourseDetailForStudent(id))
+                .build();
+    }
     @GetMapping("/{courseId}/register-details")
     public ApiResponse<CourseRegisPublicReponse> getCourseDetailregis(@PathVariable Long courseId) {
         var data = service.getCourseRegistrationDetailss(courseId);

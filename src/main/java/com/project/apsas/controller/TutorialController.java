@@ -190,7 +190,7 @@ public class TutorialController {
                 .data(assignmentService.detailAssignmentTutorial(assignmentId))
                 .build();
     }
-    @PreAuthorize("hasAuthority('RESOURCE_READ')")
+    @PreAuthorize("hasAuthority('RESOURCE_READ') or hasAuthority('MANAGE_TUTORIALS')")
     @GetMapping
     public ApiResponse<Page<SearchTutorialResponse>> getAllTutorials(
             @RequestParam(defaultValue = "0") int page,
