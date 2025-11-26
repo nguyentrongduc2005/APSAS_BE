@@ -15,6 +15,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/admin/tutorials")
 @RequiredArgsConstructor
@@ -69,6 +71,28 @@ public class TutorialManagementController {
                 .code("ok")
                 .message("Tutorial đã được phát hành thành công")
                 .data(tutorialManagementService.publishTutorial(tutorialId))
+                .build();
+    }
+
+    /**
+     * Duyệt hoặc từ chối tutorial - chuyển trạng thái thành PUBLISHED hoặc REJECTED
+     * PUT /api/admin/tutorials/{tutorialId}/review
+     */
+    @PreAuthorize("hasAuthority('MANAGE_TUTORIALS')")
+    @PutMapping("/{tutorialId}/review")
+    public ApiResponse<TutorialManagementResponse> reviewTutorial(
+            @PathVariable Long tutorialId,
+            @Valid @RequestBody ReviewTutorialRequest request
+    ) {
+        TutorialManagementResponse response = tutorialManagementService.reviewTutorial(tutorialId, request);
+        String message = request.getStatus() == TutorialStatus.PUBLISHED
+                ? "Tutorial đã được duyệt thành công"
+                : "Tutorial đã bị từ chối";
+        
+        return ApiResponse.<TutorialManagementResponse>builder()
+                .code("ok")
+                .message(message)
+                .data(response)
                 .build();
     }
 }
