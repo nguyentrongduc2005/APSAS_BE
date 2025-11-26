@@ -153,7 +153,7 @@ public class TutorialController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('RESOURCE_READ')")
+//    @PreAuthorize("hasAuthority('RESOURCE_READ')")
     public ApiResponse<DetailTutorialResponse> getTutorialDetail(@PathVariable Long id) {
         return ApiResponse.<DetailTutorialResponse>builder()
                 .code("ok")
