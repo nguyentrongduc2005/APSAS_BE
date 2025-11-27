@@ -31,7 +31,6 @@ docker compose up -d
 
 ---
 
-## 2) Backend Architecture (Monolith-Modular, DDD-oriented)
 
 > Spring Boot 3, Java 17+, mysql, WebClient, JWT, Flyway, Micrometer.
 
@@ -143,18 +142,20 @@ sequenceDiagram
 ```text
 src/
  └─ main/
-     ├─ java/com/example/project/
-     │   ├─ controller/        # REST Controllers (API layer)
-     │   ├─ service/           # Business logic
-     │   │    └─ impl/         # Triển khai service
-     │   ├─ repository/        # Repository (Spring Data JPA interface)
-     │   ├─ model/             # Entity (JPA @Entity) hoặc DTO
-     │   ├─ dto/               # Request/Response objects
-     │   ├─ config/            # Cấu hình: Security, CORS, Swagger, Database
-     │   └─ exception/         # Custom exception + @ControllerAdvice
+     ├─ java/com/project/apsas/
+     │    ├─ configuration/    # Cấu hình hệ thống (Security, CORS, Swagger, Database...)
+     │    ├─ controller/       # REST Controllers (API layer - Điểm tiếp nhận request)
+     │    ├─ dto/              # Data Transfer Objects (Request/Response models)
+     │    ├─ entity/           # JPA Entities (Ánh xạ bảng Database)
+     │    ├─ enums/            # Các hằng số định danh (Status, Type, Roles...)
+     │    ├─ exception/        # Xử lý lỗi tập trung (@ControllerAdvice, Custom Exceptions)
+     │    ├─ integration/      # Xử lý tích hợp bên ngoài (Judge0, AI Service, Email...)
+     │    ├─ mapper/           # Chuyển đổi dữ liệu giữa Entity và DTO (MapStruct)
+     │    ├─ repository/       # Data Access Layer (Spring Data JPA)
+     │    ├─ service/          # Business Logic (Xử lý nghiệp vụ chính)
+     │    └─ ApsasApplication  # Class khởi chạy ứng dụng (Main class)
      └─ resources/
-         ├─ application.yml    # cấu hình app
-         └─ db/migration/      # Flyway/Liquibase scripts
+          └─ application.yaml  # File cấu hình chính của ứng dụng
 ```
 
 ---
