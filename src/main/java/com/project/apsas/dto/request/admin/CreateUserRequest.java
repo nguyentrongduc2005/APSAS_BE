@@ -26,8 +26,8 @@ public class CreateUserRequest {
     @NotBlank(message = "PASSWORD_REQUIRED")
     private String password;
 
-    @NotEmpty(message = "ROLE_IDS_REQUIRED")
-    private Set<Long> roleIds;
+    @NotEmpty(message = "ROLE_NAMES_REQUIRED")
+    private Set<String> roleNames;
 
     @lombok.Builder.Default
     private UserStatus status = UserStatus.ACTIVE;

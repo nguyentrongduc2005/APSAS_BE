@@ -35,11 +35,30 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(value = MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse> handleArgumentNotValidException(MethodArgumentNotValidException ex) {
-        String errorCode = ex.getFieldError().getDefaultMessage();
-        ErrorCode error = ErrorCode.valueOf(errorCode);
+        String fieldName = "unknown";
+        String errorMessage = "Validation failed";
+        
+        if (ex.getFieldError() != null) {
+            fieldName = ex.getFieldError().getField();
+            String defaultMessage = ex.getFieldError().getDefaultMessage();
+            
+            // Try to parse as ErrorCode, if fails use the message directly
+            try {
+                ErrorCode error = ErrorCode.valueOf(defaultMessage);
+                errorMessage = error.getDefaultMessage();
+                ApiResponse apiResponse = new ApiResponse();
+                apiResponse.setCode(error.getCode());
+                apiResponse.setMessage(errorMessage);
+                return ResponseEntity.badRequest().body(apiResponse);
+            } catch (IllegalArgumentException | NullPointerException e) {
+                // If validation message is not an ErrorCode, use it as message
+                errorMessage = defaultMessage != null ? defaultMessage : "Validation failed for field: " + fieldName;
+            }
+        }
+        
         ApiResponse apiResponse = new ApiResponse();
-        apiResponse.setCode(error.getCode());
-        apiResponse.setMessage(error.getDefaultMessage());
+        apiResponse.setCode(ErrorCode.VALIDATION_FAILED.getCode());
+        apiResponse.setMessage(errorMessage);
         return ResponseEntity.badRequest().body(apiResponse);
     }
 

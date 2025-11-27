@@ -38,7 +38,10 @@ public enum ErrorCode {
     TIME_INVALID("E5020", HttpStatus.BAD_REQUEST, "thời gian không hợp lệ"),
     ROLE_EXISTED("E5021", HttpStatus.CONFLICT, "vai trò đã tồn tại"),
     PERMISSION_NOT_FOUND("E5022", HttpStatus.NOT_FOUND, "không tìm thấy permission"),
-    ROLE_IN_USE("E5023", HttpStatus.BAD_REQUEST, "vai trò đang được sử dụng, không thể xóa")
+    ROLE_IN_USE("E5023", HttpStatus.BAD_REQUEST, "vai trò đang được sử dụng, không thể xóa"),
+    ROLE_NAME_REQUIRED("E5024", HttpStatus.BAD_REQUEST, "Tên vai trò không được để trống"),
+    ROLE_NAME_TOO_LONG("E5025", HttpStatus.BAD_REQUEST, "Tên vai trò không được vượt quá 80 ký tự"),
+    ROLE_DESCRIPTION_TOO_LONG("E5026", HttpStatus.BAD_REQUEST, "Mô tả không được vượt quá 500 ký tự")
 
     ;
 

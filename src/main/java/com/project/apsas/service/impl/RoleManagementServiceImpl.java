@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -52,24 +53,38 @@ public class RoleManagementServiceImpl implements RoleManagementService {
     @Override
     @Transactional
     public RoleManagementResponse createRole(CreateRoleRequest request) {
-        // Kiểm tra tên role đã tồn tại chưa
-        if (roleRepository.findByName(request.getName()).isPresent()) {
+        // Validate request
+        if (request == null || request.getName() == null || request.getName().trim().isEmpty()) {
+            throw new AppException(ErrorCode.ROLE_NAME_REQUIRED);
+        }
+        
+        // Normalize role name to uppercase for consistency
+        String normalizedName = request.getName().trim().toUpperCase(Locale.ROOT);
+        
+        // Kiểm tra tên role đã tồn tại chưa (case insensitive)
+        if (roleRepository.findByName(normalizedName).isPresent()) {
             throw new AppException(ErrorCode.ROLE_EXISTED);
         }
         
-        // Lấy danh sách permissions
+        // Lấy danh sách permissions by name (more reliable than IDs) - case insensitive
         Set<Permission> permissions = new HashSet<>();
-        if (request.getPermissionIds() != null && !request.getPermissionIds().isEmpty()) {
-            permissions = request.getPermissionIds().stream()
-                    .map(id -> permissionRepository.findById(id)
-                            .orElseThrow(() -> new AppException(ErrorCode.PERMISSION_NOT_FOUND)))
+        if (request.getPermissionNames() != null && !request.getPermissionNames().isEmpty()) {
+            permissions = request.getPermissionNames().stream()
+                    .map(permissionName -> {
+                        if (permissionName == null || permissionName.trim().isEmpty()) {
+                            throw new AppException(ErrorCode.BAD_REQUEST);
+                        }
+                        // Try exact match first
+                        return permissionRepository.findByName(permissionName.trim())
+                                .orElseThrow(() -> new AppException(ErrorCode.PERMISSION_NOT_FOUND));
+                    })
                     .collect(Collectors.toSet());
         }
         
-        // Tạo role mới
+        // Tạo role mới với normalized name
         Role role = Role.builder()
-                .name(request.getName())
-                .description(request.getDescription())
+                .name(normalizedName)
+                .description(request.getDescription() != null ? request.getDescription().trim() : null)
                 .permissions(permissions)
                 .build();
         
@@ -85,13 +100,16 @@ public class RoleManagementServiceImpl implements RoleManagementService {
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
         
-        // Cập nhật tên nếu có
-        if (request.getName() != null && !request.getName().equals(role.getName())) {
-            // Kiểm tra tên mới có trùng không
-            if (roleRepository.findByName(request.getName()).isPresent()) {
-                throw new AppException(ErrorCode.ROLE_EXISTED);
+        // Cập nhật tên nếu có (normalize to uppercase)
+        if (request.getName() != null && !request.getName().trim().isEmpty()) {
+            String normalizedName = request.getName().trim().toUpperCase(Locale.ROOT);
+            if (!normalizedName.equals(role.getName())) {
+                // Kiểm tra tên mới có trùng không
+                if (roleRepository.findByName(normalizedName).isPresent()) {
+                    throw new AppException(ErrorCode.ROLE_EXISTED);
+                }
+                role.setName(normalizedName);
             }
-            role.setName(request.getName());
         }
         
         // Cập nhật mô tả
@@ -99,11 +117,16 @@ public class RoleManagementServiceImpl implements RoleManagementService {
             role.setDescription(request.getDescription());
         }
         
-        // Cập nhật permissions
-        if (request.getPermissionIds() != null) {
-            Set<Permission> permissions = request.getPermissionIds().stream()
-                    .map(id -> permissionRepository.findById(id)
-                            .orElseThrow(() -> new AppException(ErrorCode.PERMISSION_NOT_FOUND)))
+        // Cập nhật permissions by name (more reliable than IDs) - case insensitive
+        if (request.getPermissionNames() != null) {
+            Set<Permission> permissions = request.getPermissionNames().stream()
+                    .map(permissionName -> {
+                        if (permissionName == null || permissionName.trim().isEmpty()) {
+                            throw new AppException(ErrorCode.BAD_REQUEST);
+                        }
+                        return permissionRepository.findByName(permissionName.trim())
+                                .orElseThrow(() -> new AppException(ErrorCode.PERMISSION_NOT_FOUND));
+                    })
                     .collect(Collectors.toSet());
             role.setPermissions(permissions);
         }

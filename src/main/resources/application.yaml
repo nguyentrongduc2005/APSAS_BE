@@ -11,16 +11,16 @@ spring:
     name: CodeVerse
   data:
     redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT}
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
   ai:
     model:
       chat: openai
     openai:
-      api-key: ${GEMINI_API_KEY}        # dùng Gemini API key
+      api-key: ${GEMINI_API_KEY:}        # dùng Gemini API key
       chat:
         base-url: https://generativelanguage.googleapis.com
-        api-key: ${GEMINI_API_KEY}     # hoặc spring.ai.openai.chat.api-key (tùy version)
+        api-key: ${GEMINI_API_KEY:}     # hoặc spring.ai.openai.chat.api-key (tùy version)
         options:
           model: gemini-2.5-flash
         completions-path: /v1beta/openai/chat/completions
@@ -32,9 +32,9 @@ spring:
         queue-capacity: 1000
       thread-name-prefix: app-async-
   datasource:
-    url: ${MYSQL}
-    username: ${USER}
-    password: ${PASS}
+    url: ${MYSQL:jdbc:mysql://127.0.0.1:3308/apsas_db?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh}
+    username: ${USER:user}
+    password: ${PASS:1234}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       auto-commit: false
@@ -66,8 +66,8 @@ spring:
         client:
           registration:
             google:
-              client-id: ${GGCLIENTID}
-              client-secret: ${GGCLIENT_SECRET}
+              client-id: ${GGCLIENTID:}
+              client-secret: ${GGCLIENT_SECRET:}
               scope: email, profile
           provider:
             google:
@@ -75,10 +75,10 @@ spring:
               token-uri: https://oauth2.googleapis.com/token
               user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
   frontend:
-    url: ${URLFONTEND}
+    url: ${URLFONTEND:http://localhost:5173}
 #    https://apsas-fe.vercel.app
   kafka:
-    bootstrap-servers: ${KAFKA}
+    bootstrap-servers: ${KAFKA:localhost:9094}
     consumer:
       auto-offset-reset: earliest
       enable-auto-commit: false
@@ -122,7 +122,7 @@ message-queue:
 cloudinary:
   cloud-name: ddcyjcpx0
   api-key: 197971381659871
-  api-secret: ${API_SECRET_CLOUDINARY}
+  api-secret: ${API_SECRET_CLOUDINARY:}
   option:
     folder-name: uploads/general
     resource-type: auto
@@ -132,7 +132,7 @@ jwt:
     ttl-minutes: 10
   refresh:
     ttl-minutes: 120
-  signerKey: ${JWTKEY}
+  signerKey: ${JWTKEY:1TjXchw5FloESb63Kc+DFhTARvpWL4jUGCwfGWxuG5SIf/1y/LgJxHnMqaF6A/ij}
   valid-duration: 3600 # in second
   refreshable-duration: 36000 # in seconds
 
@@ -140,7 +140,7 @@ jwt:
 
 brevo:
   base-url: https://api.brevo.com/v3
-  api-key: ${API_KEY_BREVO}
+  api-key: ${API_KEY_BREVO:}
   template-id: 3
   sender:
     mail: nguyentrongduc447@gmail.com

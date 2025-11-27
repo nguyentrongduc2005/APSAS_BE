@@ -95,10 +95,17 @@ public class UserManagementServiceImpl implements UserManagementService {
             throw new AppException(ErrorCode.USER_ESIXSTED);
         }
 
-        // Get roles
-        Set<Role> roles = request.getRoleIds().stream()
-                .map(roleId -> roleRepository.findById(roleId)
-                        .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND)))
+        // Get roles by name (more reliable than IDs) - case insensitive
+        Set<Role> roles = request.getRoleNames().stream()
+                .map(roleName -> {
+                    if (roleName == null || roleName.trim().isEmpty()) {
+                        throw new AppException(ErrorCode.BAD_REQUEST);
+                    }
+                    // Try exact match first, then try uppercase
+                    String normalizedName = roleName.trim().toUpperCase(Locale.ROOT);
+                    return roleRepository.findByName(normalizedName)
+                            .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+                })
                 .collect(Collectors.toSet());
 
         // Create user
@@ -155,10 +162,27 @@ public class UserManagementServiceImpl implements UserManagementService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-        // Get new roles
-        Set<Role> newRoles = request.getRoleIds().stream()
-                .map(roleId -> roleRepository.findById(roleId)
-                        .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND)))
+        // Validate request
+        if (request == null || request.getRoleNames() == null || request.getRoleNames().isEmpty()) {
+            log.warn("Invalid updateUserRoles request for user {}: request is null or roleNames is empty", userId);
+            throw new AppException(ErrorCode.BAD_REQUEST);
+        }
+
+        // Get new roles by name (more reliable than IDs) - case insensitive
+        Set<Role> newRoles = request.getRoleNames().stream()
+                .map(roleName -> {
+                    if (roleName == null || roleName.trim().isEmpty()) {
+                        log.warn("Empty role name provided for user {}", userId);
+                        throw new AppException(ErrorCode.BAD_REQUEST);
+                    }
+                    // Normalize to uppercase for consistency
+                    String normalizedName = roleName.trim().toUpperCase(Locale.ROOT);
+                    return roleRepository.findByName(normalizedName)
+                            .orElseThrow(() -> {
+                                log.warn("Role not found: {} (normalized: {}) for user {}", roleName, normalizedName, userId);
+                                return new AppException(ErrorCode.ROLE_NOT_FOUND);
+                            });
+                })
                 .collect(Collectors.toSet());
 
         // Check if student role is added/removed to handle progress
