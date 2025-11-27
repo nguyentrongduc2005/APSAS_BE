@@ -237,11 +237,32 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     private NotificationResponse toResponse(Notification notification) {
+        // Parse payload JSON để lấy message/content
+        String message = null;
+        Map<String, Object> payloadMap = null;
+        
+        if (notification.getPayload() != null && !notification.getPayload().isBlank()) {
+            try {
+                // Thử parse payload như JSON object
+                @SuppressWarnings("unchecked")
+                Map<String, Object> parsedMap = objectMapper.readValue(notification.getPayload(), Map.class);
+                payloadMap = parsedMap;
+                // Lấy message từ payload nếu có
+                if (payloadMap != null && payloadMap.containsKey("message")) {
+                    message = payloadMap.get("message").toString();
+                }
+            } catch (Exception e) {
+                // Nếu không phải JSON, dùng payload như string message
+                message = notification.getPayload();
+            }
+        }
+        
         return NotificationResponse.builder()
                 .id(notification.getId())
                 .userId(notification.getUserId())
                 .type(notification.getType())
                 .payload(notification.getPayload())
+                .message(message) // Thêm message đã parse
                 .isRead(notification.getIsRead())
                 .createdAt(notification.getCreatedAt())
                 .build();
