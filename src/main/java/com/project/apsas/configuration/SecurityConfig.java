@@ -53,7 +53,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity, CustomOAuth2UserService customOAuth2UserService,
                                            OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler) throws Exception {
-        httpSecurity.csrf(AbstractHttpConfigurer::disable).cors(cors -> cors.configurationSource(corsConfigurationSource()));
+        httpSecurity.csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()));
         httpSecurity.authorizeHttpRequests(request -> request
                         .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.GET, PUBLIC_ENDPOINTS_GET).permitAll()
@@ -82,9 +83,10 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource(){
         CorsConfiguration config = new CorsConfiguration();
         // Origin FE
-        config.setAllowedOriginPatterns(List.of("http://localhost:*", "https://*.vercel.app"));
-        // Nếu bạn dùng cookie / Authorization header => cần dòng này
+        config.setAllowedOriginPatterns(List.of("*"));
         config.setAllowCredentials(true);
+        // Nếu bạn dùng cookie / Authorization header => cần dòng này
+
 
         // Các method cho phép
         config.setAllowedMethods(List.of("GET", "POST","PATCH", "PUT", "DELETE", "OPTIONS"));
