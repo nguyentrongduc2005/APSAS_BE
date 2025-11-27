@@ -43,7 +43,7 @@ public class DataSeeder implements ApplicationRunner {
         this.profileRepo = pr;
         this.encoder = e;
         this.admin = a;
-        this.transactionTemplate = new TransactionTemplate(transactionManager);
+        this.transactionTemplate = new TransactionTemplate(Objects.requireNonNull(transactionManager, "TransactionManager cannot be null"));
     }
 
     @Override
@@ -91,10 +91,11 @@ public class DataSeeder implements ApplicationRunner {
 
             for (String name : permissions) {
                 if (permRepo.findByName(name).isEmpty()) {
-                    permRepo.save(Permission.builder()
+                    Permission permission = Permission.builder()
                             .name(name)
                             .description(name.replace('_', ' ').toLowerCase())
-                            .build());
+                            .build();
+                    permRepo.save(Objects.requireNonNull(permission, "Permission cannot be null"));
                 }
             }
             return null;
@@ -141,11 +142,14 @@ public class DataSeeder implements ApplicationRunner {
 
                 // 1. Tìm hoặc tạo Role (Chưa lưu DB ngay để tránh lỗi)
                 Role role = roleRepo.findByName(roleName)
-                        .orElseGet(() -> roleRepo.save(Role.builder()
-                                .name(roleName)
-                                .description(roleName)
-                                .permissions(new HashSet<>())
-                                .build()));
+                        .orElseGet(() -> {
+                            Role newRole = Role.builder()
+                                    .name(roleName)
+                                    .description(roleName)
+                                    .permissions(new HashSet<>())
+                                    .build();
+                            return roleRepo.save(Objects.requireNonNull(newRole, "Role cannot be null"));
+                        });
 
                 // 2. Load các Permission Entity cần thiết từ DB
                 List<Permission> targetPermissions = permRepo.findAll().stream()
@@ -199,11 +203,11 @@ public class DataSeeder implements ApplicationRunner {
                         .roles(new HashSet<>(Collections.singletonList(adminRole)))
                         .build();
 
-                User savedUser = userRepo.save(u);
+                User savedUser = Objects.requireNonNull(userRepo.save(u), "Saved user cannot be null");
 
                 // Tạo Profile
                 Profile profile = Profile.builder().user(savedUser).build();
-                profileRepo.save(profile);
+                profileRepo.save(Objects.requireNonNull(profile, "Profile cannot be null"));
                 log.info("Created Admin User: {}", email);
 
             } else {
@@ -211,7 +215,7 @@ public class DataSeeder implements ApplicationRunner {
                 User user = existingUser.get();
                 if (user.getProfile() == null) {
                     Profile profile = Profile.builder().user(user).build();
-                    profileRepo.save(profile);
+                    profileRepo.save(Objects.requireNonNull(profile, "Profile cannot be null"));
                     log.info("Fixed missing profile for Admin: {}", email);
                 }
             }

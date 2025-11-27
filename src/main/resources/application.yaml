@@ -121,7 +121,7 @@ message-queue:
 cloudinary:
   cloud-name: ddcyjcpx0
   api-key: 197971381659871
-  api-secret: ${API_SECRET_CLOUDINARY}
+  api-secret: ${API_SECRET_CLOUDINARY:}
   option:
     folder-name: uploads/general
     resource-type: auto
