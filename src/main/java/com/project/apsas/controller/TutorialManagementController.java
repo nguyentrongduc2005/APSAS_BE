@@ -48,7 +48,7 @@ public class TutorialManagementController {
         return ApiResponse.<Page<TutorialManagementResponse>>builder()
                 .code("ok")
                 .message("Lấy danh sách tutorials chờ duyệt thành công")
-                .data(tutorialManagementService.getAllTutorials(TutorialStatus.PENDING, keyword, pageable))
+                .data(tutorialManagementService.getAllTutorials(TutorialStatus.DRAFT, keyword, pageable))
                 .build();
     }
 
