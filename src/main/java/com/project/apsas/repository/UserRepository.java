@@ -20,4 +20,11 @@ public interface UserRepository extends JpaRepository<User,Long>, JpaSpecificati
     
     @Query("SELECT COUNT(DISTINCT u) FROM User u JOIN u.roles r WHERE r.name = :roleName")
     long countByRolesName(@Param("roleName") String roleName);
+
+
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.roles r LEFT JOIN FETCH r.permissions WHERE u.email = :email")
+    Optional<User> findByEmailWithRoles(@Param("email") String email);
+
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.roles r LEFT JOIN FETCH r.permissions WHERE u.id = :id")
+    Optional<User> findByIdWithRoles(@Param("id") Long id);
 }
