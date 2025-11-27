@@ -276,7 +276,10 @@ public class ContentServiceImpl implements ContentService {
                 new AppException(ErrorCode.CONTENT_NOT_EXISTED));
 
         List<Media> finalMediaList = content.getMediaList().stream().toList();
-
+        if (content.getBodyHtmlCached() == null || content.getBodyHtmlCached().isEmpty()) {
+            Node document = markdownParser.parse(content.getBodyMd());
+            content.setBodyHtmlCached(htmlRenderer.render(document));
+        }
         return DetailContentResponse.builder()
                 .id(content.getId())
                 .title(content.getTitle())

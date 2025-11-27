@@ -87,15 +87,35 @@ public class TutorialController {
                 .build();
     }
     @PreAuthorize("hasAuthority('VIEW_OWN_TUTORIALS')")
-    @PostMapping("/my")
-    public ApiResponse<List<CreateTutorialResponse>> getMyTutorials(
+    @GetMapping("/my")
+    public ApiResponse<Page<SearchTutorialResponse>> getMyTutorials(
+            // Các tham số filter
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) Boolean hasAssignment
-    ) {
-        List<CreateTutorialResponse> data = tutorialService.getMyTutorials(keyword, status, hasAssignment);
+            @RequestParam(required = false) Boolean hasAssignment,
 
-        return ApiResponse.<List<CreateTutorialResponse>>builder()
+            // NHẬN PAGE VÀ SIZE THỦ CÔNG TẠI ĐÂY
+            @RequestParam(defaultValue = "1") int page, // Mặc định là trang 1
+            @RequestParam(defaultValue = "10") int size, // Mặc định lấy 10 dòng
+            @RequestParam(defaultValue = "createdAt") String sortBy, // Mặc định sort theo ngày tạo
+            @RequestParam(defaultValue = "desc") String order // Mặc định mới nhất xếp trước
+    ) {
+        // 1. Xử lý logic Page (Spring tính trang từ 0, nhưng người dùng thường gửi từ 1)
+        int pageNo = (page < 1) ? 0 : (page - 1);
+
+        // 2. Xử lý logic Sort (Tăng dần hay giảm dần)
+        Sort.Direction direction = order.equalsIgnoreCase("asc")
+                ? Sort.Direction.ASC
+                : Sort.Direction.DESC;
+
+        // 3. TẠO PAGEABLE TỪ CÁC THAM SỐ TRÊN
+        // Công thức: PageRequest.of(trang_số_mấy, bao_nhiêu_phần_tử, sort_như_thế_nào)
+        Pageable pageable = PageRequest.of(pageNo, size, Sort.by(direction, sortBy));
+
+        // 4. Truyền Pageable đã tạo vào Service như bình thường
+        Page<SearchTutorialResponse> data = tutorialService.getMyTutorials(keyword, status, hasAssignment, pageable);
+
+        return ApiResponse.<Page<SearchTutorialResponse>>builder()
                 .code("ok")
                 .message("success")
                 .data(data)

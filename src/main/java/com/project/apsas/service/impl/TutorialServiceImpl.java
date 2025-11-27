@@ -8,7 +8,6 @@ import com.project.apsas.dto.response.tutorial.CreateTutorialResponse;
 import com.project.apsas.dto.response.tutorial.DetailTutorialResponse;
 import com.project.apsas.dto.response.tutorial.SearchTutorialResponse;
 import com.project.apsas.dto.response.tutorial.TutorialItemDto;
-import com.project.apsas.entity.Assignment;
 import com.project.apsas.entity.Content;
 import com.project.apsas.entity.Tutorial;
 import com.project.apsas.entity.User;
@@ -20,7 +19,6 @@ import com.project.apsas.repository.*;
 import com.project.apsas.service.AuthService;
 import com.project.apsas.service.TutorialService;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +34,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import jakarta.persistence.criteria.Predicate;
-import java.util.ArrayList;
+
 import java.util.List;
 
 @Slf4j
@@ -79,82 +77,77 @@ public class TutorialServiceImpl implements TutorialService {
     }
 
     @Override
-    public List<CreateTutorialResponse> getMyTutorials(String keyword,
-                                                       String status,
-                                                       Boolean hasAssignment) {
+    public Page<SearchTutorialResponse> getMyTutorials(String keyword, String status, Boolean hasAssignment, Pageable pageable) {
         Long currentUserId = Long.parseLong(authService.currentId());
 
-        // lấy user để có name + avatar
-        User user = userRepository.findById(currentUserId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        // 1. Dùng Specification để filter (Giữ nguyên logic cũ)
+        Specification<Tutorial> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
 
-        String avatar;
-        if (user.getProfile() != null) {
-            avatar = user.getProfile().getAvatarUrl();  // đổi cho đúng tên getter trong entity Profile
-        } else {
-            avatar = null;
-        }
+            // BẮT BUỘC: Chỉ lấy tutorial của user hiện tại
+            predicates.add(cb.equal(root.get("createdBy"), currentUserId));
 
-        // lấy tất cả tutorial do user này tạo
-        List<Tutorial> tutorials = tutorialRepository.findByCreatedBy(currentUserId);
-
-        // chuẩn bị keyword (có thể null)
-        String kw = (keyword == null || keyword.isBlank())
-                ? null
-                : keyword.trim().toLowerCase();
-
-        // chuẩn bị filter status (có thể null)
-        TutorialStatus filterStatus = null;
-        if (status != null && !status.isBlank()) {
-            try {
-                filterStatus = TutorialStatus.valueOf(status.toUpperCase());
-            } catch (IllegalArgumentException ex) {
-                // nếu FE gửi status linh tinh thì bỏ qua filter status
-                filterStatus = null;
+            // Filter: Keyword
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                String likePattern = "%" + keyword.trim().toLowerCase() + "%";
+                Predicate titleLike = cb.like(cb.lower(root.get("title")), likePattern);
+                Predicate summaryLike = cb.like(cb.lower(root.get("summary")), likePattern);
+                predicates.add(cb.or(titleLike, summaryLike));
             }
-        }
 
-        TutorialStatus finalFilterStatus = filterStatus;
-        return tutorials.stream()
-                // ---- search theo title + summary ----
-                .filter(t -> {
-                    if (kw == null) return true;
-                    String title = t.getTitle() == null ? "" : t.getTitle().toLowerCase();
-                    String summary = t.getSummary() == null ? "" : t.getSummary().toLowerCase();
-                    return title.contains(kw) || summary.contains(kw);
-                })
-                // ---- filter status ----
-                .filter(t -> finalFilterStatus == null || t.getStatus() == finalFilterStatus)
-                // ---- map sang DTO + TODO: count ----
-                .map(t -> {
-                    Long tutorialId = t.getId();
+            // Filter: Status
+            if (status != null && !status.isBlank()) {
+                try {
+                    TutorialStatus statusEnum = TutorialStatus.valueOf(status.toUpperCase());
+                    predicates.add(cb.equal(root.get("status"), statusEnum));
+                } catch (IllegalArgumentException e) {
+                    // Ignore invalid status
+                }
+            }
 
-                    // TODO: thay 3 dòng dưới bằng logic thực sự
-                    int lessonCount = 0;
-                    int assignmentCount = 0;
-                    int courseCount = 0;
+            // Filter: Has Assignment
+            if (hasAssignment != null) {
+                // Kiểm tra lại tên biến trong Entity Tutorial ('assignments' hoặc 'assignmentLinks')
+                if (hasAssignment) {
+                    predicates.add(cb.isNotEmpty(root.get("assignments")));
+                } else {
+                    predicates.add(cb.isEmpty(root.get("assignments")));
+                }
+            }
 
-                    // Nếu muốn filter theo hasAssignment:
-                    if (hasAssignment != null) {
-                        boolean has = assignmentCount > 0;
-                        if (hasAssignment && !has) return null;
-                        if (!hasAssignment && has) return null;
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        // 2. Query DB trả về Page thay vì List
+        Page<Tutorial> pageResult = tutorialRepository.findAll(spec, pageable);
+
+        // 3. Map Page<Tutorial> sang Page<SearchTutorialResponse>
+        // Hàm .map() của Page tự động giữ lại thông tin phân trang (totalElements, totalPages...)
+        return pageResult.map(t -> {
+            int lessonCount = (t.getContents() != null) ? t.getContents().size() : 0;
+            int assignmentCount = (t.getAssignments() != null) ? t.getAssignments().size() : 0;
+
+            int mediaCount = 0;
+            if (t.getContents() != null) {
+                for (Content content : t.getContents()) {
+                    if (content.getMediaList() != null) {
+                        mediaCount += content.getMediaList().size();
                     }
+                }
+            }
 
-                    return CreateTutorialResponse.builder()
-                            .id(tutorialId)
-                            .title(t.getTitle())
-                            .summary(t.getSummary())
-                            .status(t.getStatus())
-                            .lessonCount(lessonCount)
-                            .assignmentCount(assignmentCount)
-                            .courseCount(courseCount)
-                            .creatorName(user.getName())
-                            .creatorAvatar(avatar)
-                            .build();
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+            return SearchTutorialResponse.builder()
+                    .id(t.getId())
+                    .title(t.getTitle())
+                    .summary(t.getSummary())
+                    .status(t.getStatus())
+                    .lessonCount(lessonCount)
+                    .assignmentCount(assignmentCount)
+                    .mediaCount(mediaCount)
+                    .creatorName(null) // Không cần trả về tên người tạo
+                    .creatorAvatar(null)
+                    .build();
+        });
     }
 
     @Override
