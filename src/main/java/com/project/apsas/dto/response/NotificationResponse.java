@@ -13,6 +13,7 @@ public class NotificationResponse {
     private Long userId;
     private String type;
     private String payload;
+    private String message; // Nội dung thông báo đã được parse từ payload
     private Boolean isRead;
     private LocalDateTime createdAt;
 }
