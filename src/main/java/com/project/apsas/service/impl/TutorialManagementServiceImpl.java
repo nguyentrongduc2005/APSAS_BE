@@ -129,18 +129,27 @@ public class TutorialManagementServiceImpl implements TutorialManagementService 
         Tutorial tutorial = tutorialRepository.findById(tutorialId)
                 .orElseThrow(() -> new AppException(ErrorCode.TUTORIAL_NOT_EXISTED));
 
+        log.info("Review tutorial {} - Current status: {}, Request status: {}", 
+                tutorialId, tutorial.getStatus(), request.getStatus());
+
         // Chỉ review tutorial đang PENDING
         if (tutorial.getStatus() != TutorialStatus.PENDING) {
-            throw new AppException(ErrorCode.BAD_REQUEST, "Chỉ có thể review tutorial đang ở trạng thái PENDING");
+            log.warn("Cannot review tutorial {} - Current status is {}, must be PENDING", 
+                    tutorialId, tutorial.getStatus());
+            throw new AppException(ErrorCode.BAD_REQUEST, 
+                    "Chỉ có thể review tutorial đang ở trạng thái PENDING. Tutorial hiện tại có status: " + tutorial.getStatus());
         }
 
         // Validate status phải là PUBLISHED hoặc REJECTED
         if (request.getStatus() == null) {
+            log.warn("Review request for tutorial {} has null status", tutorialId);
             throw new AppException(ErrorCode.BAD_REQUEST, "Status không được để trống");
         }
         
         if (request.getStatus() != TutorialStatus.PUBLISHED && request.getStatus() != TutorialStatus.REJECTED) {
-            throw new AppException(ErrorCode.BAD_REQUEST, "Status phải là PUBLISHED hoặc REJECTED");
+            log.warn("Invalid status for tutorial {} review: {}", tutorialId, request.getStatus());
+            throw new AppException(ErrorCode.BAD_REQUEST, 
+                    "Status phải là PUBLISHED hoặc REJECTED. Nhận được: " + request.getStatus());
         }
 
         // Force load contents trong transaction để tránh LazyInitializationException
@@ -159,8 +168,12 @@ public class TutorialManagementServiceImpl implements TutorialManagementService 
                 });
             }
         } else if (request.getStatus() == TutorialStatus.REJECTED) {
-            // Nếu reject thì có thể giữ nguyên content status hoặc set về DRAFT
-            // Tùy vào business logic, ở đây mình giữ nguyên
+            // Nếu reject thì set content status về DRAFT để provider có thể chỉnh sửa lại
+            if (tutorial.getContents() != null && !tutorial.getContents().isEmpty()) {
+                tutorial.getContents().forEach(content -> {
+                    content.setStatus(ContentStatus.DRAFT);
+                });
+            }
             log.info("Tutorial {} rejected with note: {}", tutorialId, request.getReviewNote());
         }
 

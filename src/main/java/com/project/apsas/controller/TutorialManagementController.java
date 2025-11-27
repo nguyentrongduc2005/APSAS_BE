@@ -5,6 +5,7 @@ import com.project.apsas.dto.request.admin.ReviewTutorialRequest;
 import com.project.apsas.dto.response.admin.TutorialManagementResponse;
 import com.project.apsas.enums.TutorialStatus;
 import com.project.apsas.service.TutorialManagementService;
+import com.project.apsas.service.TutorialService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -24,6 +25,7 @@ import jakarta.validation.Valid;
 public class TutorialManagementController {
 
     TutorialManagementService tutorialManagementService;
+    TutorialService tutorialService;
 
     /**
      * Lấy danh sách tutorials chờ duyệt (PENDING)
@@ -50,13 +52,23 @@ public class TutorialManagementController {
                 .build();
     }
 
+    /**
+     * Lấy chi tiết tutorial đầy đủ (bao gồm contents và assignments) cho admin
+     * GET /api/admin/tutorials/{tutorialId}
+     */
     @PreAuthorize("hasAuthority('MANAGE_TUTORIALS')")
     @GetMapping("/{tutorialId}")
-    public ApiResponse<TutorialManagementResponse> getTutorialDetail(@PathVariable Long tutorialId) {
-        return ApiResponse.<TutorialManagementResponse>builder()
+    public ApiResponse<com.project.apsas.dto.response.tutorial.DetailTutorialResponse> getTutorialDetail(
+            @PathVariable Long tutorialId
+    ) {
+        // Sử dụng service từ TutorialService để lấy đầy đủ thông tin (giống API public)
+        com.project.apsas.dto.response.tutorial.DetailTutorialResponse detail = 
+                tutorialService.getTutorialDetail(tutorialId);
+        
+        return ApiResponse.<com.project.apsas.dto.response.tutorial.DetailTutorialResponse>builder()
                 .code("ok")
                 .message("Get tutorial detail successfully")
-                .data(tutorialManagementService.getTutorialDetail(tutorialId))
+                .data(detail)
                 .build();
     }
 

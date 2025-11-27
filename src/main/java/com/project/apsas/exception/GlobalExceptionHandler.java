@@ -2,6 +2,7 @@ package com.project.apsas.exception;
 
 import com.project.apsas.dto.ApiResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -58,6 +59,23 @@ public class GlobalExceptionHandler {
         
         ApiResponse apiResponse = new ApiResponse();
         apiResponse.setCode(ErrorCode.VALIDATION_FAILED.getCode());
+        apiResponse.setMessage(errorMessage);
+        return ResponseEntity.badRequest().body(apiResponse);
+    }
+
+    @ExceptionHandler(value = HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
+        String errorMessage = "Request body không hợp lệ";
+        
+        // Kiểm tra nếu là lỗi parse enum
+        if (ex.getMessage() != null && ex.getMessage().contains("enum")) {
+            errorMessage = "Giá trị status không hợp lệ. Chỉ chấp nhận: PUBLISHED hoặc REJECTED";
+        } else if (ex.getMessage() != null && ex.getMessage().contains("JSON")) {
+            errorMessage = "Định dạng JSON không hợp lệ";
+        }
+        
+        ApiResponse apiResponse = new ApiResponse();
+        apiResponse.setCode(ErrorCode.BAD_REQUEST.getCode());
         apiResponse.setMessage(errorMessage);
         return ResponseEntity.badRequest().body(apiResponse);
     }
