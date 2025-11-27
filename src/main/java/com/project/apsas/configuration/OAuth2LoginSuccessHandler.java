@@ -30,6 +30,8 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -119,7 +121,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
                 .queryParam("accessToken", accessToken)
                 .queryParam("refreshToken", rf)
                 .queryParam("userId", user.getId())
-                .queryParam("userName", user.getName())
+                .queryParam("userName", URLEncoder.encode(user.getName(), StandardCharsets.UTF_8))
                 .queryParam("userEmail", user.getEmail())
                 .queryParam("userRoles", userRoles) // Param này sẽ chứa "STUDENT" hoặc "ADMIN"
                 .queryParam("userAvatar", avatarUrl)
