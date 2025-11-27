@@ -1,3 +1,11 @@
 API_KEY_BREVO=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
 API_SECRET_CLOUDINARY=6g3wTrSYbG9B5T5kPps5olGXOuM
 GEMINI_API_KEY=AIzaSyCJiqNJkeuCYH_WlqpRM_kSYGmNhIcfQ_A
+URLFONTEND=https://apsas-fe.vercel.app
+KAFKA=localhost:9094
+GGCLIENTID=983975577912-h8to98gdaf2eliiakkcmjohstg3ftp7a.apps.googleusercontent.com
+GGCLIENT_SECRET=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
+MYSQL=jdbc:mysql://127.0.0.1:3308/apsas_db?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
+JWTKEY=1TjXchw5FloESb63Kc+DFhTARvpWL4jUGCwfGWxuG5SIf/1y/LgJxHnMqaF6A/ij
+REDIS_HOST=localhost
+REDIS_PORT=6379
