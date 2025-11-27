@@ -1,4 +1,4 @@
-package com.project.apsas.dto;
+package com.project.apsas.dto.response.submission;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

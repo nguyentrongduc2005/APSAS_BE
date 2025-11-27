@@ -227,4 +227,10 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
     AND s.userId = :studentId
 """)
     long countSubmittedAssignments(Long courseId, Long studentId);
+
+    List<Submission> findByUserIdAndCourseIdAndAssignmentIdOrderByAttemptNoDesc(
+            Long userId,
+            Long courseId,
+            Long assignmentId
+    );
 }

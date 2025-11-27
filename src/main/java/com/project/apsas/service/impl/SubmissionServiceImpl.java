@@ -2,15 +2,16 @@ package com.project.apsas.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.project.apsas.dto.StudentSubmissionDTO;
+import com.project.apsas.dto.response.submission.StudentSubmissionDTO;
 import com.project.apsas.dto.event.FeedbackEvent;
 import com.project.apsas.dto.event.SubmitCodeEvent;
 import com.project.apsas.dto.mapping.ReportCongfigSubmission;
 import com.project.apsas.dto.request.CreateSubmissionRequest;
 import com.project.apsas.dto.response.CodeFeedbackDTO;
 import com.project.apsas.dto.response.CreateSubmissionResponse;
-import com.project.apsas.dto.response.PagedResponse;
 import com.project.apsas.dto.response.SubmissionResponse;
+import com.project.apsas.dto.response.submission.SubmissionItem;
+import com.project.apsas.dto.response.submission.SubmittedAssigmentResponse;
 import com.project.apsas.entity.*;
 import com.project.apsas.enums.StatusSubmission;
 import com.project.apsas.exception.AppException;
@@ -29,7 +30,6 @@ import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,7 +39,7 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -145,103 +145,11 @@ public class SubmissionServiceImpl implements SubmissionService {
             submissionRepository.save(submission);
         }
     }
-    @Override
-    public PagedResponse<SubmissionResponse> getSubmissionsByCourse(
-            Long courseId,
-            int page,
-            int limit
-    ) {
-        // Validate parameters
-        int pg = Math.max(page, 1);
-        int lm = Math.min(Math.max(limit, 1), 100);  // Max 100 per page
 
-        Pageable pageable = PageRequest.of(pg - 1, lm);
-        Page<Submission> submissions = submissionRepository.findByCourseId(courseId, pageable);
 
-        List<SubmissionResponse> data = submissions.getContent().stream()
-                .map(this::mapToResponse)
-                .toList();
 
-        int totalPages = submissions.getTotalPages();
-        boolean hasNext = submissions.hasNext();
-        boolean hasPrev = submissions.hasPrevious();
 
-        return PagedResponse.<SubmissionResponse>builder()
-                .data(data)
-                .pagination(PagedResponse.Pagination.builder()
-                        .page(pg)
-                        .limit(lm)
-                        .totalItems(submissions.getTotalElements())
-                        .totalPages(totalPages)
-                        .hasNext(hasNext)
-                        .hasPrev(hasPrev)
-                        .build())
-                .build();
-    }
 
-    /**
-     * Lấy submissions của một assignment trong course
-     * @param courseId Course ID
-     * @param assignmentId Assignment ID
-     * @param page Page number (1-based)
-     * @param limit Items per page
-     * @return Paginated submissions
-     */
-    @Override
-    public PagedResponse<SubmissionResponse> getSubmissionsByAssignment(
-            Long courseId,
-            Long assignmentId,
-            int page,
-            int limit
-    ) {
-        int pg = Math.max(page, 1);
-        int lm = Math.min(Math.max(limit, 1), 100);
-
-        Pageable pageable = PageRequest.of(pg - 1, lm);
-        Page<Submission> submissions = submissionRepository
-                .findByAssignmentIdAndCourseId(assignmentId, courseId, pageable);
-
-        List<SubmissionResponse> data = submissions.getContent().stream()
-                .map(this::mapToResponse)
-                .toList();
-
-        int totalPages = submissions.getTotalPages();
-        boolean hasNext = submissions.hasNext();
-        boolean hasPrev = submissions.hasPrevious();
-
-        return PagedResponse.<SubmissionResponse>builder()
-                .data(data)
-                .pagination(PagedResponse.Pagination.builder()
-                        .page(pg)
-                        .limit(lm)
-                        .totalItems(submissions.getTotalElements())
-                        .totalPages(totalPages)
-                        .hasNext(hasNext)
-                        .hasPrev(hasPrev)
-                        .build())
-                .build();
-    }
-
-    /**
-     * Lấy chi tiết submission của một student
-     * @param assignmentId Assignment ID
-     * @param studentId Student ID
-     * @return Submission details
-     */
-    @Override
-    public SubmissionResponse getSubmissionDetail(Long assignmentId, Long studentId) {
-        var result = submissionRepository.findByAssignmentIdAndUserId(assignmentId, studentId);
-
-        if (result.isEmpty()) {
-            throw new AppException(ErrorCode.SUBMISSION_NOT_FOUND);
-        }
-
-        return mapToResponse(result.get());
-    }
-
-    /**
-     * Map Submission entity to SubmissionResponse DTO
-     */
     private SubmissionResponse mapToResponse(Submission submission) {
         String codePreview = null;
         Integer codeLength = null;
@@ -274,33 +182,7 @@ public class SubmissionServiceImpl implements SubmissionService {
                 .build();
     }
 
-    /**
-     * Lấy tất cả submissions của một student
-     */
-    @Override
-    public List<SubmissionResponse> getSubmissionsByStudent(Long studentId) {
-        return submissionRepository.findByUserId(studentId).stream()
-                .map(this::mapToResponse)
-                .toList();
-    }
 
-    /**
-     * Lấy submissions của một assignment
-     */
-    @Override
-    public List<SubmissionResponse> getSubmissionsByAssignmentId(Long assignmentId) {
-        return submissionRepository.findByAssignmentId(assignmentId).stream()
-                .map(this::mapToResponse)
-                .toList();
-    }
-
-    /**
-     * Lấy danh sách sinh viên đã nộp bài trong một assignment của course
-     * @param courseId Course ID
-     * @param assignmentId Assignment ID
-     * @param pageable Pageable object (page, size, sort)
-     * @return Paginated student submissions
-     */
     @Override
     public Page<StudentSubmissionDTO> getStudentSubmissionsByAssignment(
             Long courseId,
@@ -439,148 +321,33 @@ public class SubmissionServiceImpl implements SubmissionService {
      * Bao gồm cả assignments chưa nộp
      */
     @Override
-    public Page<com.project.apsas.dto.StudentAllSubmissionsDTO> getAllSubmissionsOfStudent(
-            Long courseId,
-            Long studentId,
-            Pageable pageable
-    ) {
-        // 1. Verify enrollment exists
-        Enrollment.PK enrollmentPK = new Enrollment.PK(studentId, courseId);
-        if (!enrollmentRepository.existsById(enrollmentPK)) {
-            throw new AppException(ErrorCode.USER_NOT_FOUND);
-        }
-        
-        // 2. Lấy tất cả assignments của course (không phân trang ở đây)
-        List<CourseAssignment> allCourseAssignments = courseAssignmentRepository
-                .findAllByCourseId(courseId);
-        
-        // 3. Map sang DTO với thông tin submission (nếu có)
-        List<com.project.apsas.dto.StudentAllSubmissionsDTO> allSubmissions = allCourseAssignments.stream()
-                .map(ca -> {
-                    Assignment assignment = ca.getAssignment();
-                    
-                    // Tìm submission của student cho assignment này (lấy latest submission)
-                    Optional<Submission> submissionOpt = submissionRepository
-                            .findTopByAssignmentIdAndUserIdOrderBySubmittedAtDesc(
-                                    assignment.getId(), 
-                                    studentId
-                            );
-                    
-                    com.project.apsas.dto.StudentAllSubmissionsDTO.StudentAllSubmissionsDTOBuilder builder = 
-                            com.project.apsas.dto.StudentAllSubmissionsDTO.builder()
-                                // Assignment info
-                                .assignmentId(assignment.getId())
-                                .assignmentTitle(assignment.getTitle())
-                                .assignmentDescription(assignment.getStatementMd())
-                                .assignmentMaxScore(assignment.getMaxScore() != null ? assignment.getMaxScore().intValue() : null)
-                                .language(null); // Assignment không có language field
-                    
-                    if (submissionOpt.isPresent()) {
-                        Submission submission = submissionOpt.get();
-                        
-                        builder
-                            // Submission info
-                            .submissionId(submission.getId())
-                            .status(submission.getStatus() != null ? submission.getStatus().name() : null)
-                            .score(submission.getScore() != null ? submission.getScore().doubleValue() : null)
-                            .submittedAt(submission.getSubmittedAt())
-                            .feedback(submission.getFeedback())
-                            .attemptNo(submission.getAttemptNo())
-                            .passed(submission.getPassed())
-                            .language(submission.getLanguage())
-                            // Derived fields
-                            .hasSubmitted(true);
-                    } else {
-                        // Chưa nộp bài
-                        builder
-                            .submissionId(null)
-                            .status(null)
-                            .score(null)
-                            .submittedAt(null)
-                            .feedback(null)
-                            .attemptNo(null)
-                            .passed(null)
-                            .hasSubmitted(false);
-                    }
-                    
-                    return builder.build();
-                })
-                .toList();
-        
-        // 4. Manual pagination
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), allSubmissions.size());
-        
-        List<com.project.apsas.dto.StudentAllSubmissionsDTO> pageContent = 
-                allSubmissions.subList(start, end);
-        
-        return new org.springframework.data.domain.PageImpl<>(
-                pageContent, 
-                pageable, 
-                allSubmissions.size()
-        );
+    public SubmittedAssigmentResponse getSubmissionHistory(Long userId, Long courseId, Long assignmentId) {
+        if(courseId == null || assignmentId == null) throw new AppException(ErrorCode.BAD_REQUEST);
+        // 1. Lấy danh sách Entity từ DB
+        List<Submission> submissions = submissionRepository
+                .findByUserIdAndCourseIdAndAssignmentIdOrderByAttemptNoDesc(userId, courseId, assignmentId);
+
+        // 2. Map từ Entity sang DTO (SubmissionItem)
+        List<SubmissionItem> submissionItems = submissions.stream()
+                .map(this::mapToSubmissionItem)
+                .collect(Collectors.toList());
+
+        // 3. Trả về Response bọc bên ngoài
+        return SubmittedAssigmentResponse.builder()
+                .items(submissionItems)
+                .build();
     }
 
-    /**
-     * Student xem các assignment đã nộp của chính mình
-     */
-    @Override
-    public Page<com.project.apsas.dto.StudentSubmittedAssignmentDTO> getMySubmittedAssignments(
-            Pageable pageable
-    ) {
-        // 1. Lấy user ID hiện tại
-        String currentId = authService.currentId();
-        if (currentId == null || currentId.trim().isEmpty()) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
-        }
-        
-        Long currentUserId;
-        try {
-            currentUserId = Long.parseLong(currentId);
-        } catch (NumberFormatException e) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
-        }
-        
-        // 2. Lấy tất cả submissions của user với pagination
-        Page<Submission> submissions = submissionRepository
-                .findByUserIdOrderBySubmittedAtDesc(currentUserId, pageable);
-        
-        // 3. Map sang DTO
-        return submissions.map(submission -> {
-            Assignment assignment = submission.getAssignment();
-            Course course = submission.getCourse();
-            
-            // Kiểm tra null để tránh NPE - sử dụng fallback values
-            Long assignmentId = assignment != null ? assignment.getId() : submission.getAssignmentId();
-            String assignmentTitle = assignment != null ? assignment.getTitle() : "Unknown Assignment";
-            String assignmentDescription = assignment != null ? assignment.getStatementMd() : null;
-            Integer assignmentMaxScore = assignment != null && assignment.getMaxScore() != null 
-                    ? assignment.getMaxScore().intValue() : null;
-            
-            Long courseId = course != null ? course.getId() : submission.getCourseId();
-            String courseName = course != null ? course.getName() : "Unknown Course";
-            
-            return com.project.apsas.dto.StudentSubmittedAssignmentDTO.builder()
-                    // Assignment info
-                    .assignmentId(assignmentId)
-                    .assignmentTitle(assignmentTitle)
-                    .assignmentDescription(assignmentDescription)
-                    .assignmentMaxScore(assignmentMaxScore)
-                    // Course info
-                    .courseId(courseId)
-                    .courseName(courseName)
-                    // Submission info
-                    .submissionId(submission.getId())
-                    .status(submission.getStatus() != null ? submission.getStatus().name() : null)
-                    .score(submission.getScore() != null ? submission.getScore().doubleValue() : null)
-                    .passed(submission.getPassed())
-                    .submittedAt(submission.getSubmittedAt())
-                    .attemptNo(submission.getAttemptNo())
-                    .language(submission.getLanguage())
-                    .feedback(submission.getFeedback())
-                    // Additional info
-                    .isLatest(true) // Vì query đã sort theo submittedAt desc
-                    .build();
-        });
+    // Helper method để map data (Có thể dùng MapStruct thay thế nếu muốn)
+    private SubmissionItem mapToSubmissionItem(Submission submission) {
+        return SubmissionItem.builder()
+                .id(submission.getId())
+                .passed(submission.getPassed() != null ? submission.getPassed() : false)
+                .status(submission.getStatus())
+                .score(submission.getScore())
+                .attemptNo(submission.getAttemptNo())
+                .language(submission.getLanguage())
+                .submittedAt(submission.getSubmittedAt())
+                .build();
     }
 }
