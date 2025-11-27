@@ -6,7 +6,6 @@ import com.project.apsas.entity.Profile;
 import com.project.apsas.entity.User;
 import com.project.apsas.exception.AppException;
 import com.project.apsas.exception.ErrorCode;
-import com.project.apsas.repository.ProfileRepository;
 import com.project.apsas.repository.UserRepository;
 import com.project.apsas.service.AuthService;
 import com.project.apsas.service.CloudinaryService;
@@ -29,7 +28,6 @@ public class ProfileAvatarServiceImpl implements ProfileAvatarService {
 
     AuthService authService;
     UserRepository userRepository;
-    ProfileRepository profileRepository;
     CloudinaryService cloudinaryService;
     @NonFinal
     @Value("${cloudinary.option.folder-name}")
@@ -60,11 +58,10 @@ public class ProfileAvatarServiceImpl implements ProfileAvatarService {
         if (profile == null) {
             profile = new Profile();
             profile.setUser(user);
+            user.setProfile(profile);  // Set cả 2 chiều để đảm bảo quan hệ đúng
         }
 
         // 4. Upload lên Cloudinary
-        // Nếu trong application.yaml có folder-name riêng thì bạn có thể truyền vào
-        // Ở đây ví dụ: folder = "avatars"
         String publicId = UUID.randomUUID().toString();
         boolean success = false;
         try {
@@ -75,10 +72,8 @@ public class ProfileAvatarServiceImpl implements ProfileAvatarService {
             e.printStackTrace();
         }
 
-
-        // 5. Lưu URL avatar vào profile
-
-        profileRepository.save(profile);
+        // 5. Lưu user (cascade sẽ tự động lưu profile) - Đảm bảo user_id được set đúng
+        userRepository.save(user);
 
         // 6. Build ProfileResponse trả về giống các API profile khác
         return ProfileResponse.builder()
