@@ -28,14 +28,20 @@ public class SubmissionController {
 
     @PreAuthorize("hasAuthority('VIEW_SUBMISSIONS')")
     @GetMapping("/course/{courseId}/assignment/{assignmentId}/students")
-    public ResponseEntity<Page<StudentSubmissionDTO>> getStudentsByAssignment(
+    public ResponseEntity<ApiResponse <Page<StudentSubmissionDTO>>> getStudentsByAssignment(
             @PathVariable Long courseId,
             @PathVariable Long assignmentId,
             Pageable pageable
     ) {
-        Page<StudentSubmissionDTO> response = submissionService
+         Page<StudentSubmissionDTO> response = submissionService
                 .getStudentSubmissionsByAssignment(courseId, assignmentId, pageable);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(
+                ApiResponse.<Page<StudentSubmissionDTO>>builder()
+                        .code("OK")
+                        .message("Lấy danh sách bài nộp thành công")
+                        .data(response)
+                        .build()
+        );
     }
 
 //    get submission by id user, assigment id, course id

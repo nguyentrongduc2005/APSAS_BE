@@ -745,7 +745,7 @@ public class CourseServicesImpl implements CourseServices {
                                 .totalLession(totalLession)
                                 .lecture(
                                         CourseItemStudentResponse.Lecture.builder()
-                                                .avatarUrl(createBy.getProfile().getAvatarUrl())
+                                                .avatarUrl(createBy.getProfile() != null ? createBy.getProfile().getAvatarUrl() : null)
                                                 .id(createBy.getId())
                                                 .name(createBy.getName())
                                                 .build()
