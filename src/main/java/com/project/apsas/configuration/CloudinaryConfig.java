@@ -16,11 +16,17 @@ public class CloudinaryConfig {
     @Value("${cloudinary.api-key}")
     private String apiKey;
 
-    @Value("${cloudinary.api-secret}")
+    @Value("${cloudinary.api-secret:}")
     private String apiSecret;
 
     @Bean
     public Cloudinary cloudinary() {
+        // Validate API secret
+        if (apiSecret == null || apiSecret.trim().isEmpty()) {
+            throw new IllegalStateException(
+                "Cloudinary API secret is required. Please set environment variable API_SECRET_CLOUDINARY or configure cloudinary.api-secret in application.yaml"
+            );
+        }
         Map<String, Object> config = new HashMap<>();
         config.put("cloud_name", cloudName);
         config.put("api_key", apiKey);

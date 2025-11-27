@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(of = {"id"})
+@EqualsAndHashCode(of = {"courseId", "assignmentId"})
 @Table(name = "courses_assignments")
 @IdClass(CourseAssignment.PK.class)
 public class CourseAssignment {

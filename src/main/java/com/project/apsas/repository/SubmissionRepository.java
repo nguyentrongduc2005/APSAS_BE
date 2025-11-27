@@ -184,22 +184,20 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
      * Lấy danh sách sinh viên đã nộp bài trong một assignment của course
      * Chỉ hiển thị thông tin cơ bản: studentId, studentName, studentEmail, score, passed, submittedAt, attemptNo
      */
-    @Query(value = """
-        SELECT 
-            u.id as studentId,
-            u.name as studentName,
-            u.email as studentEmail,
-            s.score,
-            s.passed,
-            s.submitted_at as submittedAt,
-            s.attempt_no as attemptNo
-        FROM submissions s
-        JOIN users u ON s.user_id = u.id
-        WHERE s.assignment_id = :assignmentId 
-          AND s.course_id = :courseId
-        GROUP BY u.id, s.id
-        ORDER BY s.submitted_at DESC
-        """, nativeQuery = true)
+    @Query("""
+    SELECT 
+        s.user.id,
+        s.user.name,
+        s.user.email,
+        s.score,
+        s.passed,
+        s.submittedAt, 
+        s.attemptNo
+    FROM Submission s
+    WHERE s.assignment.id = :assignmentId 
+      AND s.course.id = :courseId
+    ORDER BY s.submittedAt DESC
+    """)
     Page<Object[]> findStudentSubmissionsByCourseAndAssignment(
             @Param("courseId") Long courseId,
             @Param("assignmentId") Long assignmentId,
@@ -227,4 +225,18 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
     AND s.userId = :studentId
 """)
     long countSubmittedAssignments(Long courseId, Long studentId);
+
+    List<Submission> findByUserIdAndCourseIdAndAssignmentIdOrderByAttemptNoDesc(
+            Long userId,
+            Long courseId,
+            Long assignmentId
+    );
+
+    @Query("""
+        SELECT s FROM Submission s 
+        JOIN FETCH s.assignment a 
+        LEFT JOIN FETCH a.assignmentEvaluations 
+        WHERE s.id = :id
+    """)
+    Optional<Submission> findByIdWithAssignment(@Param("id") Long id);
 }
