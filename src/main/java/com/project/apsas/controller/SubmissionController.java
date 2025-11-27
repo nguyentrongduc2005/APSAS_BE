@@ -56,13 +56,14 @@ public class SubmissionController {
     @GetMapping("/history")
     public ApiResponse<SubmittedAssigmentResponse> getSubmissionHistory(
             @RequestParam(required = false) Long courseId,
-            @RequestParam(required = false) Long assignmentId
+            @RequestParam(required = false) Long assignmentId,
+            @RequestParam(required = false) Long studentId
             // @AuthenticationPrincipal UserDetails userDetails // Nếu dùng Spring Security để lấy User hiện tại
     ) {
         // Tạm thời fix cứng userId để test, thực tế bạn sẽ lấy từ Security Context
         ;
 
-        SubmittedAssigmentResponse response = submissionService.getSubmissionHistory( courseId, assignmentId);
+        SubmittedAssigmentResponse response = submissionService.getSubmissionHistory( courseId, assignmentId, studentId);
 
         return ApiResponse.<SubmittedAssigmentResponse>builder()
                 .code("ok")

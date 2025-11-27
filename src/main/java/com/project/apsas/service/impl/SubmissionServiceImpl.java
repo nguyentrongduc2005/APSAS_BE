@@ -329,8 +329,12 @@ public class SubmissionServiceImpl implements SubmissionService {
      * Bao gồm cả assignments chưa nộp
      */
     @Override
-    public SubmittedAssigmentResponse getSubmissionHistory( Long courseId, Long assignmentId) {
-        long userId =Long.parseLong(authService.currentId());
+    public SubmittedAssigmentResponse getSubmissionHistory( Long courseId, Long assignmentId, Long studentId) {
+        long userId = 0;
+        if(studentId == null)
+             userId = Long.parseLong(authService.currentId());
+        else
+            userId = studentId;
         if(courseId == null || assignmentId == null) throw new AppException(ErrorCode.BAD_REQUEST);
         // 1. Lấy danh sách Entity từ DB
         List<Submission> submissions = submissionRepository

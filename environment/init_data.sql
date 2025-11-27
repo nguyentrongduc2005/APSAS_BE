@@ -105,7 +105,7 @@ FROM tutorials t;
 INSERT IGNORE INTO `assignment_evaluations` (`assignment_id`, `name`, `type`, `config_json`, `created_at`)
 SELECT
     a.id, 'Auto Config', 'UNIT_TEST',
-    '{ "testCase": [ {"in": "1", "out": "1", "visibility": "PUBLIC"}, {"in": "2", "out": "2", "visibility": "HIDDEN"} ] }',
+    '{ "testCase": [ {"in": "1", "out": "1", "visibility": "PUBLIC"}, {"in": "2", "out": "2", "visibility": "PRIVATE"} ] }',
     NOW()
 FROM assignments a
 WHERE NOT EXISTS (SELECT 1 FROM assignment_evaluations ae WHERE ae.assignment_id = a.id);
