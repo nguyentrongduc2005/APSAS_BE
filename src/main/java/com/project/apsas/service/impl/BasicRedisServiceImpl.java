@@ -39,7 +39,7 @@ public class BasicRedisServiceImpl implements BaseRedisService {
 
     @Override
     public boolean hashExists(String key, String hashKey) {
-        return false;
+        return hashOperations.hasKey(key, hashKey);
     }
 
     @Override
@@ -61,13 +61,13 @@ public class BasicRedisServiceImpl implements BaseRedisService {
     public List<Object> hashGetByFieldPrefix(String key, String fieldPrefix) {
         List<Object> list = new ArrayList<>();
         Map<String,Object> map = hashOperations.entries(key);
-        for(Map.Entry<String,Object>  entry :hashOperations.entries(fieldPrefix).entrySet()) {
-            if(entry.getKey().equals(fieldPrefix)) {
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            // Kiểm tra xem field (key con) có bắt đầu bằng prefix không
+            if (entry.getKey().startsWith(fieldPrefix)) {
                 list.add(entry.getValue());
-                return list;
             }
         }
-        return List.of();
+        return list;
     }
 
     @Override
