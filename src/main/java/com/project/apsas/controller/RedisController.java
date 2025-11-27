@@ -15,7 +15,7 @@ public class RedisController {
 
     @PostMapping
     public void SetupRedis() {
-        baseRedisService.set("hihi", "haha");
+        baseRedisService.set("hhehehêhehe", "1111111111");
     }
 
 }
