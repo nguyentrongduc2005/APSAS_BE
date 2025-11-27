@@ -1,6 +1,6 @@
 package com.project.apsas.service.impl;
 
-import com.project.apsas.dto.SkillDTO;
+import com.project.apsas.dto.skill.SkillDTO;
 import com.project.apsas.entity.Skill;
 import com.project.apsas.enums.CategorySkill;
 import com.project.apsas.repository.SkillRepository;

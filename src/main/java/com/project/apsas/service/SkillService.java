@@ -1,6 +1,6 @@
 package com.project.apsas.service;
 
-import com.project.apsas.dto.SkillDTO;
+import com.project.apsas.dto.skill.SkillDTO;
 import java.util.List;
 
 public interface SkillService {

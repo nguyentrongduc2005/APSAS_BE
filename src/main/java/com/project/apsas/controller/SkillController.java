@@ -1,7 +1,7 @@
 package com.project.apsas.controller;
 
 import com.project.apsas.dto.ApiResponse;
-import com.project.apsas.dto.SkillDTO;
+import com.project.apsas.dto.skill.SkillDTO;
 import com.project.apsas.service.SkillService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
