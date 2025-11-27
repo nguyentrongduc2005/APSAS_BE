@@ -4,6 +4,7 @@ import com.project.apsas.dto.ApiResponse;
 import com.project.apsas.dto.request.CreateSubmissionRequest;
 import com.project.apsas.dto.response.CreateSubmissionResponse;
 import com.project.apsas.dto.response.submission.StudentSubmissionDTO;
+import com.project.apsas.dto.response.submission.SubmissionDetailResponse;
 import com.project.apsas.dto.response.submission.SubmittedAssigmentResponse;
 import com.project.apsas.service.SubmissionService;
 import lombok.RequiredArgsConstructor;
@@ -53,9 +54,9 @@ public class SubmissionController {
             // @AuthenticationPrincipal UserDetails userDetails // Nếu dùng Spring Security để lấy User hiện tại
     ) {
         // Tạm thời fix cứng userId để test, thực tế bạn sẽ lấy từ Security Context
-        Long currentUserId = 1L;
+        ;
 
-        SubmittedAssigmentResponse response = submissionService.getSubmissionHistory(currentUserId, courseId, assignmentId);
+        SubmittedAssigmentResponse response = submissionService.getSubmissionHistory( courseId, assignmentId);
 
         return ApiResponse.<SubmittedAssigmentResponse>builder()
                 .code("ok")
@@ -64,8 +65,29 @@ public class SubmissionController {
                 .build();
     }
 
+    @PreAuthorize("hasAuthority('VIEW_SUBMISSIONS')")
+    @GetMapping("/{id}")
+    public ApiResponse<SubmissionDetailResponse> getSubmissionDetail(@PathVariable Long id) {
+        // Có thể thêm logic kiểm tra xem User hiện tại có phải chủ nhân bài nộp không ở đây
+        SubmissionDetailResponse response = submissionService.getSubmissionDetailForStudent(id);
+        return ApiResponse.<SubmissionDetailResponse>builder()
+                .code("ok")
+                .message("success")
+                .data(response)
+                .build();
+    }
 
-
+    @PreAuthorize("hasAuthority('VIEW_SUBMISSIONS')")
+    @GetMapping("/teacher/submissions/{id}")
+    public ApiResponse<SubmissionDetailResponse> getSubmissionDetailTeacher(@PathVariable Long id) {
+        // Có thể thêm logic kiểm tra xem User hiện tại có phải chủ nhân bài nộp không ở đây
+        SubmissionDetailResponse response = submissionService.getSubmissionDetailForTeacher(id);
+        return ApiResponse.<SubmissionDetailResponse>builder()
+                .code("ok")
+                .message("success")
+                .data(response)
+                .build();
+    }
 
     @PreAuthorize("hasAuthority('SUBMIT_ASSIGNMENT')")
     @PostMapping("/create")

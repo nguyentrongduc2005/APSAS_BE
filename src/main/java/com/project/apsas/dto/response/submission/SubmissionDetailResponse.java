@@ -1,6 +1,7 @@
 package com.project.apsas.dto.response.submission;
 
 import com.project.apsas.dto.mapping.TestCase;
+import com.project.apsas.dto.mapping.TestCaseResult;
 import com.project.apsas.entity.Feedback;
 import com.project.apsas.enums.StatusSubmission;
 import lombok.AllArgsConstructor;
@@ -31,5 +32,5 @@ public class SubmissionDetailResponse {
     private Boolean passed;
     private Integer attemptNo;
     private Set<Feedback> feedbackTeachers;
-    private List<TestCase> testCases;
+    private List<TestCaseResult> testCases;
 }

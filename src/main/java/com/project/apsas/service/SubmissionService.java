@@ -6,6 +6,7 @@ import com.project.apsas.dto.mapping.ReportCongfigSubmission;
 import com.project.apsas.dto.request.CreateSubmissionRequest;
 import com.project.apsas.dto.response.CodeFeedbackDTO;
 import com.project.apsas.dto.response.CreateSubmissionResponse;
+import com.project.apsas.dto.response.submission.SubmissionDetailResponse;
 import com.project.apsas.dto.response.submission.SubmittedAssigmentResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,8 +25,8 @@ public interface SubmissionService {
             Pageable pageable
     );
 
-
-
-    public SubmittedAssigmentResponse getSubmissionHistory(Long userId, Long courseId, Long assignmentId);
+    public SubmissionDetailResponse getSubmissionDetailForStudent(Long submissionId);
+    public SubmissionDetailResponse getSubmissionDetailForTeacher(Long submissionId);
+    public SubmittedAssigmentResponse getSubmissionHistory( Long courseId, Long assignmentId);
     public CreateSubmissionResponse createSubmission(CreateSubmissionRequest createSubmissionRequest);
 }
