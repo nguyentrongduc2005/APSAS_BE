@@ -65,6 +65,8 @@ public class AuthServiceImpl implements AuthService {
     UserMapper mapper;
     KafkaMailProducer mailProducer;
     RefreshTokenRepository  refreshTokenRepository;
+
+    BasicRedisServiceImpl redisService;
     @NonFinal
     @Value("${jwt.signerKey}")
     String jwtSecret;
@@ -131,10 +133,16 @@ public class AuthServiceImpl implements AuthService {
 
         // Tạo OTP
         String code = genOtp6();
+        String otpkey = "otp:" + email;
+        redisService.set(otpkey, code);
+        redisService.setTimeToLive(otpkey, VERIFY_TTL_MINUTES * 60);
+
         LocalDateTime expiresAt = LocalDateTime.ofInstant(
                 Instant.now().plus(VERIFY_TTL_MINUTES, ChronoUnit.MINUTES),
                 ZoneId.systemDefault()
         );
+
+
 
         Otp otp = Otp.builder()
                 .code(code)
@@ -173,8 +181,17 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void verify(VerifyRequest request) {
+
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_ESIXSTED));
+
+        String otpKey = "OTP:" + request.getEmail();
+        Object storedOtp = redisService.Get(otpKey);
+        if (storedOtp == null || !storedOtp.equals(request.getCode())) {
+            throw new AppException(ErrorCode.BAD_REQUEST);
+        }
+
+
         String userCode = user.getOtp().getCode();
         if(!(user.getStatus().equals(UserStatus.INACTIVE)
                 && request.getCode().equals(userCode))) {
@@ -182,6 +199,8 @@ public class AuthServiceImpl implements AuthService {
         }
         user.setStatus(UserStatus.ACTIVE);
         userRepository.save(user);
+
+        redisService.delete(otpKey);
     }
 
     // ================= LOGIN =================
@@ -234,6 +253,9 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new AppException(ErrorCode.USER_ESIXSTED));
 
         String code = genOtp6();
+        String otpKey = "OTP:" + email;
+        redisService.set(otpKey, code);
+        redisService.setTimeToLive(otpKey, VERIFY_TTL_MINUTES * 60);
         LocalDateTime expiresAt = LocalDateTime.ofInstant(Instant.now().plus(VERIFY_TTL_MINUTES, ChronoUnit.MINUTES),
                 ZoneId.systemDefault());
         user.getOtp().setCode(code);
@@ -262,9 +284,6 @@ public class AuthServiceImpl implements AuthService {
     private String generateRefreshToken() {
         return UUID.randomUUID().toString().replace("-", "");
     }
-
-
-
 
     private String generateAccessToken(User user) {
         try {
