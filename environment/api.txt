@@ -9,3 +9,5 @@ MYSQL=jdbc:mysql://127.0.0.1:3308/apsas_db?useUnicode=true&characterEncoding=UTF
 JWTKEY=1TjXchw5FloESb63Kc+DFhTARvpWL4jUGCwfGWxuG5SIf/1y/LgJxHnMqaF6A/ij
 REDIS_HOST=localhost
 REDIS_PORT=6379
+USER=
+PASS=

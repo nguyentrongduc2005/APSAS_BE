@@ -33,8 +33,8 @@ spring:
       thread-name-prefix: app-async-
   datasource:
     url: ${MYSQL}
-    username: user
-    password: 1234
+    username: ${USER}
+    password: ${PASS}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       auto-commit: false
