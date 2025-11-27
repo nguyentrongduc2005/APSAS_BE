@@ -1,4 +1,4 @@
-package com.project.apsas.dto;
+package com.project.apsas.dto.skill;
 
 import com.project.apsas.enums.CategorySkill;
 import lombok.*;
