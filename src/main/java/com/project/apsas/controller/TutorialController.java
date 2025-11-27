@@ -11,9 +11,7 @@ import com.project.apsas.dto.request.tutorial.UpdateTutorialRequest;
 import com.project.apsas.dto.response.assignment.CreateAssignmentResponse;
 import com.project.apsas.dto.response.content.CreateContentResponse;
 import com.project.apsas.dto.response.content.UpdateContentResponse;
-import com.project.apsas.dto.response.tutorial.CreateTutorialResponse;
-import com.project.apsas.dto.response.tutorial.DetailContentResponse;
-import com.project.apsas.dto.response.tutorial.DetailTutorialResponse;
+import com.project.apsas.dto.response.tutorial.*;
 import com.project.apsas.service.AssignmentService;
 import com.project.apsas.service.ContentService;
 import com.project.apsas.service.TutorialService;
@@ -31,6 +29,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -88,15 +87,35 @@ public class TutorialController {
                 .build();
     }
     @PreAuthorize("hasAuthority('VIEW_OWN_TUTORIALS')")
-    @PostMapping("/my")
-    public ApiResponse<List<CreateTutorialResponse>> getMyTutorials(
+    @GetMapping("/my")
+    public ApiResponse<Page<SearchTutorialResponse>> getMyTutorials(
+            // Các tham số filter
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) Boolean hasAssignment
-    ) {
-        List<CreateTutorialResponse> data = tutorialService.getMyTutorials(keyword, status, hasAssignment);
+            @RequestParam(required = false) Boolean hasAssignment,
 
-        return ApiResponse.<List<CreateTutorialResponse>>builder()
+            // NHẬN PAGE VÀ SIZE THỦ CÔNG TẠI ĐÂY
+            @RequestParam(defaultValue = "1") int page, // Mặc định là trang 1
+            @RequestParam(defaultValue = "10") int size, // Mặc định lấy 10 dòng
+            @RequestParam(defaultValue = "createdAt") String sortBy, // Mặc định sort theo ngày tạo
+            @RequestParam(defaultValue = "desc") String order // Mặc định mới nhất xếp trước
+    ) {
+        // 1. Xử lý logic Page (Spring tính trang từ 0, nhưng người dùng thường gửi từ 1)
+        int pageNo = (page < 1) ? 0 : (page - 1);
+
+        // 2. Xử lý logic Sort (Tăng dần hay giảm dần)
+        Sort.Direction direction = order.equalsIgnoreCase("asc")
+                ? Sort.Direction.ASC
+                : Sort.Direction.DESC;
+
+        // 3. TẠO PAGEABLE TỪ CÁC THAM SỐ TRÊN
+        // Công thức: PageRequest.of(trang_số_mấy, bao_nhiêu_phần_tử, sort_như_thế_nào)
+        Pageable pageable = PageRequest.of(pageNo, size, Sort.by(direction, sortBy));
+
+        // 4. Truyền Pageable đã tạo vào Service như bình thường
+        Page<SearchTutorialResponse> data = tutorialService.getMyTutorials(keyword, status, hasAssignment, pageable);
+
+        return ApiResponse.<Page<SearchTutorialResponse>>builder()
                 .code("ok")
                 .message("success")
                 .data(data)
@@ -154,6 +173,7 @@ public class TutorialController {
     }
 
     @GetMapping("/{id}")
+//    @PreAuthorize("hasAuthority('RESOURCE_READ')")
     public ApiResponse<DetailTutorialResponse> getTutorialDetail(@PathVariable Long id) {
         return ApiResponse.<DetailTutorialResponse>builder()
                 .code("ok")
@@ -163,6 +183,7 @@ public class TutorialController {
     }
 
     @GetMapping("/contents/{contentId}")
+    @PreAuthorize("hasAuthority('RESOURCE_READ')")
     public ApiResponse<DetailContentResponse> getContentDetail(@PathVariable Long contentId) {
         return ApiResponse.<DetailContentResponse>builder()
                 .code("ok")
@@ -180,8 +201,18 @@ public class TutorialController {
                 .data(tutorialService.submitTutorialForReview(tutorialId))
                 .build();
     }
+    @PreAuthorize("hasAuthority('VIEW_OWN_TUTORIALS') or hasAuthority('RESOURCE_READ')")
+    @GetMapping("/assignments/{assignmentId}")
+    public ApiResponse<DetailAssignmentResponse> getAssignmentDetail(@PathVariable Long assignmentId) throws JsonProcessingException {
+        return ApiResponse.<DetailAssignmentResponse>builder()
+                .code("ok")
+                .message("successfully get tutorial")
+                .data(assignmentService.detailAssignmentTutorial(assignmentId))
+                .build();
+    }
+    @PreAuthorize("hasAuthority('RESOURCE_READ') or hasAuthority('MANAGE_TUTORIALS')")
     @GetMapping
-    public ApiResponse<Page<CreateTutorialResponse>> getAllTutorials(
+    public ApiResponse<Page<SearchTutorialResponse>> getAllTutorials(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt,desc", required = false) String[] sort,
@@ -189,9 +220,9 @@ public class TutorialController {
     ) {
         Sort sortObj = createSortObject(sort);
         Pageable pageable = PageRequest.of(page, size, sortObj);
-        Page<CreateTutorialResponse> data = tutorialService.searchTutorials(search, pageable);
+        Page<SearchTutorialResponse> data = tutorialService.searchTutorials(search, pageable);
 
-        return ApiResponse.<Page<CreateTutorialResponse>>builder()
+        return ApiResponse.<Page<SearchTutorialResponse>>builder()
                 .code("ok")
                 .message("SUCCESS")
                 .data(data)

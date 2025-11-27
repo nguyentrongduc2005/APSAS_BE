@@ -37,7 +37,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     @Override
     @Transactional
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
-        // 1. Lấy thông tin user từ Google (Spring tự làm)
         OAuth2User oAuth2User = super.loadUser(userRequest);
         Map<String, Object> attributes = oAuth2User.getAttributes();
 
@@ -45,82 +44,94 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String name = (String) attributes.get("name");
         String avatarUrl = (String) attributes.get("picture");
 
-        // 2. Logic "Find or Create" (Bắt chước hàm register của bạn)
-        Optional<User> userOptional = userRepository.findByEmail(email);
+        log.info("OAuth2: Processing user {}", email);
+
+        Optional<User> userOptional = userRepository.findByEmailWithRoles(email);
         User user;
 
         if (userOptional.isPresent()) {
-            // User đã tồn tại -> Cập nhật tên và avatar
             user = userOptional.get();
-            log.info("OAuth2: Found existing user {}", email);
+            log.info("OAuth2: Found existing user {} with roles: {}", email,
+                    user.getRoles().stream().map(Role::getName).toList());
+
             user.setName(name);
             if (user.getProfile() != null) {
                 user.getProfile().setAvatarUrl(avatarUrl);
             } else {
-                // Nếu profile bị thiếu (lỗi data cũ), tạo mới
-                Profile profile = Profile.builder().user(user).avatarUrl(avatarUrl).build();
+                Profile profile = Profile.builder()
+                        .dob(null)
+                        .phone(null)
+                        .bio(null)
+                        .address(null)
+                        .avatarUrl(avatarUrl)
+                        .gender(null)
+                        .user(user)
+                        .build();
                 user.setProfile(profile);
             }
             user = userRepository.save(user);
         } else {
-            // User mới -> Tạo user mới (Bắt chước hàm register)
             log.info("OAuth2: Creating new user {}", email);
 
-            // Lấy role STUDENT
             Role studentRole = roleRepository.findByName(com.project.apsas.enums.Role.STUDENT.name())
-                    .orElseThrow((() -> new RuntimeException("Error: Role STUDENT is not found.")));
+                    .orElseThrow(() -> new AppException(ErrorCode.BAD_REQUEST));
 
-            userRepository.findByEmail(email).ifPresent(u -> {
-                throw new AppException(ErrorCode.USER_ESIXSTED);
-            });
             user = new User();
             user.setEmail(email);
             user.setName(name);
             user.setRoles(Set.of(studentRole));
-            user.setStatus(UserStatus.ACTIVE); // Kích hoạt luôn
-            // Set mật khẩu ngẫu nhiên vì user sẽ không dùng nó
+            user.setStatus(UserStatus.ACTIVE);
             user.setPassword(UUID.randomUUID().toString());
 
-            // Tạo Profile (giống register)
             Profile profile = Profile.builder()
-                    .avatarUrl(avatarUrl) // Dùng avatar từ Google
+                    .dob(null)
+                    .phone(null)
+                    .bio(null)
+                    .address(null)
+                    .avatarUrl(avatarUrl)
+                    .gender(null)
                     .user(user)
                     .build();
             user.setProfile(profile);
 
-            // Lưu user trước để lấy ID
-            User savedUser = userRepository.save(user);
+            user = userRepository.save(user);
 
-            // Tạo Progress (giống register)
             Progress progress = Progress.builder()
-                    .userId(savedUser.getId())
+                    .userId(user.getId())
                     .totalAttemptNo(0)
                     .acceptance(0.0f)
                     .build();
             progressRepository.save(progress);
 
-            user = savedUser;
+            user = userRepository.findByIdWithRoles(user.getId())
+                    .orElseThrow(() -> new RuntimeException("Failed to reload user"));
+
+            log.info("OAuth2: Created user {} with roles: {}", email,
+                    user.getRoles().stream().map(Role::getName).toList());
         }
 
-        // 3. Trả về Principal cho Spring
-        // Chúng ta sẽ dùng "email" làm định danh
         Set<GrantedAuthority> authorities = new HashSet<>();
+
         if (!CollectionUtils.isEmpty(user.getRoles())) {
             user.getRoles().forEach(role -> {
                 authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getName()));
+                log.info("OAuth2: Added role authority: ROLE_{}", role.getName());
+
                 if (!CollectionUtils.isEmpty(role.getPermissions())) {
                     role.getPermissions().forEach(permission -> {
                         authorities.add(new SimpleGrantedAuthority(permission.getName()));
+                        log.info("OAuth2: Added permission authority: {}", permission.getName());
                     });
                 }
             });
         }
 
-        // Chúng ta sẽ dùng "email" làm định danh
+        log.info("OAuth2: Final authorities for user {}: {}", email, authorities);
+
         return new org.springframework.security.oauth2.core.user.DefaultOAuth2User(
-                authorities, // Dùng danh sách quyền vừa tạo
+                authorities,
                 attributes,
-                "email" // Dùng email làm 'name' attribute key
+                "email"
         );
     }
 }

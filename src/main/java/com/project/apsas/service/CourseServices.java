@@ -15,10 +15,12 @@ import java.io.IOException;
 public interface CourseServices {
     Page<PublicCourseItem> getPublicCourses(Pageable pageable, String search);
     CourseRegisResponse getCourseRegistrationDetails(Long courseId);
+    DetailCourseStudentResponse getCourseDetailForStudent(Long courseId);
     Page<CourseItemTeacherResponse> getMyCoursesTeacher(Pageable pageable, String search);
     Page<CourseItemStudentResponse> getMyCoursesStudent(Pageable pageable, String search);
     CreateCourseResponse createCourseFromTutorial(CreateCourseFromTutorialRequest request);
     JoinCourseResponse joinCourse(JoinCourseRequest request);
     CreateCourseResponseDTO createCourse(CreateCourseRequestDTO request);
     CourseAvatarResponseDTO updateCourseAvatar(Long courseId, MultipartFile file) throws IOException;
+    public CourseRegisPublicReponse getCourseRegistrationDetailss(Long courseId);
 }

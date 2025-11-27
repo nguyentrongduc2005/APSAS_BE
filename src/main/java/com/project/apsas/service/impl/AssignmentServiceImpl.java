@@ -10,6 +10,7 @@ import com.project.apsas.dto.request.assignment.CreateAssigmentRequest;
 import com.project.apsas.dto.request.assignment.UpdateAssignmentRequest;
 import com.project.apsas.dto.response.assignment.CreateAssignmentResponse;
 import com.project.apsas.dto.response.assignment.TestCaseConfig;
+import com.project.apsas.dto.response.tutorial.DetailAssignmentResponse;
 import com.project.apsas.entity.*;
 import com.project.apsas.exception.AppException;
 import com.project.apsas.exception.ErrorCode;
@@ -22,9 +23,13 @@ import com.project.apsas.service.AssignmentService;
 import com.project.apsas.service.AuthService;
 import com.project.apsas.service.NotificationService;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.commonmark.node.Node;
+import org.commonmark.parser.Parser;
+import org.commonmark.renderer.html.HtmlRenderer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,12 +38,15 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
+@Builder
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Transactional
 @Slf4j
 public class AssignmentServiceImpl implements AssignmentService {
 
+
+    // Inject 2 repository cần thiết
     AssignmentRepository assignmentRepository;
     TutorialRepository tutorialRepository;
     AssignmentMapper assignmentMapper;
@@ -47,7 +55,8 @@ public class AssignmentServiceImpl implements AssignmentService {
     AuthService authService;
     CourseAssignmentRepository courseAssignmentRepository;
     NotificationService notificationService;
-
+    Parser markdownParser;
+    HtmlRenderer htmlRenderer;
 
     @Override
     @Transactional
@@ -247,13 +256,13 @@ public class AssignmentServiceImpl implements AssignmentService {
         courseAssignment.setDueAt(dueAt);
 
         courseAssignmentRepository.save(courseAssignment);
-        
+
         // Create notification for students
         Assignment assignment = courseAssignment.getAssignment();
-        String message = String.format("Bài tập '%s' đã được mở. Hạn nộp: %s", 
-                assignment.getTitle(), 
+        String message = String.format("Bài tập '%s' đã được mở. Hạn nộp: %s",
+                assignment.getTitle(),
                 dueAt.toString());
-        
+
         try {
             notificationService.createAssignmentNotification(courseId, assignment.getTitle(), message);
             log.info("Created assignment notifications for course {} and assignment {}", courseId, assignmentId);
@@ -286,4 +295,54 @@ public class AssignmentServiceImpl implements AssignmentService {
         return assignmentDetail;
     }
 
+    @Override
+    public DetailAssignmentResponse detailAssignmentTutorial(Long assignmentId) throws JsonProcessingException {
+
+        Assignment assignment = assignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> new AppException(ErrorCode.ASSIGNMENT_NOT_EXISTED));
+
+        String markdownInput = assignment.getStatementMd();
+
+        String htmlOutput = "";
+        if (markdownInput != null) {
+            Node document = markdownParser.parse(markdownInput);
+            htmlOutput = htmlRenderer.render(document);
+        }
+
+        // --- SỬA ĐOẠN NÀY ---
+
+        // 1. Tìm evaluation, nếu không có thì trả về null (không ném lỗi nữa)
+        AssignmentEvaluation assignmentEvaluation = assignment.getAssignmentEvaluations().stream()
+                .findFirst()
+                .orElse(null);
+
+        List<TestCase> testCases = null; // Mặc định là null
+
+        // 2. Chỉ parse JSON nếu evaluation tồn tại
+        if (assignmentEvaluation != null) {
+            String configJsonString = assignmentEvaluation.getConfigJson();
+            if (configJsonString != null && !configJsonString.isEmpty()) {
+                // Bọc try-catch đề phòng JSON lỗi format cũng không làm sập API
+                try {
+                    ConfigJson configJson = objectMapper.readValue(configJsonString, ConfigJson.class);
+                    testCases = configJson.getTestCases();
+                } catch (Exception e) {
+                    // Log lỗi nếu cần, hoặc bỏ qua
+                    System.err.println("Lỗi parse JSON config: " + e.getMessage());
+                }
+            }
+        }
+
+        return DetailAssignmentResponse.builder()
+                .id(assignment.getId())
+                .title(assignment.getTitle())
+                .attemptsLimit(assignment.getAttemptsLimit())
+                .createdDate(assignment.getCreatedAt())
+                .proficiency(assignment.getProficiency())
+                .statementHtml(htmlOutput)
+                .testCases(testCases) // Giá trị này sẽ là null nếu không có evaluation
+                .maxScore(assignment.getMaxScore())
+                .orderNo(assignment.getOrderNo())
+                .build();
+    }
 }

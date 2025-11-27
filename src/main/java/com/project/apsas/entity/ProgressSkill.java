@@ -1,6 +1,5 @@
 package com.project.apsas.entity;
 
-import com.project.apsas.entity.ProgressSkillId;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -11,7 +10,7 @@ import java.math.BigDecimal;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(of = {"id"})
+@EqualsAndHashCode(of = {"progressId", "skillId"})
 @IdClass(ProgressSkillId.class)
 @Table(name = "progress_skills")
 public class ProgressSkill {

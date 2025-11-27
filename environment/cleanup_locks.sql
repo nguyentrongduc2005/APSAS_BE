@@ -5,19 +5,12 @@
 
 USE apsas_db;
 
--- 1. Show current locks
-SELECT 
-    r.trx_id waiting_trx_id,
-    r.trx_mysql_thread_id waiting_thread,
-    r.trx_query waiting_query,
-    b.trx_id blocking_trx_id,
-    b.trx_mysql_thread_id blocking_thread,
-    b.trx_query blocking_query
-FROM information_schema.innodb_lock_waits w
-INNER JOIN information_schema.innodb_trx b ON b.trx_id = w.blocking_trx_id
-INNER JOIN information_schema.innodb_trx r ON r.trx_id = w.requesting_trx_id;
+-- 1. Show current locks (Disabled during init - use manually if needed)
+-- This script is for manual cleanup only, not for automatic execution
+-- SELECT 'Lock cleanup queries disabled during initialization' as status;
 
--- 2. Show long-running transactions (> 10 seconds)
+-- 2. Show long-running transactions (> 10 seconds) - Disabled during init
+/*
 SELECT 
     id,
     user,
@@ -32,6 +25,7 @@ WHERE db = 'apsas_db'
   AND time > 10
   AND command != 'Sleep'
 ORDER BY time DESC;
+*/
 
 -- 3. Kill long-running transactions (UNCOMMENT if needed)
 -- WARNING: This will kill active connections!
@@ -44,11 +38,11 @@ WHERE db = 'apsas_db'
   AND command != 'Sleep';
 */
 
--- 4. Check InnoDB lock status
-SHOW ENGINE INNODB STATUS\G
+-- 4. Check InnoDB lock status - Disabled during init
+-- SHOW ENGINE INNODB STATUS\G
 
--- 5. Check table locks
-SHOW OPEN TABLES WHERE In_use > 0;
+-- 5. Check table locks - Disabled during init
+-- SHOW OPEN TABLES WHERE In_use > 0;
 
 -- 6. Optimize tables if needed (OPTIONAL - run during maintenance only)
 /*
@@ -66,8 +60,8 @@ ALTER TABLE permissions AUTO_INCREMENT = 1;
 ALTER TABLE users AUTO_INCREMENT = 1;
 */
 
--- 8. Show current transaction isolation level
-SELECT @@GLOBAL.transaction_isolation, @@SESSION.transaction_isolation;
+-- 8. Show current transaction isolation level - Disabled during init
+-- SELECT @@GLOBAL.transaction_isolation, @@SESSION.transaction_isolation;
 
 -- 9. Adjust lock wait timeout (default is 50 seconds)
 -- SHOW VARIABLES LIKE 'innodb_lock_wait_timeout';

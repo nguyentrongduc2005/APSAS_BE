@@ -36,6 +36,7 @@ public class AssignmentController {
                 .build();
     }
     @GetMapping("/{courseId}/assignments")
+    @PreAuthorize("hasAuthority('VIEW_COURSES')")
     public ApiResponse<List<AssignmentListItemDTO>> getAssignmentsByCourse(
             @PathVariable Long courseId) {
 
@@ -49,6 +50,7 @@ public class AssignmentController {
     }
 
     @GetMapping("/{courseId}/assignments/{assignmentId}")
+    @PreAuthorize("hasAuthority('VIEW_COURSES')")
     public ApiResponse<AssignmentDetailDTO> getAssignmentDetail(
             @PathVariable Long courseId,
             @PathVariable Long assignmentId) {

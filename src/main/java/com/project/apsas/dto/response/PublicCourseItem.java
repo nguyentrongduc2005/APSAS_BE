@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 public class PublicCourseItem {
     private Long id;
     private String name;
+    private String url;
     private String description;
     private Long studentsCount;
     private Long lessonsCount;

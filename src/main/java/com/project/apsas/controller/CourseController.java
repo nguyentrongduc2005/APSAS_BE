@@ -105,14 +105,29 @@ public class CourseController {
         return sortList;
     }
 
-    @GetMapping("/{courseId}/register-details")
-    public ApiResponse<CourseRegisResponse> getRegistrationDetails(@PathVariable Long courseId) {
-
-        // Gọi Service để lấy dữ liệu chi tiết
+    @GetMapping("/{courseId}/teacher-overview")
+    @PreAuthorize("hasAuthority('VIEW_COURSES')")
+    public ApiResponse<CourseRegisResponse> getCourseDetailForTeacher(@PathVariable Long courseId) {
         var data = service.getCourseRegistrationDetails(courseId);
-
-        // Trả về phản hồi chuẩn
         return ApiResponse.<CourseRegisResponse>builder()
+                .code("0")
+                .message("SUCCESS")
+                .data(data)
+                .build();
+    }
+    @PreAuthorize("hasAuthority('VIEW_COURSES')")
+    @GetMapping("/{id}/detail-student")
+    public ApiResponse<DetailCourseStudentResponse> getCourseDetail(@PathVariable Long id) {
+        return ApiResponse.<DetailCourseStudentResponse>builder()
+                .code("ok")
+                .message("succces")
+                .data(service.getCourseDetailForStudent(id))
+                .build();
+    }
+    @GetMapping("/{courseId}/register-details")
+    public ApiResponse<CourseRegisPublicReponse> getCourseDetailregis(@PathVariable Long courseId) {
+        var data = service.getCourseRegistrationDetailss(courseId);
+        return ApiResponse.<CourseRegisPublicReponse>builder()
                 .code("0")
                 .message("SUCCESS")
                 .data(data)

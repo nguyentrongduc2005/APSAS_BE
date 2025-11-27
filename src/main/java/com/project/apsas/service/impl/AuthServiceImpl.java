@@ -371,63 +371,55 @@ public class AuthServiceImpl implements AuthService {
     }
 
 //     ================= REFRESH TOKEN =================
-//@Override
-//public LoginResponse refreshToken(RefreshTokenRequest request) {
-//    String refreshTokenValue = request.getRefreshToken();
-//
-//    // Bước 1: Kiểm tra null hoặc empty
-//    if (refreshTokenValue == null || refreshTokenValue.trim().isEmpty()) {
-//        throw new AppException(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
-//    }
-//
-//    // Bước 2: Lấy user hiện tại từ access token nếu có (hoặc client gửi kèm)
-//    String currentUserId = currentId(); // lấy từ SecurityContextHolder
-//    if (currentUserId == null) {
-//        throw new AppException(ErrorCode.USER_NOT_FOUND);
-//    }
-//
-//    Long userId = Long.parseLong(currentUserId);
-//
-//    // Bước 3: Tìm refresh token theo userId
-//    RefreshToken refreshToken = refreshTokenRepository.findByUserId(userId)
-//            .orElseThrow(() -> new AppException(ErrorCode.REFRESH_TOKEN_INVALID));
-//
-//    // Bước 4: Kiểm tra token trùng khớp (so sánh hash)
-//    if (!passwordEncoder.matches(refreshTokenValue, refreshToken.getTokenHash())) {
-//        throw new AppException(ErrorCode.REFRESH_TOKEN_INVALID);
-//    }
-//
-//    // Bước 5: Kiểm tra hết hạn
-//    if (refreshToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-//        throw new AppException(ErrorCode.REFRESH_TOKEN_INVALID);
-//    }
-//
-//    // Bước 6: Lấy user
-//    User user = refreshToken.getUser();
-//    if (user == null || user.getStatus() != UserStatus.ACTIVE) {
-//        throw new AppException(ErrorCode.USER_NOT_FOUND);
-//    }
-//
-//    // Bước 7: Sinh token mới
-//    String newAccessToken = generateAccessToken(user);
-//    String newRefreshToken = generateRefreshToken(); // random string mới
-//
-//    // Bước 8: Cập nhật refresh token trong DB
-//    LocalDateTime expiresAt = LocalDateTime.ofInstant(
-//            Instant.now().plus(refreshTtlMinutes, ChronoUnit.MINUTES),
-//            ZoneId.systemDefault()
-//    );
-//
-//    refreshToken.setTokenHash(passwordEncoder.encode(newRefreshToken));
-//    refreshToken.setExpiresAt(expiresAt);
-//    refreshTokenRepository.save(refreshToken);
-//
-//    // Bước 9: Trả response
-//    LoginResponse res = mapper.toLoginResponse(user);
-//    res.setAccessToken(newAccessToken);
-//    res.setRefreshToken(newRefreshToken);
-//    return res;
-//}
+@Override
+public LoginResponse refreshToken(RefreshTokenRequest request) {
+    String refreshTokenValue = request.getRefreshToken();
+    Long userId = request.getUserId();
+    // Bước 1: Kiểm tra null hoặc empty
+    if (refreshTokenValue == null || refreshTokenValue.trim().isEmpty() || userId == null) {
+        throw new AppException(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
+    }
+
+    // Bước 3: Tìm refresh token theo userId
+    RefreshToken refreshToken = refreshTokenRepository.findByUserId(userId)
+            .orElseThrow(() -> new AppException(ErrorCode.REFRESH_TOKEN_INVALID));
+
+    // Bước 4: Kiểm tra token trùng khớp (so sánh hash)
+    if (!passwordEncoder.matches(refreshTokenValue, refreshToken.getTokenHash())) {
+        throw new AppException(ErrorCode.REFRESH_TOKEN_INVALID);
+    }
+
+    // Bước 5: Kiểm tra hết hạn
+    if (refreshToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+        throw new AppException(ErrorCode.REFRESH_TOKEN_INVALID);
+    }
+
+    // Bước 6: Lấy user
+    User user = refreshToken.getUser();
+    if (user == null || user.getStatus() != UserStatus.ACTIVE) {
+        throw new AppException(ErrorCode.USER_NOT_FOUND);
+    }
+
+    // Bước 7: Sinh token mới
+    String newAccessToken = generateAccessToken(user);
+    String newRefreshToken = generateRefreshToken(); // random string mới
+
+    // Bước 8: Cập nhật refresh token trong DB
+    LocalDateTime expiresAt = LocalDateTime.ofInstant(
+            Instant.now().plus(refreshTtlMinutes, ChronoUnit.MINUTES),
+            ZoneId.systemDefault()
+    );
+
+    refreshToken.setTokenHash(passwordEncoder.encode(newRefreshToken));
+    refreshToken.setExpiresAt(expiresAt);
+    refreshTokenRepository.save(refreshToken);
+
+    // Bước 9: Trả response
+    LoginResponse res = mapper.toLoginResponse(user);
+    res.setAccessToken(newAccessToken);
+    res.setRefreshToken(newRefreshToken);
+    return res;
+}
 
     @Override
     public String currentId() {

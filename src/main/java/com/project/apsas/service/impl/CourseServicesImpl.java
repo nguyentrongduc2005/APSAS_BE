@@ -45,6 +45,7 @@ public class CourseServicesImpl implements CourseServices {
     private final TutorialRepository tutorialRepository;
     private final ContentRepository contentRepository;
     private final CloudinaryService cloudinaryService;
+    private final SubmissionRepository submissionRepository;
 
     @NonFinal
     @Value("${cloudinary.option.folder-name}")
@@ -113,6 +114,7 @@ public class CourseServicesImpl implements CourseServices {
         return PublicCourseItem.builder()
                 .id(courseId)
                 .name(course.getName())
+                .url(course.getAvatarUrl())
                 .description(course.getDescription())
                 .studentsCount(studentsCount)
                 .lessonsCount(lessonsCount)
@@ -265,8 +267,7 @@ public class CourseServicesImpl implements CourseServices {
                 .totalAssignments(assignmentsAdded)
                 .build();
     }
-    @Override
-    public CourseRegisResponse getCourseRegistrationDetails(Long courseId) {
+    public CourseRegisPublicReponse getCourseRegistrationDetailss(Long courseId) {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
 
@@ -297,24 +298,15 @@ public class CourseServicesImpl implements CourseServices {
         Long assignmentsCount = assignmentCountsMap.getOrDefault(courseId, 0L);
 
         // 5. Ánh xạ và trả về DTO
-        return buildCourseRegisResponse(
+        return buildCourseRegisResponses(
                 course,
                 totalStudents,
                 lessonsCountTotal,
                 assignmentsCount
         );
     }
-    private Map<Long, Long> listToObjectMap(List<Object[]> list) {
-        if (list == null || list.isEmpty()) {
-            return Map.of();
-        }
-        return list.stream()
-                .collect(Collectors.toMap(
-                        row -> (Long) row[0], // Khóa
-                        row -> (Long) row[1]  // Giá trị
-                ));
-    }
-    private CourseRegisResponse buildCourseRegisResponse(
+
+    private CourseRegisPublicReponse buildCourseRegisResponses(
             Course course,
             Long totalStudents,
             Long lessonsCountTotal, // Total lessons (total content)
@@ -332,7 +324,7 @@ public class CourseServicesImpl implements CourseServices {
         Long totalStudentViews = enrollmentRepository.countTotalStudentsByCreatorId(creatorId);
 
         // 3. Ánh xạ Instructor Info (Đã truyền giá trị vào)
-        CourseRegisResponse.InstructorInfo instructorInfo = CourseRegisResponse.InstructorInfo.builder()
+        CourseRegisPublicReponse.InstructorInfo instructorInfo = CourseRegisPublicReponse.InstructorInfo.builder()
                 .id(creatorId)
                 .name(creator.getName())
                 .email(creator.getEmail())
@@ -341,14 +333,97 @@ public class CourseServicesImpl implements CourseServices {
                 .build();
 
 
+        return CourseRegisPublicReponse.builder()
+                .id(course.getId())
+                .name(course.getName())
+                .description(course.getDescription())
+                .url(course.getAvatarUrl())
+                .totalStudents(totalStudents)
+                .lessonsCount(lessonsCountTotal)
+                .totalAssignments(assignmentsCount)
+                .instructor(instructorInfo)
+                .build();
+    }
+    @Override
+    public CourseRegisResponse getCourseRegistrationDetails(Long courseId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+
+        // Count total students
+        List<Long> singleCourseIdList = List.of(courseId);
+        List<Object[]> studentCountsList = enrollmentRepository.findStudentCountsByCourseIds(singleCourseIdList);
+        Map<Long, Long> studentsCountMap = listToObjectMap(studentCountsList);
+        Long totalStudents = studentsCountMap.getOrDefault(courseId, 0L);
+
+        // Get contents list
+        List<CourseContent> courseContents = course.getContentLinks().stream().toList();
+        List<CourseRegisResponse.ContentItem> contentItems = courseContents.stream()
+                .map(cc -> CourseRegisResponse.ContentItem.builder()
+                        .id(cc.getContent().getId())
+                        .title(cc.getContent().getTitle())
+                        .orderNo(cc.getContent().getOrderNo())
+                        .build())
+                .sorted((a, b) -> Integer.compare(a.getOrderNo() != null ? a.getOrderNo() : 0, 
+                                                   b.getOrderNo() != null ? b.getOrderNo() : 0))
+                .collect(Collectors.toList());
+
+        // Get assignments list
+        List<CourseAssignment> courseAssignments = course.getAssignmentLinks().stream().toList();
+        List<CourseRegisResponse.AssignmentItem> assignmentItems = courseAssignments.stream()
+                .map(ca -> CourseRegisResponse.AssignmentItem.builder()
+                        .id(ca.getAssignment().getId())
+                        .title(ca.getAssignment().getTitle())
+                        .openAt(ca.getOpenAt())
+                        .dueAt(ca.getDueAt())
+                        .build())
+                .sorted((a, b) -> {
+                    if (a.getDueAt() == null && b.getDueAt() == null) return 0;
+                    if (a.getDueAt() == null) return 1;
+                    if (b.getDueAt() == null) return -1;
+                    return a.getDueAt().compareTo(b.getDueAt());
+                })
+                .collect(Collectors.toList());
+
+        return buildCourseRegisResponse(course, totalStudents, contentItems, assignmentItems);
+    }
+    private Map<Long, Long> listToObjectMap(List<Object[]> list) {
+        if (list == null || list.isEmpty()) {
+            return Map.of();
+        }
+        return list.stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0], // Khóa
+                        row -> (Long) row[1]  // Giá trị
+                ));
+    }
+    private CourseRegisResponse buildCourseRegisResponse(
+            Course course,
+            Long totalStudents,
+            List<CourseRegisResponse.ContentItem> contents,
+            List<CourseRegisResponse.AssignmentItem> assignments
+    ) {
+        User creator = course.getCreator();
+        Long creatorId = creator.getId();
+
+        Long coursesCountByCreator = courseRepository.countCoursesByCreatorId(creatorId);
+        Long totalStudentViews = enrollmentRepository.countTotalStudentsByCreatorId(creatorId);
+
+        CourseRegisResponse.InstructorInfo instructorInfo = CourseRegisResponse.InstructorInfo.builder()
+                .id(creatorId)
+                .name(creator.getName())
+                .email(creator.getEmail())
+                .coursesCount(coursesCountByCreator)
+                .studentViews(totalStudentViews)
+                .build();
+
         return CourseRegisResponse.builder()
                 .id(course.getId())
                 .name(course.getName())
                 .description(course.getDescription())
                 .totalStudents(totalStudents)
-                .lessonsCount(lessonsCountTotal)
-                .totalAssignments(assignmentsCount)
                 .instructor(instructorInfo)
+                .contents(contents)
+                .assignments(assignments)
                 .build();
     }
     @Override
@@ -733,4 +808,75 @@ public class CourseServicesImpl implements CourseServices {
                 .build();
     }
 
+    @Override
+    public DetailCourseStudentResponse getCourseDetailForStudent(Long courseId) {
+        // 1. Lấy thông tin User hiện tại (từ Security Context)
+        // String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        // User currentUser = userRepository.findByEmail(email)...;
+        // Giả sử bạn đã có ID của student đang login, ví dụ:
+        Long currentStudentId = 1L; // TODO: Lấy từ token/security context thực tế
+
+        // 2. Lấy thông tin Course
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new RuntimeException("Course not found"));
+
+        // 3. Mapping ContentItems
+        // Dựa vào quan hệ Course -> CourseContent -> Content
+        List<DetailCourseStudentResponse.ContentItem> contentItems = course.getContentLinks().stream()
+                .map(link -> {
+                    Content content = link.getContent();
+                    return DetailCourseStudentResponse.ContentItem.builder()
+                            .id(content.getId())
+                            .title(content.getTitle())
+                            .orderNo(content.getOrderNo())
+                            // size của set mediaList
+                            .totalMedia(content.getMediaList() != null ? content.getMediaList().size() : 0)
+                            .build();
+                })
+                .sorted(Comparator.comparingInt(item ->
+                        item.getOrderNo() != null ? item.getOrderNo() : Integer.MAX_VALUE))
+                .collect(Collectors.toList());
+
+        // 4. Mapping Assignments
+        // Dựa vào quan hệ Course -> CourseAssignment -> Assignment
+        List<DetailCourseStudentResponse.AssignmentItem> assignments = course.getAssignmentLinks().stream()
+                .map(link -> {
+                    // Entity CourseAssignment chứa thông tin openAt, dueAt
+                    // Entity Assignment chứa thông tin title (Giả định entity Assignment có getTitle)
+                    var assignmentEntity = link.getAssignment();
+
+                    return DetailCourseStudentResponse.AssignmentItem.builder()
+                            .id(assignmentEntity.getId())
+                            .title(assignmentEntity.getTitle()) // TODO: Đảm bảo Assignment entity có field này
+                            .openAt(link.getOpenAt())
+                            .dueAt(link.getDueAt())
+                            .orderNo(assignmentEntity.getOrderNo()) // CourseAssignment không có orderNo, Content mới có. Để null hoặc tự xử lý logic
+                            .build();
+                })
+                // Sort theo ngày mở nếu không có orderNo
+                .sorted(Comparator.comparing(item ->
+                        item.getOpenAt() != null ? item.getOpenAt() : java.time.LocalDateTime.MAX))
+                .collect(Collectors.toList());
+
+        // 5. Tính toán Progress (Bài đã nộp / Tổng bài tập)
+        int totalAssignment = assignments.size();
+        long submittedCount = submissionRepository.countSubmittedAssignments(courseId, currentStudentId);
+
+        int progressAverage = 0;
+        if (totalAssignment > 0) {
+            progressAverage = (int) (((double) submittedCount / totalAssignment) * 100);
+        }
+
+        // 6. Build Response
+        return DetailCourseStudentResponse.builder()
+                .name(course.getName())
+                .description(course.getDescription())
+                .totalStudent(course.getEnrollments() != null ? course.getEnrollments().size() : 0)
+                .totalLession(contentItems.size() + totalAssignment)
+                .totalAssignment(totalAssignment)
+                .progressAverage(progressAverage)
+                .contentItems(contentItems)
+                .assignments(assignments)
+                .build();
+    }
 }

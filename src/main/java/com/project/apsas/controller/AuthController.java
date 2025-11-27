@@ -69,14 +69,14 @@ public class AuthController {
                 .data(response)
                 .build();
     }
-//    @PostMapping("/refresh-token")
-//    public ApiResponse<LoginResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest request){
-//        LoginResponse response = authService.refreshToken(request);
-//        return ApiResponse.<LoginResponse>builder()
-//                .code("OK")
-//                .message("Đã Cấp nhật Token Mới")
-//                .data(response)
-//                .build();
-//    }
+    @PostMapping("/refresh-token")
+        public ApiResponse<LoginResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest request){
+        LoginResponse response = authService.refreshToken(request);
+        return ApiResponse.<LoginResponse>builder()
+                .code("OK")
+                .message("Đã Cấp nhật Token Mới")
+                .data(response)
+                .build();
+    }
 
 }

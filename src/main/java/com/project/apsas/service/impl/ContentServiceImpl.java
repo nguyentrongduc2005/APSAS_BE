@@ -1,5 +1,7 @@
 package com.project.apsas.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.project.apsas.dto.mapping.ConfigJson;
 import com.project.apsas.dto.request.assignment.CreateAssigmentRequest;
 import com.project.apsas.dto.request.content.CreateContentRequest;
 import com.project.apsas.dto.request.content.UpdateContentRequest;
@@ -7,15 +9,15 @@ import com.project.apsas.dto.response.UploadResult;
 import com.project.apsas.dto.response.assignment.CreateAssignmentResponse;
 import com.project.apsas.dto.response.content.CreateContentResponse;
 import com.project.apsas.dto.response.content.UpdateContentResponse;
+import com.project.apsas.dto.response.tutorial.DetailAssignmentResponse;
 import com.project.apsas.dto.response.tutorial.DetailContentResponse;
-import com.project.apsas.entity.Content;
-import com.project.apsas.entity.Media;
-import com.project.apsas.entity.Tutorial;
+import com.project.apsas.entity.*;
 import com.project.apsas.enums.ContentStatus;
 import com.project.apsas.enums.MediaType;
 import com.project.apsas.exception.AppException;
 import com.project.apsas.exception.ErrorCode;
 import com.project.apsas.mapper.MediaMapper;
+import com.project.apsas.repository.AssignmentRepository;
 import com.project.apsas.repository.ContentRepository;
 import com.project.apsas.repository.MediaRepository;
 import com.project.apsas.repository.TutorialRepository;
@@ -49,11 +51,12 @@ public class ContentServiceImpl implements ContentService {
 
     Parser markdownParser;
     HtmlRenderer htmlRenderer;
-
+    AssignmentRepository assignmentRepository;
     ContentRepository contentRepository;
     TutorialRepository tutorialRepository;
     CloudinaryService cloudinaryService;
     MediaRepository mediaRepository;
+    ObjectMapper objectMapper;
     MediaMapper  mediaMapper;
     private final AuthService authService;
 
@@ -273,13 +276,19 @@ public class ContentServiceImpl implements ContentService {
                 new AppException(ErrorCode.CONTENT_NOT_EXISTED));
 
         List<Media> finalMediaList = content.getMediaList().stream().toList();
-
+        if (content.getBodyHtmlCached() == null || content.getBodyHtmlCached().isEmpty()) {
+            Node document = markdownParser.parse(content.getBodyMd());
+            content.setBodyHtmlCached(htmlRenderer.render(document));
+        }
         return DetailContentResponse.builder()
                 .id(content.getId())
                 .title(content.getTitle())
                 .bodyHtml(content.getBodyHtmlCached())
                 .totalMedia(finalMediaList.size())
                 .mediaList(mediaMapper.toMediaList(finalMediaList))
+                .createdDate(content.getCreatedAt())
                 .build();
     }
+
+
 }

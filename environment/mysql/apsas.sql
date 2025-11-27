@@ -31,7 +31,7 @@ CREATE TABLE `assignments` (
                                `proficiency` int(10) DEFAULT NULL,
                                `created_at` datetime DEFAULT current_timestamp(),
                                PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `assignment_evaluations` (
                                           `id` BIGINT NOT NULL AUTO_INCREMENT,
@@ -41,7 +41,7 @@ CREATE TABLE `assignment_evaluations` (
                                           `config_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`config_json`)),
                                           `created_at` datetime DEFAULT current_timestamp(),
                                           PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ĐÃ XÓA BẢNG 'assignment_evaluation_maps'
 
@@ -55,7 +55,7 @@ CREATE TABLE `contents` (
                             `status` enum('DRAFT','PUBLISHED','ARCHIVED') DEFAULT 'DRAFT',
                             `created_at` datetime DEFAULT current_timestamp(),
                             PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `courses` (
                            `id` BIGINT NOT NULL AUTO_INCREMENT,
@@ -66,7 +66,7 @@ CREATE TABLE `courses` (
                            `limit` int(10) UNSIGNED DEFAULT NULL,
                            `created_at` datetime DEFAULT current_timestamp(),
                            PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 ALTER TABLE `courses`
     ADD COLUMN `created_by` BIGINT NOT NULL COMMENT 'ID của người dùng đã tạo khóa học';
@@ -79,7 +79,7 @@ CREATE TABLE `enrollments` (
                                `course_id` BIGINT NOT NULL,
                                `role` enum('OWNER','TEACHER','TA','STUDENT') DEFAULT 'STUDENT',
                                `joined_at` datetime DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `feedback` (
                             `id` BIGINT NOT NULL AUTO_INCREMENT,
@@ -87,7 +87,7 @@ CREATE TABLE `feedback` (
                             `created_at` datetime DEFAULT current_timestamp(),
                             `submission_id` BIGINT NOT NULL,
                             PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `help_requests` (
                                  `id` BIGINT NOT NULL AUTO_INCREMENT,
@@ -97,7 +97,7 @@ CREATE TABLE `help_requests` (
                                  `body` text DEFAULT NULL,
                                  `created_at` datetime DEFAULT current_timestamp(),
                                  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `media` (
                          `id` BIGINT NOT NULL AUTO_INCREMENT,
@@ -109,7 +109,7 @@ CREATE TABLE `media` (
                          `order_no` int(11) DEFAULT NULL,
                          `created_at` datetime DEFAULT current_timestamp(),
                          PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `notifications` (
                                  `id` BIGINT NOT NULL AUTO_INCREMENT,
@@ -119,7 +119,7 @@ CREATE TABLE `notifications` (
                                  `is_read` tinyint(1) DEFAULT 0,
                                  `created_at` datetime DEFAULT current_timestamp(),
                                  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `otps` (
                         `id` BIGINT NOT NULL AUTO_INCREMENT,
@@ -128,7 +128,7 @@ CREATE TABLE `otps` (
                         `expires_at` datetime NOT NULL,
                         `created_at` datetime DEFAULT current_timestamp(),
                         PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `permissions` (
                                `id` BIGINT NOT NULL AUTO_INCREMENT,
@@ -136,7 +136,7 @@ CREATE TABLE `permissions` (
                                `description` text DEFAULT NULL,
                                PRIMARY KEY (`id`),
                                UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `profiles` (
                             `id` BIGINT NOT NULL AUTO_INCREMENT,
@@ -149,7 +149,7 @@ CREATE TABLE `profiles` (
                             `bio` text DEFAULT NULL,
                             `created_at` datetime NOT NULL DEFAULT current_timestamp(),
                             PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `progress` (
                             `id` BIGINT NOT NULL AUTO_INCREMENT,
@@ -158,14 +158,14 @@ CREATE TABLE `progress` (
                             `acceptance` float DEFAULT NULL,
                             `created_at` datetime DEFAULT current_timestamp(),
                             PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `progress_skills` (
                                    `progress_id` BIGINT NOT NULL,
                                    `skill_id` BIGINT NOT NULL,
                                    `level` int(11) DEFAULT NULL,
                                    `score` decimal(6,2) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `refresh_tokens` (
                                   `id` BIGINT NOT NULL AUTO_INCREMENT,
@@ -176,7 +176,7 @@ CREATE TABLE `refresh_tokens` (
                                   `expires_at` datetime DEFAULT NULL,
                                   PRIMARY KEY (`id`),
                                   UNIQUE KEY `token_hash` (`token_hash`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `roles` (
                          `id` BIGINT NOT NULL AUTO_INCREMENT,
@@ -185,7 +185,7 @@ CREATE TABLE `roles` (
                          `created_at` datetime DEFAULT current_timestamp(),
                          PRIMARY KEY (`id`),
                          UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `skills` (
                           `id` BIGINT NOT NULL AUTO_INCREMENT,
@@ -215,7 +215,7 @@ CREATE TABLE `skills` (
 ) DEFAULT 'OTHER',
                           PRIMARY KEY (`id`),
                           UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_GENERAL_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `submissions` (
                                `id` BIGINT NOT NULL AUTO_INCREMENT,
@@ -234,28 +234,28 @@ CREATE TABLE `submissions` (
                                `attempt_no` int(10) UNSIGNED DEFAULT 1,
                                `submitted_at` datetime DEFAULT current_timestamp(),
                                PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_GENERAL_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `tutorials` (
                              `id` BIGINT NOT NULL AUTO_INCREMENT,
                              `created_by` BIGINT DEFAULT NULL,
                              `title` varchar(200) NOT NULL,
                              `summary` text DEFAULT NULL,
-                             `status` enum('DRAFT','PUBLISHED','ARCHIVED') DEFAULT 'DRAFT',
+                             `status` enum('DRAFT','PUBLISHED','ARCHIVED','PENDING') DEFAULT 'PENDING',
                              `created_at` datetime DEFAULT current_timestamp(),
                              PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `users` (
                          `id` BIGINT NOT NULL AUTO_INCREMENT,
                          `name` varchar(120) NOT NULL,
                          `email` varchar(190) NOT NULL,
                          `password` varchar(255) NOT NULL,
-                         `status` enum('ACTIVE','INACTIVE','BANNED') DEFAULT 'ACTIVE',
+                         `status` enum('ACTIVE','INACTIVE','BANNED','BLOCKED','UNVERIFIED') DEFAULT 'ACTIVE',
                          `created_at` datetime NOT NULL DEFAULT current_timestamp(),
                          PRIMARY KEY (`id`),
                          UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_GENERAL_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ========================================================
 -- Join tables (đã đổi tên cột FK sang plural_id)
@@ -266,29 +266,29 @@ CREATE TABLE `courses_assignments` (
                                        `assignments_id` BIGINT NOT NULL,
                                        `open_at` datetime DEFAULT NULL,
                                        `due_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `courses_contents` (
                                     `courses_id` BIGINT NOT NULL,
                                     `contents_id` BIGINT NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_GENERAL_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `roles_permissions` (
                                      `roles_id` BIGINT NOT NULL,
                                      `permissions_id` BIGINT NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_GENERAL_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `users_notifications` (
                                        `users_id` BIGINT NOT NULL,
                                        `notifications_id` BIGINT NOT NULL,
                                        `is_read` tinyint(1) DEFAULT 0,
                                        `read_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_GENERAL_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `users_roles` (
                                `users_id` BIGINT NOT NULL,
                                `roles_id` BIGINT NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_GENERAL_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ========================================================
 -- Indexes
