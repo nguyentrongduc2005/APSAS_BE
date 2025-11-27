@@ -27,6 +27,6 @@ public interface SubmissionService {
 
     public SubmissionDetailResponse getSubmissionDetailForStudent(Long submissionId);
     public SubmissionDetailResponse getSubmissionDetailForTeacher(Long submissionId);
-    public SubmittedAssigmentResponse getSubmissionHistory( Long courseId, Long assignmentId);
+    public SubmittedAssigmentResponse getSubmissionHistory( Long courseId, Long assignmentId,  Long studentId);
     public CreateSubmissionResponse createSubmission(CreateSubmissionRequest createSubmissionRequest);
 }
