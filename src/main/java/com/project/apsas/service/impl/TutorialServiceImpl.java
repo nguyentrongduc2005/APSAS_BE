@@ -11,7 +11,6 @@ import com.project.apsas.dto.response.tutorial.TutorialItemDto;
 import com.project.apsas.entity.Content;
 import com.project.apsas.entity.Tutorial;
 import com.project.apsas.entity.User;
-import com.project.apsas.enums.ContentStatus;
 import com.project.apsas.enums.TutorialStatus;
 import com.project.apsas.exception.AppException;
 import com.project.apsas.exception.ErrorCode;
@@ -302,14 +301,10 @@ public class TutorialServiceImpl implements TutorialService {
             throw new AppException(ErrorCode.BAD_REQUEST);
         }
         
-        // Chuyển tutorial và tất cả content sang PENDING
-        tutorial.setStatus(TutorialStatus.PENDING);
-        tutorial.getContents().forEach(content -> {
-            content.setStatus(ContentStatus.PENDING);
-        });
-        
+        // Giữ tutorial ở DRAFT để chờ admin duyệt (không chuyển sang PENDING)
+        // Content vẫn giữ ở DRAFT
         tutorialRepository.save(tutorial);
-        log.info("Provider {} submitted tutorial {} for review", currentUserId, tutorialId);
+        log.info("Provider {} submitted tutorial {} for review (status: DRAFT)", currentUserId, tutorialId);
         
         return true;
     }

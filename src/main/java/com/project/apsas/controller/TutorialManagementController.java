@@ -28,7 +28,7 @@ public class TutorialManagementController {
     TutorialService tutorialService;
 
     /**
-     * Lấy danh sách tutorials chờ duyệt (PENDING)
+     * Lấy danh sách tutorials chờ duyệt (DRAFT)
      * GET /api/admin/tutorials/pending
      */
     @PreAuthorize("hasAuthority('MANAGE_TUTORIALS')")

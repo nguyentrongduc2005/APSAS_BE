@@ -71,8 +71,8 @@ public class TutorialManagementServiceImpl implements TutorialManagementService 
         Tutorial tutorial = tutorialRepository.findById(tutorialId)
                 .orElseThrow(() -> new AppException(ErrorCode.TUTORIAL_NOT_EXISTED));
 
-        // Chỉ publish tutorial đang PENDING
-        if (tutorial.getStatus() != TutorialStatus.PENDING) {
+        // Chỉ publish tutorial đang DRAFT (chờ duyệt)
+        if (tutorial.getStatus() != TutorialStatus.DRAFT) {
             throw new AppException(ErrorCode.BAD_REQUEST);
         }
 
@@ -132,12 +132,12 @@ public class TutorialManagementServiceImpl implements TutorialManagementService 
         log.info("Review tutorial {} - Current status: {}, Request status: {}", 
                 tutorialId, tutorial.getStatus(), request.getStatus());
 
-        // Chỉ review tutorial đang PENDING
-        if (tutorial.getStatus() != TutorialStatus.PENDING) {
-            log.warn("Cannot review tutorial {} - Current status is {}, must be PENDING", 
+        // Chỉ review tutorial đang DRAFT (chờ duyệt)
+        if (tutorial.getStatus() != TutorialStatus.DRAFT) {
+            log.warn("Cannot review tutorial {} - Current status is {}, must be DRAFT", 
                     tutorialId, tutorial.getStatus());
             throw new AppException(ErrorCode.BAD_REQUEST, 
-                    "Chỉ có thể review tutorial đang ở trạng thái PENDING. Tutorial hiện tại có status: " + tutorial.getStatus());
+                    "Chỉ có thể review tutorial đang ở trạng thái DRAFT (chờ duyệt). Tutorial hiện tại có status: " + tutorial.getStatus());
         }
 
         // Validate status phải là PUBLISHED hoặc REJECTED
